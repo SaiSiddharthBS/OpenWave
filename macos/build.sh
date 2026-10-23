@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds OpenWave.app and OpenWave-<version>-<arch>.dmg into macos/dist/.
+# Builds OpenWave.app and OpenWave-macOS-<AppleSilicon|Intel>.dmg into macos/dist/.
 #
 #   ./macos/build.sh            # uses ../.venv if present, else python3
 #
@@ -27,6 +27,7 @@ rm -rf "$WORK" "$DIST/OpenWave.app"
 mkdir -p "$WORK" "$DIST"
 
 echo "▸ Freezing the engine (PyInstaller)"
+rm -rf "$ROOT/build"  # setuptools reuses stale copies from here
 pip_install --upgrade "$ROOT" pyinstaller "yt-dlp[default]" ytmusicapi
 "$PY" -m PyInstaller --noconfirm --clean --log-level WARN \
   --name openwave-server --onedir \
@@ -53,6 +54,7 @@ sed "s/__VERSION__/$VERSION/g" "$HERE/Info.plist" > "$APP/Contents/Info.plist"
 cp -R "$WORK/pyi-dist/openwave-server" "$APP/Contents/Resources/server"
 cp "$WORK/deno/deno" "$APP/Contents/Resources/bin/deno"
 cp "$ROOT/openwave/web/icons/logo-mark-128.png" "$APP/Contents/Resources/logo-mark.png"
+cp "$HERE"/Resources/MenuBarIcon*.png "$APP/Contents/Resources/"
 
 ICONSET="$WORK/AppIcon.iconset"
 mkdir -p "$ICONSET"
@@ -62,21 +64,74 @@ for s in 16 32 128 256 512; do
 done
 iconutil -c icns "$ICONSET" -o "$APP/Contents/Resources/AppIcon.icns"
 
-echo "▸ Signing (ad-hoc)"
-# Sign inside-out: every embedded binary, then the bundle.
-find "$APP/Contents/Resources" -type f \( -perm -u+x -o -name "*.so" -o -name "*.dylib" \) -print0 | xargs -0 codesign --force --sign - --timestamp=none 2>/dev/null || true
-codesign --force --sign - --timestamp=none "$APP/Contents/MacOS/OpenWave"
-codesign --force --sign - --timestamp=none "$APP"
+# Signing: a Developer ID + notarisation makes OpenWave open with no warnings on every Mac.
+# Without one (local builds, forks) the app is ad-hoc signed and users confirm it once.
+#   DEVELOPER_ID="Developer ID Application: Your Name (TEAMID)"
+#   APPLE_ID=you@example.com APPLE_TEAM_ID=TEAMID APPLE_APP_PASSWORD=xxxx-xxxx-xxxx-xxxx  (app-specific password)
+SIGN_ID="${DEVELOPER_ID:--}"
+SIGN_FLAGS=(--force --sign "$SIGN_ID")
+if [ "$SIGN_ID" != "-" ]; then
+  echo "▸ Signing with $SIGN_ID (hardened runtime)"
+  SIGN_FLAGS+=(--options runtime --timestamp --entitlements "$HERE/entitlements.plist")
+else
+  echo "▸ Signing (ad-hoc)"
+  SIGN_FLAGS+=(--timestamp=none)
+fi
+# Inside-out: every embedded binary, then the main executable, then the bundle.
+find "$APP/Contents/Resources" -type f \( -perm -u+x -o -name "*.so" -o -name "*.dylib" \) -print0 \
+  | xargs -0 -n 50 codesign "${SIGN_FLAGS[@]}" 2>/dev/null || true
+codesign "${SIGN_FLAGS[@]}" "$APP/Contents/MacOS/OpenWave"
+codesign "${SIGN_FLAGS[@]}" "$APP"
 codesign --verify --deep --strict "$APP" && echo "  signature ok"
 
 echo "▸ Creating disk image"
-DMG="$DIST/OpenWave-$VERSION-macOS-$ARCH.dmg"
+case "$ARCH" in arm64) LABEL="AppleSilicon" ;; *) LABEL="Intel" ;; esac
+DMG="$DIST/OpenWave-macOS-$LABEL.dmg"
 STAGE="$WORK/dmg"
-mkdir -p "$STAGE"
+mkdir -p "$STAGE/.background"
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
+cp "$HERE/Resources/dmg-background.tiff" "$STAGE/.background/background.tiff"
+RW="$WORK/rw.dmg"
+hdiutil create -volname "OpenWave" -srcfolder "$STAGE" -fs HFS+ -format UDRW -ov "$RW" >/dev/null
+MOUNT="$(hdiutil attach -readwrite -noverify -noautoopen "$RW" | awk -F'\t' '/\/Volumes\// {print $NF}')"
+VOLNAME="$(basename "$MOUNT")"
+# Lay out the Finder window (best effort: needs a logged-in Finder, skipped silently on headless CI).
+perl -e 'alarm 60; exec @ARGV' osascript <<APPLESCRIPT >/dev/null 2>&1 || echo "  (Finder layout skipped: allow Terminal to control Finder to get the styled window)"
+tell application "Finder"
+  tell disk "$VOLNAME"
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set bounds of container window to {200, 120, 860, 560}
+    set opts to the icon view options of container window
+    set arrangement of opts to not arranged
+    set icon size of opts to 112
+    set text size of opts to 13
+    set background picture of opts to file ".background:background.tiff"
+    set position of item "OpenWave.app" of container window to {170, 200}
+    set position of item "Applications" of container window to {490, 200}
+    update without registering applications
+    delay 1
+    close
+  end tell
+end tell
+APPLESCRIPT
+SetFile -a C "$MOUNT" 2>/dev/null || true
+sync
+hdiutil detach "$MOUNT" -quiet || hdiutil detach "$MOUNT" -force -quiet
 rm -f "$DMG"
-hdiutil create -volname "OpenWave $VERSION" -srcfolder "$STAGE" -ov -format UDZO "$DMG" >/dev/null
+hdiutil convert "$RW" -format UDZO -imagekey zlib-level=9 -o "$DMG" >/dev/null
+rm -f "$RW"
+
+if [ "$SIGN_ID" != "-" ] && [ -n "${APPLE_ID:-}" ]; then
+  echo "▸ Notarising with Apple (a few minutes)"
+  codesign --sign "$SIGN_ID" --timestamp "$DMG"
+  xcrun notarytool submit "$DMG" --apple-id "$APPLE_ID" --team-id "$APPLE_TEAM_ID" --password "$APPLE_APP_PASSWORD" --wait
+  xcrun stapler staple "$DMG"
+  xcrun stapler staple "$APP"
+fi
 
 du -sh "$APP" "$DMG"
 echo "✓ Done: $DMG"

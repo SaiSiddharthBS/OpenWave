@@ -220,7 +220,7 @@ function copyText(text) {
   }
 }
 
-const watchUrl = (t) => (t.type === 'video' ? `https://www.youtube.com/watch?v=${t.videoId}` : `https://music.youtube.com/watch?v=${t.videoId}`);
+const watchUrl = (t) => `https://music.youtube.com/watch?v=${t.videoId}`;
 
 function playlistPicker(anchor, tracks) {
   const items = [
@@ -327,9 +327,6 @@ const ACTIONS = {
   'close-np': () => closeNP(),
   'np-queue': () => toggleNP('queue'),
   'np-lyrics': () => toggleNP('lyrics'),
-  'np-video': () => { if (!videoAllowed()) return; const v = player.mode !== 'video'; player.setMode(v ? 'video' : 'audio'); if (v) openNP(); },
-  'mode-audio': () => player.setMode('audio'),
-  'mode-video': () => { if (videoAllowed()) player.setMode('video'); },
   'sheet-queue': () => toggleSheet('queue'),
   'sheet-lyrics': () => toggleSheet('lyrics'),
   'play-collection': () => playCollection(page.collection, false),
@@ -536,12 +533,6 @@ document.addEventListener('change', (e) => {
 });
 
 // ================================================================== offline downloads
-function videoAllowed() {
-  if (navigator.onLine) return true;
-  toast('Video needs an internet connection');
-  return false;
-}
-
 async function downloadCollection(c, toggle) {
   if (!c?.tracks.length) return;
   const missing = c.tracks.filter((t) => !offline.has(t.videoId));
@@ -686,15 +677,6 @@ function bindState() {
     b.classList.toggle('on', player.repeat !== 'off');
     b.innerHTML = icon(player.repeat === 'one' ? 'repeat-one' : 'repeat');
   });
-  bindMode();
-}
-
-function bindMode() {
-  const video = player.mode === 'video';
-  np.classList.toggle('video-mode', video);
-  bind('mode-audio').forEach((b) => b.classList.toggle('on', !video));
-  bind('mode-video').forEach((b) => b.classList.toggle('on', video));
-  bind('video-mode').forEach((b) => b.classList.toggle('on', video));
 }
 
 let seeking = false;
@@ -730,7 +712,6 @@ vol.addEventListener('wheel', (e) => { e.preventDefault(); player.setVolume(play
 
 player.addEventListener('track', (e) => bindTrack(e.detail));
 player.addEventListener('state', bindState);
-player.addEventListener('mode', bindState);
 player.addEventListener('time', bindTime);
 player.addEventListener('volume', bindVolume);
 player.addEventListener('queue', () => { bind('context').forEach((el) => { el.textContent = player.context?.label || 'Queue'; }); if (!np.hidden) renderQueue(); markPlaying(); });

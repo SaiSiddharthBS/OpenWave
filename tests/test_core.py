@@ -45,27 +45,22 @@ def test_cards():
     assert top_artist == {"type": "artist", "id": "UC9", "title": "C", "subtitle": "Artist", "thumbnail": None}
 
 
-def test_proxy_allowlist():
-    assert app._allowed("https://rr1---sn-abc.googlevideo.com/videoplayback?x", app.MEDIA_HOSTS)
-    assert app._allowed("https://manifest.googlevideo.com/api/manifest/hls", app.MEDIA_HOSTS)
-    assert not app._allowed("https://evilgooglevideo.com/x", app.MEDIA_HOSTS)
-    assert not app._allowed("http://rr1.googlevideo.com/x", app.MEDIA_HOSTS)
-    assert not app._allowed("https://googlevideo.com.evil.net/x", app.MEDIA_HOSTS)
+def test_image_allowlist():
     assert app._allowed("https://i.ytimg.com/vi/x/hqdefault.jpg", app.IMAGE_HOSTS)
+    assert app._allowed("https://lh3.googleusercontent.com/abc=w60-h60", app.IMAGE_HOSTS)
     assert not app._allowed("https://x.i.ytimg.com/vi/x.jpg", app.IMAGE_HOSTS)
+    assert not app._allowed("http://i.ytimg.com/vi/x.jpg", app.IMAGE_HOSTS)
     assert not app._allowed("https://169.254.169.254/latest", app.IMAGE_HOSTS)
 
 
-def test_rewrite_m3u8():
-    src = (
-        '#EXTM3U\n#EXT-X-MEDIA:URI="https://manifest.googlevideo.com/a/index.m3u8",TYPE=AUDIO\n'
-        '#EXT-X-MAP:URI="init.mp4"\n#EXTINF:5,\nseg1.ts\n'
-    )
-    out = app.rewrite_m3u8(src, "https://rr1.googlevideo.com/dir/list.m3u8")
-    assert 'URI="/api/proxy?u=https%3A%2F%2Fmanifest.googlevideo.com%2Fa%2Findex.m3u8"' in out
-    assert 'URI="/api/proxy?u=https%3A%2F%2Frr1.googlevideo.com%2Fdir%2Finit.mp4"' in out
-    assert "/api/proxy?u=https%3A%2F%2Frr1.googlevideo.com%2Fdir%2Fseg1.ts" in out
-    assert out.startswith("#EXTM3U")
+def test_clean_title_and_matching():
+    from openwave import music
+    assert music.clean_title("Blinding Lights (Official Video)") == "Blinding Lights"
+    assert music.clean_title("Kesariya (Full Song) | Brahmastra") == "Kesariya"
+    assert music.clean_title("STAY (Official Music Video) ft. Justin Bieber") == "STAY"
+    song = {"title": "Blinding Lights", "artists": [{"name": "The Weeknd"}], "duration": 200}
+    other = {"title": "Blinding Lights (Slowed)", "artists": [{"name": "Someone"}], "duration": 260}
+    assert music.match_score("Blinding Lights (Official Video)", "The Weeknd", None, song) > music.match_score("Blinding Lights (Official Video)", "The Weeknd", None, other)
 
 
 def test_clamp_range():
@@ -89,7 +84,7 @@ def test_stream_falls_back_to_robust_client(monkeypatch):
     async def fake_resolve(video_id, force=False, robust=False):
         calls.append(robust)
         url = "https://rr1.googlevideo.com/robust" if robust else "https://rr1.googlevideo.com/fast"
-        return {"fast": not robust, "formats": {"140": fmt(url)}, "hls": None}
+        return {"fast": not robust, "formats": {"140": fmt(url)}}
 
     def handler(request):
         if request.url.path == "/fast":
@@ -100,7 +95,7 @@ def test_stream_falls_back_to_robust_client(monkeypatch):
     monkeypatch.setattr(app, "client", httpx.AsyncClient(transport=httpx.MockTransport(handler)))
 
     async def run():
-        resp = await app._open_upstream("dQw4w9WgXcQ", "audio", "normal", "bytes=0-")
+        resp = await app._open_upstream("dQw4w9WgXcQ", "normal", "bytes=0-")
         body = await resp.aread()
         await resp.aclose()
         return resp.status_code, body
@@ -138,7 +133,7 @@ def test_download_stitches_chunks(monkeypatch):
 
     mock = httpx.AsyncClient(transport=httpx.MockTransport(upstream))
 
-    async def fake_open(video_id, kind, quality, range_header, codec=None):
+    async def fake_open(video_id, quality, range_header, codec=None):
         requested.append(int(range_header.split("=")[1].split("-")[0]))
         return await mock.send(mock.build_request("GET", "https://rr1.googlevideo.com/x", headers={"range": range_header}), stream=True)
 

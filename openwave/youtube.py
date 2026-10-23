@@ -15,7 +15,6 @@ from urllib.parse import parse_qs, urlparse
 import yt_dlp
 
 from .config import bin_dir
-from .music import cached, parse_duration
 
 
 def _js_runtimes() -> dict:
@@ -78,12 +77,8 @@ def _extract(video_id: str, fast: bool) -> dict:
             raise StreamError(str(e).removeprefix("ERROR: ")) from e
 
     formats = {}
-    hls = None
     expires = time.time() + 5 * 3600
     for f in info.get("formats") or []:
-        if f.get("protocol") == "m3u8_native" and f.get("manifest_url"):
-            hls = hls or f["manifest_url"]
-            continue
         if f.get("protocol") != "https" or not f.get("url"):
             continue
         formats[f["format_id"]] = {
@@ -101,7 +96,7 @@ def _extract(video_id: str, fast: bool) -> dict:
         if exp:
             expires = min(expires, int(exp[0]))
 
-    if not formats and not hls:
+    if not formats:
         raise StreamError("No playable formats found")
     if fast and not any(f["audio"] for f in formats.values()):
         raise StreamError("Fast client returned no audio")
@@ -111,7 +106,6 @@ def _extract(video_id: str, fast: bool) -> dict:
         "title": info.get("title"),
         "duration": info.get("duration"),
         "formats": formats,
-        "hls": hls,
         "expires": expires - 600,  # refresh ten minutes early
     }
 
@@ -159,40 +153,3 @@ def pick_audio(info: dict, quality: str = "normal", codec: str | None = None) ->
         return max(audio_only, key=lambda f: f["abr"])
     muxed = [f for f in fmts.values() if f["audio"]]
     return min(muxed, key=lambda f: f["height"]) if muxed else None
-
-
-def pick_muxed(info: dict) -> dict | None:
-    muxed = [f for f in info["formats"].values() if f["audio"] and f["video"] and f["ext"] == "mp4"]
-    return max(muxed, key=lambda f: f["height"]) if muxed else None
-
-
-@cached(ttl=600)
-async def search_videos(query: str, limit: int = 30) -> list[dict]:
-    """Plain YouTube search (any video, not only music)."""
-
-    def run():
-        opts = {**BASE_OPTS, "extract_flat": "in_playlist"}
-        opts.pop("format")
-        with yt_dlp.YoutubeDL(opts) as ydl:
-            return ydl.extract_info(f"ytsearch{limit}:{query}", download=False)
-
-    data = await asyncio.to_thread(run)
-    out = []
-    for e in data.get("entries") or []:
-        vid = e.get("id")
-        if not vid or e.get("ie_key") not in (None, "Youtube"):
-            continue
-        if (e.get("url") or "").find("/shorts/") != -1 and not e.get("duration"):
-            continue
-        out.append({
-            "type": "video",
-            "videoId": vid,
-            "title": e.get("title") or "Unknown",
-            "artists": [{"name": e.get("channel") or e.get("uploader") or "YouTube", "id": e.get("channel_id")}],
-            "album": None,
-            "duration": parse_duration(e.get("duration")),
-            "thumbnail": f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg",
-            "explicit": False,
-            "views": e.get("view_count"),
-        })
-    return out

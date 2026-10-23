@@ -74,10 +74,7 @@ function trackListRows(tracks, opts) {
 }
 
 // ------------------------------------------------------------------ search
-const TYPES = [
-  ['all', 'All'], ['songs', 'Songs'], ['videos', 'Music videos'], ['albums', 'Albums'],
-  ['artists', 'Artists'], ['playlists', 'Playlists'], ['youtube', 'All of YouTube'],
-];
+const TYPES = [['all', 'All'], ['songs', 'Songs'], ['albums', 'Albums'], ['artists', 'Artists'], ['playlists', 'Playlists']];
 
 const GENRES = [
   ['Pop', '#e13300'], ['Hip-Hop', '#bc5900'], ['Bollywood', '#d84000'], ['Lo-fi beats', '#477d95'],
@@ -107,36 +104,30 @@ export async function search({ q = '', type = 'all' }) {
     `<a class="chip ${k === type ? 'on' : ''}" href="#/search?q=${enc(q)}&type=${k}">${label}</a>`).join('')}</div>`;
   const results = data.results || [];
   if (!results.length && !data.top) {
-    return { html: chips + empty('search', `No results for “${q}”`, 'Check the spelling, or try “All of YouTube”.') };
+    return { html: chips + empty('search', `No results for “${q}”`, 'Check the spelling, or try fewer words.') };
   }
 
   if (type !== 'all') {
     const tracks = results.filter((r) => r.videoId);
     const opts = { mode: 'radio', context: { label: `Search: ${q}` } };
-    if (tracks.length) {
-      if (type === 'youtube') return { html: chips + `<div class="grid">${trackCards(tracks, opts)}</div>` };
-      return { html: chips + trackList(tracks, { ...opts, album: type === 'songs' }) };
-    }
+    if (tracks.length) return { html: chips + trackList(tracks, { ...opts, album: type === 'songs' }) };
     return { html: chips + `<div class="grid">${cards(results)}</div>` };
   }
 
   const songs = results.filter((r) => r.type === 'song');
-  const videos = results.filter((r) => r.type === 'video');
   const by = (k) => results.filter((r) => r.type === k);
   const ctx = { mode: 'radio', context: { label: `Search: ${q}` } };
   let html = chips;
   if (data.top) {
     html += `<div class="top-grid"><section><div class="section-head"><h2>Top result</h2></div>${topCard(data.top)}</section>
-      <section><div class="section-head"><h2>Songs</h2><a href="#/search?q=${enc(q)}&type=songs">Show all</a></div>
-      ${trackList(songs.slice(0, 4), ctx)}</section></div>`;
+      ${songs.length ? `<section><div class="section-head"><h2>Songs</h2><a href="#/search?q=${enc(q)}&type=songs">Show all</a></div>
+      ${trackList(songs.slice(0, 4), ctx)}</section>` : ''}</div>`;
   } else if (songs.length) {
     html += section('Songs', trackList(songs.slice(0, 6), ctx), { cls: '', more: `<a href="#/search?q=${enc(q)}&type=songs">Show all</a>` });
   }
-  if (videos.length) html += section('Videos', trackCards(videos, ctx), { more: `<a href="#/search?q=${enc(q)}&type=videos">Show all</a>` });
   if (by('artist').length) html += section('Artists', cards(by('artist')), { more: `<a href="#/search?q=${enc(q)}&type=artists">Show all</a>` });
   if (by('album').length) html += section('Albums', cards(by('album')), { more: `<a href="#/search?q=${enc(q)}&type=albums">Show all</a>` });
   if (by('playlist').length) html += section('Playlists', cards(by('playlist')), { more: `<a href="#/search?q=${enc(q)}&type=playlists">Show all</a>` });
-  html += `<p class="muted" style="margin-top:28px">Not finding it? <a class="chip" href="#/search?q=${enc(q)}&type=youtube">Search all of YouTube</a></p>`;
   return { html };
 }
 
@@ -146,7 +137,7 @@ function topCard(item) {
     return `<div class="top-card ${item.type}" data-list="${key}" data-i="0" data-vid="${esc(item.videoId)}" role="button" tabindex="0">
       <img src="${img(item.thumbnail, 300)}" alt="">
       <h3>${esc(item.title)}</h3>
-      <div class="muted">${artistLinks(item.artists)}<span class="pill">${item.type === 'video' ? 'Video' : 'Song'}</span></div>
+      <div class="muted">${artistLinks(item.artists)}<span class="pill">Song</span></div>
       <span class="hover-play">${icon('play')}</span></div>`;
   }
   const href = `#/${item.type}/${enc(item.id)}`;
@@ -235,7 +226,6 @@ export async function artist({ id }) {
   }
   if (a.albums.length) html += section('Albums', cards(a.albums));
   if (a.singles.length) html += section('Singles & EPs', cards(a.singles));
-  if (a.videos.length) html += section('Videos', trackCards(a.videos, { mode: 'radio', context }));
   if (a.related.length) html += section('Fans also like', cards(a.related));
   if (a.description) html += `<section class="section"><div class="section-head"><h2>About</h2></div><p class="about">${esc(a.description)}</p></section>`;
   return {

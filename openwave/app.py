@@ -7,10 +7,10 @@ import re
 import time
 from contextlib import asynccontextmanager
 from pathlib import Path
-from urllib.parse import quote, urljoin, urlparse
+from urllib.parse import urlparse
 
 import httpx
-from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
@@ -23,7 +23,6 @@ from .library import LibraryError
 WEB = Path(__file__).parent / "web"
 CHUNK = 4 * 1024 * 1024  # bytes per upstream request; mirrors how YouTube's own players fetch
 
-MEDIA_HOSTS = (".googlevideo.com", ".youtube.com")
 IMAGE_HOSTS = ("i.ytimg.com", "lh3.googleusercontent.com", "yt3.googleusercontent.com", "yt3.ggpht.com", "music.youtube.com")
 PASS_HEADERS = ("content-type", "content-length", "content-range", "accept-ranges", "last-modified", "etag")
 
@@ -88,7 +87,7 @@ async def health():
 
 @app.get("/api/search")
 async def search(q: str = Query(..., min_length=1, max_length=300), type: str = "all"):
-    if type not in ("all", "songs", "videos", "albums", "artists", "playlists", "youtube"):
+    if type not in ("all", "songs", "albums", "artists", "playlists"):
         raise HTTPException(400, "unknown search type")
     return await _guard(music.search(q.strip(), type))
 
@@ -123,6 +122,15 @@ async def up_next(video_id: str, playlistId: str | None = None):
     return await _guard(music.up_next(_check_id(video_id), playlistId))
 
 
+@app.get("/api/audio/{video_id}")
+async def audio(video_id: str):
+    """The audio-track version of a video (OpenWave plays songs, not music videos)."""
+    info = await _guard(music.audio_version(_check_id(video_id)))
+    if not info:
+        raise HTTPException(404, "no audio version")
+    return info
+
+
 @app.get("/api/track/{video_id}")
 async def track(video_id: str):
     info = await _guard(music.track_info(_check_id(video_id)))
@@ -154,15 +162,6 @@ async def prefetch(video_id: str):
     return {"ok": True}
 
 
-@app.get("/api/video/{video_id}")
-async def video(video_id: str):
-    info = await youtube.resolve(_check_id(video_id))
-    return {
-        "hls": f"/api/proxy?u={quote(info['hls'], safe='')}" if info["hls"] else None,
-        "mp4": f"/api/stream/{video_id}?kind=video" if youtube.pick_muxed(info) else None,
-    }
-
-
 def _clamp_range(header: str | None, size: int | None) -> str:
     """Turn open-ended range requests into bounded chunks; googlevideo throttles huge ranges."""
     m = re.match(r"bytes=(\d+)-(\d*)$", header or "")
@@ -175,11 +174,11 @@ def _clamp_range(header: str | None, size: int | None) -> str:
     return f"bytes={start}-{end}"
 
 
-async def _open_upstream(video_id: str, kind: str, quality: str, range_header: str | None, codec: str | None = None):
+async def _open_upstream(video_id: str, quality: str, range_header: str | None, codec: str | None = None):
     robust = False
     for attempt in range(4):
         info = await youtube.resolve(video_id, force=attempt == 3, robust=robust)
-        fmt = youtube.pick_muxed(info) if kind == "video" else youtube.pick_audio(info, quality, codec)
+        fmt = youtube.pick_audio(info, quality, codec)
         if not fmt:
             raise youtube.StreamError("No suitable stream for this video")
         wait = fmt["available_at"] - time.time()
@@ -210,8 +209,8 @@ def _relay(resp: httpx.Response, extra: dict | None = None) -> StreamingResponse
 
 
 @app.get("/api/stream/{video_id}")
-async def stream(video_id: str, request: Request, kind: str = "audio", q: str = "normal", codec: str | None = None):
-    resp = await _open_upstream(_check_id(video_id), kind, q, request.headers.get("range"), codec)
+async def stream(video_id: str, request: Request, q: str = "normal", codec: str | None = None):
+    resp = await _open_upstream(_check_id(video_id), q, request.headers.get("range"), codec)
     return _relay(resp)
 
 
@@ -224,7 +223,7 @@ def _total_size(resp: httpx.Response) -> int | None:
 async def download(video_id: str, q: str = "normal", codec: str | None = None):
     """The whole audio file in one response (fetched upstream chunk by chunk) for offline saving."""
     _check_id(video_id)
-    first = await _open_upstream(video_id, "audio", q, "bytes=0-", codec)
+    first = await _open_upstream(video_id, q, "bytes=0-", codec)
     total = _total_size(first)
 
     async def body():
@@ -237,7 +236,7 @@ async def download(video_id: str, q: str = "normal", codec: str | None = None):
                 await resp.aclose()
                 if total is None or pos >= total:
                     break
-                resp = await _open_upstream(video_id, "audio", q, f"bytes={pos}-", codec)
+                resp = await _open_upstream(video_id, q, f"bytes={pos}-", codec)
         finally:
             await resp.aclose()
 
@@ -251,40 +250,6 @@ def _allowed(url: str, hosts: tuple[str, ...]) -> bool:
     p = urlparse(url)
     host = p.hostname or ""
     return p.scheme == "https" and any((host.endswith(h) or host == h[1:]) if h.startswith(".") else host == h for h in hosts)
-
-
-def _proxied(url: str) -> str:
-    return f"/api/proxy?u={quote(url, safe='')}"
-
-
-def rewrite_m3u8(text: str, base: str) -> str:
-    """Point every URL in an HLS playlist back at our proxy."""
-    out = []
-    for line in text.splitlines():
-        if line and not line.startswith("#"):
-            line = _proxied(urljoin(base, line.strip()))
-        elif 'URI="' in line:
-            line = re.sub(r'URI="([^"]+)"', lambda m: f'URI="{_proxied(urljoin(base, m.group(1)))}"', line)
-        out.append(line)
-    return "\n".join(out) + "\n"
-
-
-@app.get("/api/proxy")
-async def proxy(u: str, request: Request):
-    if not _allowed(u, MEDIA_HOSTS):
-        raise HTTPException(400, "host not allowed")
-    headers = {}
-    if request.headers.get("range"):
-        headers["Range"] = request.headers["range"]
-    resp = await client.send(client.build_request("GET", u, headers=headers), stream=True)
-    ctype = resp.headers.get("content-type", "")
-    if "mpegurl" in ctype or urlparse(u).path.endswith(".m3u8") or "/api/manifest/" in u:
-        body = (await resp.aread()).decode("utf-8", "replace")
-        await resp.aclose()
-        if resp.status_code >= 400:
-            raise HTTPException(resp.status_code, "manifest unavailable")
-        return Response(rewrite_m3u8(body, u), media_type="application/vnd.apple.mpegurl", headers={"cache-control": "no-store"})
-    return _relay(resp)
 
 
 @app.get("/api/img")

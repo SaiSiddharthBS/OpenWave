@@ -27,7 +27,7 @@ export const get = {
   artist: (id) => api(`/api/artist/${enc(id)}`, { ttl: 1800 }),
   next: (id, playlistId) => api(`/api/next/${id}${playlistId ? `?playlistId=${enc(playlistId)}` : ''}`, { ttl: 600 }),
   lyrics: (id) => api(`/api/lyrics/${id}`, { ttl: 3600 }),
-  video: (id) => api(`/api/video/${id}`),
+  audio: (id) => api(`/api/audio/${id}`, { ttl: 86400 }),
   prefetch: (id) => fetch(`/api/prefetch/${id}`, { method: 'POST' }).catch(() => {}),
 };
 

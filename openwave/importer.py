@@ -10,7 +10,6 @@ import csv
 import io
 import json
 import re
-from difflib import SequenceMatcher
 
 import httpx
 
@@ -21,16 +20,6 @@ SPOTIFY_RE = re.compile(r"open\.spotify\.com/(?:intl-[a-z]+/)?(playlist|album)/(
 
 class ImportError_(Exception):
     pass
-
-
-def _norm(s: str) -> str:
-    s = (s or "").lower()
-    s = re.sub(r"\((feat|ft|with)\.?[^)]*\)|\[[^\]]*\]|- (remaster|live|radio edit|from)[^-]*$", " ", s)
-    return " ".join(re.sub(r"[^\w\s]", " ", s).split())
-
-
-def _similar(a: str, b: str) -> float:
-    return SequenceMatcher(None, _norm(a), _norm(b)).ratio()
 
 
 async def parse_spotify(url: str) -> dict:
@@ -113,26 +102,11 @@ async def parse(payload: dict) -> dict:
 
 
 def _score(item: dict, cand: dict) -> float:
-    s = _similar(item["title"], cand["title"]) * 0.6
-    names = " ".join(a["name"] for a in cand.get("artists") or [])
-    s += (_similar(item.get("artist") or "", names) if item.get("artist") else 0.5) * 0.3
-    if item.get("duration") and cand.get("duration"):
-        diff = abs(item["duration"] - cand["duration"])
-        s += 0.1 if diff <= 5 else (0.05 if diff <= 15 else -0.15)
-    return s
+    return music.match_score(item["title"], item.get("artist") or "", item.get("duration"), cand)
 
 
 async def match_one(item: dict) -> dict | None:
-    query = f"{item.get('artist') or ''} {item['title']}".strip()
-    try:
-        res = await music.search(query, "songs")
-    except Exception:  # noqa: BLE001 - a single miss shouldn't fail the batch
-        return None
-    candidates = [r for r in res.get("results", [])[:6] if r.get("videoId")]
-    if not candidates:
-        return None
-    best = max(candidates, key=lambda c: _score(item, c))
-    return best if _score(item, best) >= 0.45 else None
+    return await music.match_song(item["title"], item.get("artist") or "", item.get("duration"))
 
 
 async def match(items: list[dict]) -> list[dict | None]:

@@ -11,6 +11,8 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-7b7bff.svg)](LICENSE)
 ![Platforms](https://img.shields.io/badge/macOS%20app%20·%20Web%20·%20Android%20·%20iOS%20·%20Windows%20·%20Linux-2fc8ff.svg)
 
+**[⬇️ Download OpenWave](https://saisiddharthbs.github.io/OpenWave/)**
+
 [Get it](#-get-openwave) · [Features](#-features) · [Mac app](#-the-mac-app) · [Phone](#-on-your-phone) · [Switch from Spotify](#-bring-your-playlists) · [How it works](#-how-it-works) · [FAQ](#-faq) · [Contribute](#-contributing)
 
 <img src="docs/screenshots/home.png" alt="OpenWave home with personal mixes" width="100%">
@@ -19,17 +21,24 @@
 
 ## ⬇️ Get OpenWave
 
-| You have | Do this |
-|---|---|
-| **A Mac** | Download the latest **OpenWave-…-macOS.dmg** from [Releases](https://github.com/SaiSiddharthBS/OpenWave/releases), drag OpenWave to Applications, then right-click → **Open** the first time. [More](#-the-mac-app) |
-| **Windows / Linux** | [Run the server](#-run-the-server) with one command, then open `http://localhost:8787` and use **Install app** in Chrome/Edge |
-| **A phone** | Open the address your Mac or PC shows (see [On your phone](#-on-your-phone)) and **Add to Home Screen** |
-| **A home server / VPS** | `docker compose up -d` and share it with your family. [More](#-run-the-server) |
+Everything is free. Pick your device:
+
+| Device | Download | First launch |
+|---|---|---|
+| 🍎 **Mac** (Apple Silicon) | [OpenWave-macOS-AppleSilicon.dmg](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-AppleSilicon.dmg) | Drag it to Applications and open it. If macOS can't verify it, go to **System Settings → Privacy & Security → Open Anyway** (once). |
+| 🍎 **Mac** (Intel) | [OpenWave-macOS-Intel.dmg](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-Intel.dmg) | Same as above |
+| 🪟 **Windows 10/11** | [OpenWave-Windows-Setup.exe](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Windows-Setup.exe) | If you see "Windows protected your PC", click **More info → Run anyway**. No admin needed. |
+| 🐧 **Linux** | [OpenWave-Linux-x86_64.AppImage](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Linux-x86_64.AppImage) | Make it executable (`chmod +x`), then double-click. |
+| 📱 **Phone** | Use the app on your computer: **Settings → Phone → scan the QR code** | Then **Add to Home Screen**. [More](#-on-your-phone) |
+| 🏠 **Home server** | `docker run -d -p 8787:8787 -v openwave:/data ghcr.io/saisiddharthbs/openwave` | Open `http://<server>:8787` on any device |
+
+Each desktop app is self-contained: there's nothing else to install.
 
 ## ✨ Features
 
 **Listening**
-- 🔎 **Search almost anything on YouTube:** songs, albums, artists, playlists, music videos, plus an "All of YouTube" tab. You can also paste a YouTube or YouTube Music link.
+- 🔎 **Search almost any song on YouTube Music:** songs, albums, artists and playlists. You can also paste a YouTube or YouTube Music link.
+- 🎵 **Songs, never videos.** OpenWave always plays the clean audio track, so there's no film dialogue, intros or skits. Music videos are swapped for their song version automatically.
 - 🎧 **Gapless playback** with optional **crossfade** (0–12 s). The next song buffers while the current one plays, so skipping is instant.
 - 📻 **Never-ending autoplay.** When the queue ends, similar music keeps playing, and songs you heard recently are skipped.
 - 🎤 **Synced lyrics** scroll with the song. Tap any line to jump to it.
@@ -87,13 +96,15 @@ The Mac app runs everything itself, so there's nothing to install or configure:
 - **Stays working when YouTube changes.** The app updates its YouTube support automatically in the background.
 - `openwave://` links, for example `openwave://play/<videoId>`.
 
-> **First launch:** the app isn't notarised by Apple (that costs $99/year), so macOS asks you to confirm it. Right-click OpenWave in Applications → **Open** → **Open**. You only need to do this once.
+> **First launch:** until OpenWave is notarised by Apple, macOS asks you to confirm it once. Open it, then go to **System Settings → Privacy & Security** and click **Open Anyway**. Builds signed with an Apple Developer ID open with no prompt (see `macos/build.sh`).
 
 **Build it yourself** (requires Xcode and Python 3.11+ or [uv](https://docs.astral.sh/uv/)):
 
 ```bash
-./macos/build.sh        # → macos/dist/OpenWave.app and OpenWave-<version>-macOS-<arch>.dmg
+./macos/build.sh        # → macos/dist/OpenWave.app and OpenWave-macOS-<AppleSilicon|Intel>.dmg
 ```
+
+**Windows and Linux** apps are built by [`.github/workflows/desktop.yml`](.github/workflows/desktop.yml). They bundle the same engine with a small launcher (`openwave/launcher.py`) that opens OpenWave in its own window, using Microsoft Edge on Windows or Chrome/Chromium on Linux.
 
 ## 🖥️ Run the server
 
@@ -163,10 +174,11 @@ OpenWave matches every song on YouTube Music, comparing title, artist and length
 
 | Endpoint | Returns |
 |---|---|
-| `GET /api/search?q=&type=all\|songs\|videos\|albums\|artists\|playlists\|youtube` | normalised results |
+| `GET /api/search?q=&type=all\|songs\|albums\|artists\|playlists` | normalised results |
 | `GET /api/home` · `/api/album/{id}` · `/api/playlist/{id}` · `/api/artist/{id}` | catalog pages |
 | `GET /api/next/{videoId}` · `/api/lyrics/{videoId}` | radio, lyrics |
 | `GET /api/stream/{videoId}?q=&codec=opus\|aac` · `/api/download/{videoId}` | audio |
+| `GET /api/audio/{videoId}` | the song (audio-track) version of any video |
 | `GET/POST /api/profiles` · `POST /api/profiles/{id}/login` | profiles & sign-in |
 | `GET /api/me/library` · `POST /api/me/ops` · `GET /api/me/version` | library sync |
 | `GET /api/me/stats` · `/api/me/mixes` · `/api/me/radio/{videoId}` | insights, mixes, personal radio |
@@ -204,8 +216,8 @@ Yes. Run it on one computer or server and give everyone their own profile.
 
 ## 🗺️ Roadmap
 
-- [ ] Windows desktop app (the macOS shell ported to Windows)
-- [ ] Native Android & iOS wrappers
+- [ ] Standalone Android app (no computer needed), distributed as an APK, via Obtainium and on F-Droid
+- [ ] Notarised Mac builds and signed Windows builds (no first-launch prompts)
 - [ ] Equalizer and loudness normalisation
 - [ ] Collaborative playlists across profiles
 - [ ] Translations
@@ -224,7 +236,7 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 
 ## 🙏 Built with
 
-[yt-dlp](https://github.com/yt-dlp/yt-dlp) · [ytmusicapi](https://github.com/sigma67/ytmusicapi) · [FastAPI](https://fastapi.tiangolo.com) · [hls.js](https://github.com/video-dev/hls.js) · [Deno](https://deno.com) · [PyInstaller](https://pyinstaller.org). Inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
+[yt-dlp](https://github.com/yt-dlp/yt-dlp) · [ytmusicapi](https://github.com/sigma67/ytmusicapi) · [FastAPI](https://fastapi.tiangolo.com) · [Deno](https://deno.com) · [PyInstaller](https://pyinstaller.org). Inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
 
 ## ⚖️ Disclaimer
 

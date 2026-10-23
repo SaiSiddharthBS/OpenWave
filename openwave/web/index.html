@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>OpenWave</title>
-  <meta name="description" content="Free and open-source music & video player. No ads, no accounts, no premium.">
+  <meta name="description" content="Free and open-source music for everyone. No ads, no subscriptions, no premium.">
   <meta name="theme-color" content="#0a0b14">
   <meta name="color-scheme" content="dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -44,7 +44,6 @@
   <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-queue" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 6h13M3 12h13M3 18h8"/><path d="M15 15.2v6.6a.6.6 0 0 0 .9.5l5-3.3a.6.6 0 0 0 0-1l-5-3.3a.6.6 0 0 0-.9.5z"/></symbol>
   <symbol id="i-lyrics" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8 8h8M8 12h5"/></symbol>
-  <symbol id="i-video" viewBox="0 0 24 24"><rect x="2.5" y="5" width="14" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m17 10.5 4.5-3v9l-4.5-3z"/></symbol>
   <symbol id="i-volume" viewBox="0 0 24 24"><path d="M3 9.5v5a1 1 0 0 0 1 1h3l4.4 3.7a.6.6 0 0 0 1-.5V5.3a.6.6 0 0 0-1-.5L7 8.5H4a1 1 0 0 0-1 1z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 8.5a5 5 0 0 1 0 7M18.8 5.5a9 9 0 0 1 0 13"/></symbol>
   <symbol id="i-mute" viewBox="0 0 24 24"><path d="M3 9.5v5a1 1 0 0 0 1 1h3l4.4 3.7a.6.6 0 0 0 1-.5V5.3a.6.6 0 0 0-1-.5L7 8.5H4a1 1 0 0 0-1 1z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m16 9.5 5 5m0-5-5 5"/></symbol>
   <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></symbol>
@@ -64,7 +63,7 @@
 
 <div class="app">
   <aside class="sidebar">
-    <a class="brand" href="#/home"><img class="logo-img" src="/icons/logo-mark-64.png" alt="">OpenWave</a>
+    <a class="brand" href="#/home"><span class="brand-glass"><img src="/icons/logo-mark-128.png" alt=""></span><span class="wordmark">Open<b>Wave</b></span></a>
     <nav class="side-nav">
       <a href="#/home" data-route="home"><svg><use href="#i-home"/></svg>Home</a>
       <a href="#/search" data-route="search"><svg><use href="#i-search"/></svg>Search</a>
@@ -88,10 +87,10 @@
         <button class="icon-btn round" data-act="back" aria-label="Back"><svg><use href="#i-back"/></svg></button>
         <button class="icon-btn round" data-act="forward" aria-label="Forward"><svg><use href="#i-forward"/></svg></button>
       </div>
-      <a class="brand mobile-only" href="#/home"><img class="logo-img" src="/icons/logo-mark-64.png" alt="">OpenWave</a>
+      <a class="brand mobile-only" href="#/home"><span class="brand-glass"><img src="/icons/logo-mark-128.png" alt=""></span><span class="wordmark">Open<b>Wave</b></span></a>
       <form class="searchbar" id="search-form" role="search" autocomplete="off">
         <svg><use href="#i-search"/></svg>
-        <input id="search-input" type="search" enterkeyhint="search" placeholder="Songs, artists, videos — or paste a YouTube link" aria-label="Search">
+        <input id="search-input" type="search" enterkeyhint="search" placeholder="What do you want to listen to?" aria-label="Search">
         <div class="suggest" id="suggest" hidden></div>
       </form>
       <div class="top-actions">
@@ -128,7 +127,6 @@
     </div>
   </div>
   <div class="pb-right desktop-only">
-    <button class="icon-btn toggle" data-act="np-video" data-bind="video-mode" title="Watch video" aria-label="Video"><svg><use href="#i-video"/></svg></button>
     <button class="icon-btn" data-act="np-lyrics" title="Lyrics" aria-label="Lyrics"><svg><use href="#i-lyrics"/></svg></button>
     <button class="icon-btn" data-act="np-queue" title="Queue" aria-label="Queue"><svg><use href="#i-queue"/></svg></button>
     <button class="icon-btn toggle" data-act="sleep" title="Sleep timer" aria-label="Sleep timer"><svg><use href="#i-moon"/></svg></button>
@@ -151,15 +149,10 @@
     <button class="icon-btn round" data-act="close-np" aria-label="Close"><svg><use href="#i-down"/></svg></button>
     <div class="np-from ellipsis"><small>Playing from</small><b data-bind="context">Queue</b></div>
     <button class="icon-btn toggle" data-act="sleep" title="Sleep timer" aria-label="Sleep timer"><svg><use href="#i-moon"/></svg></button>
-    <div class="seg" role="tablist">
-      <button data-act="mode-audio" data-bind="mode-audio">Song</button>
-      <button data-act="mode-video" data-bind="mode-video">Video</button>
-    </div>
   </header>
   <div class="np-body">
     <div class="np-stage" id="np-stage">
       <img class="np-art" data-bind="art" alt="">
-      <video id="video" playsinline preload="none"></video>
       <div class="np-spinner" data-bind="spinner"></div>
     </div>
     <div class="np-panel">

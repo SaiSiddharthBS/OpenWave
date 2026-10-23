@@ -1,0 +1,96 @@
+# Builds the Windows installer and the Linux AppImage. On version tags they're attached to the
+# GitHub Release next to the macOS DMGs, so everyone gets a one-click download.
+name: Windows & Linux apps
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  DENO_VERSION: "2.9.7"
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install . pyinstaller
+      - name: Fetch Deno
+        shell: pwsh
+        run: |
+          Invoke-WebRequest "https://github.com/denoland/deno/releases/download/v$env:DENO_VERSION/deno-x86_64-pc-windows-msvc.zip" -OutFile deno.zip
+          Expand-Archive deno.zip -DestinationPath deno
+      - name: Freeze
+        shell: pwsh
+        run: |
+          pyinstaller --noconfirm --clean --windowed --name OpenWave --icon packaging/windows/openwave.ico `
+            --add-data "openwave/web;openwave/web" --collect-all yt_dlp_ejs --collect-data ytmusicapi `
+            --collect-submodules yt_dlp --collect-submodules uvicorn packaging/launcher_entry.py
+          New-Item -ItemType Directory -Force dist/OpenWave/bin | Out-Null
+          Copy-Item deno/deno.exe dist/OpenWave/bin/deno.exe
+      - name: Smoke test the packaged app
+        shell: pwsh
+        run: |
+          $env:OPENWAVE_DATA = "$env:RUNNER_TEMP\owdata"
+          $p = Start-Process dist/OpenWave/OpenWave.exe -ArgumentList "--server-only","--port","47999" -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 60; $i++) { try { $h = Invoke-RestMethod http://127.0.0.1:47999/api/health; $ok = $true; break } catch { Start-Sleep 1 } }
+          Stop-Process $p -Force
+          if (-not $ok) { throw "engine did not start" }
+          $h | ConvertTo-Json
+          if ($h.jsRuntimes -notcontains "deno") { throw "bundled Deno not found" }
+      - name: Installer
+        shell: pwsh
+        run: |
+          $env:OPENWAVE_VERSION = (python -c "import openwave; print(openwave.__version__)")
+          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging/windows/openwave.iss
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenWave-Windows
+          path: dist/OpenWave-Windows-Setup.exe
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/OpenWave-Windows-Setup.exe
+
+  linux:
+    runs-on: ubuntu-22.04   # older glibc = runs on more distros
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: pip install . pyinstaller
+      - name: Freeze
+        run: |
+          pyinstaller --noconfirm --clean --name OpenWave \
+            --add-data "openwave/web:openwave/web" --collect-all yt_dlp_ejs --collect-data ytmusicapi \
+            --collect-submodules yt_dlp --collect-submodules uvicorn packaging/launcher_entry.py
+          curl -fsSL "https://github.com/denoland/deno/releases/download/v$DENO_VERSION/deno-x86_64-unknown-linux-gnu.zip" -o deno.zip
+          mkdir -p dist/OpenWave/bin && unzip -q deno.zip -d dist/OpenWave/bin
+      - name: Smoke test the packaged app
+        run: |
+          OPENWAVE_DATA=$(mktemp -d) PATH=/usr/bin:/bin dist/OpenWave/OpenWave --server-only --port 47999 &
+          for i in $(seq 1 60); do curl -sf localhost:47999/api/health > health.json && break; sleep 1; done
+          cat health.json && grep -q '"deno"' health.json
+      - name: AppImage
+        run: ./packaging/linux/build-appimage.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenWave-Linux
+          path: dist/OpenWave-Linux-x86_64.AppImage
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/OpenWave-Linux-x86_64.AppImage

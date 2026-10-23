@@ -26,14 +26,14 @@ If you change files the service worker caches, bump `VERSION` in `openwave/web/s
 |---|---|
 | `openwave/music.py` | Catalog (search, albums, artists, lyrics) via ytmusicapi, normalised into `track` / `card` shapes |
 | `openwave/youtube.py` | Stream resolution via yt-dlp, caching, fast-client → robust-client fallback |
-| `openwave/app.py` | HTTP API, byte-range stream proxy, HLS + image proxies, full-file download endpoint |
+| `openwave/app.py` | HTTP API, byte-range audio proxy, image proxy, full-file download endpoint, song-version lookup |
 | `openwave/library.py` · `api_library.py` | Profiles, PINs and the per-profile library in SQLite (ops-based sync), insights, mixes, personal radio |
 | `openwave/importer.py` | Spotify / CSV / text playlist parsing and YouTube Music matching |
 | `openwave/updater.py` · `desktop.py` | Packaged-app entry point and background yt-dlp / ytmusicapi updates |
 | `openwave/web/js/store.js` | Client library cache + offline outbox that syncs to `/api/me/ops` |
 | `openwave/web/js/profiles.js` · `insights.js` · `importer.js` · `native.js` | Profile picker, insights + share card, import dialog, Mac app bridge |
 | `macos/` | Native macOS app (Swift: AppKit window, SwiftUI menu-bar player & settings, media keys, Now Playing) and `build.sh` |
-| `openwave/web/js/player.js` | Playback engine: two-deck gapless/crossfade, queue, radio, sleep timer, video mode, media session |
+| `openwave/web/js/player.js` | Playback engine: two-deck gapless/crossfade, queue, radio, sleep timer, song-version swapping, media session |
 | `openwave/web/js/offline.js` | Offline downloads in IndexedDB |
 | `openwave/web/js/views.js` | Page rendering |
 | `openwave/web/js/app.js` | Router, event handling, player UI bindings |

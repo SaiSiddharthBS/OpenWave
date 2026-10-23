@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenWave — free music for everyone</title>
+  <meta name="description" content="Free, open-source music app. Search almost any song, play it with no ads, download for offline, sync your playlists. No subscriptions, ever.">
+  <meta property="og:title" content="OpenWave — free music for everyone">
+  <meta property="og:description" content="No ads. No subscriptions. No premium tier. Ever.">
+  <meta property="og:image" content="screenshots/home.png">
+  <meta name="theme-color" content="#0a0b14">
+  <link rel="icon" href="favicon-64.png">
+  <style>
+    :root { --bg: #0a0b14; --text: #f3f3f6; --muted: #a4a4b2; --line: rgba(255,255,255,.1); --card: rgba(255,255,255,.05);
+      --grad: linear-gradient(135deg, #2fc8ff, #4f6bff 45%, #c45cff); }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+    .glow { position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background: radial-gradient(60% 45% at 15% 0%, rgba(47,200,255,.18), transparent 70%), radial-gradient(50% 45% at 90% 30%, rgba(196,92,255,.16), transparent 70%); }
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 850; font-size: 20px; letter-spacing: -.03em; text-decoration: none; }
+    .brand img { height: 30px; filter: drop-shadow(0 4px 14px rgba(79,107,255,.5)); }
+    .brand b, .grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    nav .links a { color: var(--muted); text-decoration: none; margin-left: 22px; font-weight: 600; font-size: 15px; }
+    nav .links a:hover { color: var(--text); }
+    header { text-align: center; padding: 56px 0 30px; }
+    .hero-logo { width: min(340px, 70vw); filter: drop-shadow(0 20px 60px rgba(79,107,255,.45)); }
+    h1 { font-size: clamp(40px, 7vw, 76px); line-height: 1.02; letter-spacing: -.045em; margin: 20px 0 14px; font-weight: 880; }
+    .sub { color: var(--muted); font-size: clamp(17px, 2.2vw, 20px); max-width: 640px; margin: 0 auto; }
+    .cta { margin: 34px 0 10px; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .btn { display: inline-flex; align-items: center; gap: 10px; padding: 16px 30px; border-radius: 999px; font-weight: 750; font-size: 18px; text-decoration: none; transition: transform .15s, box-shadow .15s; }
+    .btn.primary { background: var(--grad); color: #fff; box-shadow: 0 12px 40px rgba(79,107,255,.45); }
+    .btn.primary:hover { transform: translateY(-2px); box-shadow: 0 16px 50px rgba(79,107,255,.6); }
+    .small { color: var(--muted); font-size: 14px; }
+    .others { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 6px; }
+    .others a { color: var(--muted); font-size: 14px; padding: 7px 14px; border: 1px solid var(--line); border-radius: 999px; text-decoration: none; }
+    .others a:hover { color: var(--text); border-color: rgba(255,255,255,.3); }
+    .shot { margin: 40px auto 0; border-radius: 16px; overflow: hidden; border: 1px solid var(--line); box-shadow: 0 40px 120px rgba(0,0,0,.6); }
+    .shot img { width: 100%; display: block; }
+    section { padding: 70px 0 10px; }
+    h2 { font-size: clamp(28px, 4vw, 40px); letter-spacing: -.03em; margin: 0 0 10px; }
+    .lead { color: var(--muted); margin: 0 0 30px; max-width: 700px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+    .card h3 { margin: 6px 0 6px; font-size: 18px; }
+    .card p { margin: 0; color: var(--muted); font-size: 15px; }
+    .emoji { font-size: 26px; }
+    .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; }
+    .steps li { counter-increment: s; position: relative; padding: 0 0 14px 40px; color: var(--muted); }
+    .steps li::before { content: counter(s); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 50%; background: var(--grad); color: #fff; font-weight: 800; font-size: 14px; display: grid; place-items: center; }
+    .steps b { color: var(--text); }
+    .platform { display: none; }
+    .platform.on { display: block; }
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+    .tabs button { font: inherit; color: var(--muted); background: var(--card); border: 1px solid var(--line); padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: 650; }
+    .tabs button.on { background: var(--text); color: var(--bg); }
+    .phones { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
+    .phones img { width: 100%; max-width: 300px; border-radius: 22px; border: 1px solid var(--line); justify-self: center; }
+    footer { padding: 70px 0 40px; color: var(--muted); font-size: 14px; text-align: center; }
+    @media (max-width: 720px) { nav .links { display: none; } .phones { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+  <nav>
+    <a class="brand" href="#"><img src="logo.png" alt=""><span>Open<b>Wave</b></span></a>
+    <div class="links"><a href="#features">Features</a><a href="#install">Install</a><a href="#phone">Phone</a><a href="https://github.com/SaiSiddharthBS/OpenWave">GitHub</a></div>
+  </nav>
+
+  <header>
+    <img class="hero-logo" src="logo.png" alt="OpenWave">
+    <h1>All the music.<br><span class="grad">None of the bills.</span></h1>
+    <p class="sub">OpenWave is a free, open-source music app. Search almost any song, play it with no ads and no gaps, download it for offline, and keep your playlists everywhere. No subscriptions. Ever.</p>
+    <div class="cta">
+      <a class="btn primary" id="primary" href="#install">Download OpenWave</a>
+      <span class="small" id="primary-note">Free · Open source (GPL-3.0) · No account needed</span>
+      <div class="others" id="others"></div>
+    </div>
+    <div class="shot"><img src="screenshots/home.png" alt="OpenWave home screen"></div>
+  </header>
+
+  <section id="features">
+    <h2>Everything you'd pay for. Free.</h2>
+    <p class="lead">Built to replace a premium subscription, not to upsell you one.</p>
+    <div class="grid">
+      <div class="card"><div class="emoji">🎧</div><h3>No ads, no gaps</h3><p>Songs flow into each other, with optional crossfade. Skips are instant.</p></div>
+      <div class="card"><div class="emoji">🎵</div><h3>Songs, never videos</h3><p>Always the clean audio track. No film dialogue, intros or skits.</p></div>
+      <div class="card"><div class="emoji">📻</div><h3>Never-ending radio</h3><p>When your queue ends, music you'll like keeps playing.</p></div>
+      <div class="card"><div class="emoji">⬇️</div><h3>Offline downloads</h3><p>Save albums and playlists and listen anywhere, even with no internet.</p></div>
+      <div class="card"><div class="emoji">🎤</div><h3>Synced lyrics</h3><p>Lyrics scroll with the song. Tap a line to jump to it.</p></div>
+      <div class="card"><div class="emoji">🔁</div><h3>Bring your Spotify playlists</h3><p>Paste a playlist link and OpenWave rebuilds it in seconds.</p></div>
+      <div class="card"><div class="emoji">👨‍👩‍👧</div><h3>Profiles & sync</h3><p>Everyone gets their own likes and playlists, synced across devices.</p></div>
+      <div class="card"><div class="emoji">📊</div><h3>Your year in music</h3><p>Top artists, top songs, minutes listened, with a card to share.</p></div>
+    </div>
+  </section>
+
+  <section id="install">
+    <h2>Install in a minute</h2>
+    <p class="lead">Pick your device. Everything is free, and the source is on GitHub for anyone to check.</p>
+    <div class="tabs" id="tabs">
+      <button data-p="mac">Mac</button><button data-p="win">Windows</button><button data-p="linux">Linux</button><button data-p="server">Home server</button>
+    </div>
+    <div class="card platform" data-p="mac"><ol class="steps">
+      <li><b>Download</b> <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-AppleSilicon.dmg">for Apple Silicon (M1–M4)</a> or <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-Intel.dmg">for Intel Macs</a>. Not sure which? Apple menu → About This Mac → "Chip".</li>
+      <li><b>Open the file and drag OpenWave into Applications.</b></li>
+      <li><b>Open OpenWave.</b> If macOS says it can't verify the app, open System Settings → Privacy &amp; Security, scroll down and click <b>Open Anyway</b>. You only do this once.</li>
+    </ol></div>
+    <div class="card platform" data-p="win"><ol class="steps">
+      <li><b>Download</b> <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Windows-Setup.exe">OpenWave-Windows-Setup.exe</a> (Windows 10 or 11).</li>
+      <li><b>Run it.</b> If Windows shows "Windows protected your PC", click <b>More info → Run anyway</b>. No admin password is needed.</li>
+      <li><b>Start OpenWave</b> from the Start menu or the desktop shortcut.</li>
+    </ol></div>
+    <div class="card platform" data-p="linux"><ol class="steps">
+      <li><b>Download</b> <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Linux-x86_64.AppImage">OpenWave-Linux-x86_64.AppImage</a>.</li>
+      <li><b>Make it runnable:</b> right-click → Properties → "Allow executing as program", or run <code>chmod +x OpenWave-*.AppImage</code>.</li>
+      <li><b>Double-click it.</b> It opens in its own window (Chrome, Chromium, Edge or Brave needed for the app window).</li>
+    </ol></div>
+    <div class="card platform" data-p="server"><ol class="steps">
+      <li><b>Run</b> <code>docker run -d -p 8787:8787 -v openwave:/data --restart unless-stopped ghcr.io/saisiddharthbs/openwave</code></li>
+      <li><b>Open</b> <code>http://&lt;server&gt;:8787</code> on any device. Everyone in the house gets a profile.</li>
+      <li><b>Optional:</b> put it behind HTTPS (Tailscale, Cloudflare Tunnel or Caddy) to listen anywhere.</li>
+    </ol></div>
+  </section>
+
+  <section id="phone">
+    <div class="phones">
+      <div>
+        <h2>On your phone</h2>
+        <p class="lead">Your phone plays from the OpenWave on your computer, with the same profiles, playlists and likes.</p>
+        <ol class="steps">
+          <li><b>On your computer,</b> open OpenWave → Settings → <b>Phone</b> and switch it on.</li>
+          <li><b>Scan the QR code</b> with your phone's camera.</li>
+          <li><b>Add it to your home screen:</b> on iPhone, Safari → Share → Add to Home Screen. On Android, Chrome → ⋮ → Install app.</li>
+        </ol>
+      </div>
+      <img src="screenshots/mobile-home.png" alt="OpenWave on a phone">
+    </div>
+  </section>
+
+  <footer>
+    <p><a class="brand" href="#" style="justify-content:center"><img src="logo.png" alt=""><span>Open<b>Wave</b></span></a></p>
+    <p>Free and open source under the GNU GPL v3 · <a href="https://github.com/SaiSiddharthBS/OpenWave">Source code</a> · <a href="https://github.com/SaiSiddharthBS/OpenWave/issues">Report a problem</a></p>
+    <p>OpenWave is an independent project, not affiliated with YouTube, Google or Spotify. It hosts no content. Please support the artists you love.</p>
+  </footer>
+</div>
+<script>
+  const REL = 'https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/';
+  const ua = navigator.userAgent;
+  const P = {
+    mac: { label: 'Download for Mac', file: 'OpenWave-macOS-AppleSilicon.dmg', note: 'macOS 13 or later · Intel Mac? Use the Intel download below' },
+    win: { label: 'Download for Windows', file: 'OpenWave-Windows-Setup.exe', note: 'Windows 10 & 11 · no admin needed' },
+    linux: { label: 'Download for Linux', file: 'OpenWave-Linux-x86_64.AppImage', note: 'AppImage · x86-64' },
+  };
+  const os = /Mac/.test(ua) && !/iPhone|iPad/.test(ua) ? 'mac' : /Windows/.test(ua) ? 'win' : /Linux/.test(ua) && !/Android/.test(ua) ? 'linux' : null;
+  const primary = document.getElementById('primary');
+  if (os) {
+    primary.textContent = P[os].label;
+    primary.href = REL + P[os].file;
+    document.getElementById('primary-note').textContent = `Free · ${P[os].note}`;
+  } else {
+    primary.textContent = 'Get OpenWave on your phone';
+    primary.href = '#phone';
+  }
+  const others = [['Mac (Apple Silicon)', 'OpenWave-macOS-AppleSilicon.dmg'], ['Mac (Intel)', 'OpenWave-macOS-Intel.dmg'], ['Windows', 'OpenWave-Windows-Setup.exe'], ['Linux', 'OpenWave-Linux-x86_64.AppImage']];
+  document.getElementById('others').innerHTML = others.map(([l, f]) => `<a href="${REL + f}">${l}</a>`).join('') + '<a href="#install">Home server</a>';
+  const tabs = document.getElementById('tabs');
+  const show = (p) => {
+    tabs.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.p === p));
+    document.querySelectorAll('.platform').forEach((c) => c.classList.toggle('on', c.dataset.p === p));
+  };
+  tabs.onclick = (e) => { const b = e.target.closest('button'); if (b) show(b.dataset.p); };
+  show(os || 'mac');
+</script>
+</body>
+</html>

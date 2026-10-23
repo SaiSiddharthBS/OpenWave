@@ -18,7 +18,7 @@ def lan_ip() -> str | None:
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="openwave", description="Free, open-source music & video player backed by YouTube")
+    parser = argparse.ArgumentParser(prog="openwave", description="Free, open-source music player backed by YouTube")
     parser.add_argument("--host", default="0.0.0.0", help="interface to bind (default: all, so phones on your Wi-Fi can connect)")
     parser.add_argument("--port", type=int, default=8787)
     parser.add_argument("--no-browser", action="store_true", help="don't open a browser window")

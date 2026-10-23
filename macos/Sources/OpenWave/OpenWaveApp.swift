@@ -11,7 +11,11 @@ struct OpenWaveApp: App {
             MiniPlayerView()
                 .environmentObject(bridge)
         } label: {
-            Image(systemName: bridge.track?.playing == true ? "waveform" : "waveform.path")
+            if let icon = MenuBarIcon.image {
+                Image(nsImage: icon)
+            } else {
+                Image(systemName: "waveform")
+            }
         }
         .menuBarExtraStyle(.window)
 
@@ -105,6 +109,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func dockNext() { Bridge.shared.command("next") }
     @objc private func dockPrev() { Bridge.shared.command("prev") }
     @objc private func dockLike() { Bridge.shared.command("like") }
+}
+
+/// The OpenWave wave as a template image, so macOS tints it for light and dark menu bars.
+enum MenuBarIcon {
+    static let image: NSImage? = {
+        guard let image = NSImage(named: "MenuBarIcon") else { return nil }
+        image.isTemplate = true
+        image.size = NSSize(width: image.size.width * 13 / max(image.size.height, 1), height: 13)
+        return image
+    }()
 }
 
 enum MainWindow {

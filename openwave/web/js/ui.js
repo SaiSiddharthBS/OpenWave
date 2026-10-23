@@ -48,12 +48,11 @@ export function trackRow(t, i, key, { numbered = false, album = false, playing =
   const lead = numbered
     ? `<span class="lead num">${i + 1}</span>`
     : `<span class="lead"><img class="thumb" loading="lazy" src="${img(t.thumbnail, 120)}" alt=""></span>`;
-  const badges = (t.explicit ? '<span class="badge-e" title="Explicit">E</span>' : '') +
-    (t.type === 'video' && !numbered ? '<span class="badge-v">VIDEO</span>' : '');
+  const badges = t.explicit ? '<span class="badge-e" title="Explicit">E</span>' : '';
   const cls = ['row', numbered && 'numbered', album && 'with-album', playing && 'playing'].filter(Boolean).join(' ');
   return `<div class="${cls}" data-list="${key}" data-i="${i}" data-vid="${esc(t.videoId)}" role="button" tabindex="0">
     ${lead}
-    <div class="ellipsis"><div class="t ellipsis">${esc(t.title)}</div><div class="a ellipsis">${badges}${artistLinks(t.artists) || (t.type === 'video' ? 'Video' : 'Song')}</div></div>
+    <div class="ellipsis"><div class="t ellipsis">${esc(t.title)}</div><div class="a ellipsis">${badges}${artistLinks(t.artists) || 'Song'}</div></div>
     ${album ? `<div class="alb ellipsis">${t.album?.id ? `<a href="#/album/${esc(t.album.id)}" data-stop>${esc(t.album.name)}</a>` : esc(t.album?.name || '')}</div>` : ''}
     <span class="d">${t.duration ? fmtTime(t.duration) : ''}</span>
     <button class="icon-btn more" data-menu aria-label="More options">${icon('more')}</button>
@@ -66,10 +65,8 @@ export function trackList(tracks, opts = {}) {
 }
 
 export function trackCard(t, i, key) {
-  const video = t.type === 'video';
-  return `<div class="card ${video ? 'video' : ''}" data-list="${key}" data-i="${i}" data-vid="${esc(t.videoId)}" role="button" tabindex="0">
+  return `<div class="card" data-list="${key}" data-i="${i}" data-vid="${esc(t.videoId)}" role="button" tabindex="0">
     <div class="art"><img loading="lazy" src="${img(t.thumbnail, 300)}" alt="">
-      ${video && t.duration ? `<span class="dur-badge">${fmtTime(t.duration)}</span>` : ''}
       <span class="hover-play">${icon('play')}</span></div>
     <div class="title">${esc(t.title)}</div>
     <div class="sub">${t.explicit ? '<span class="badge-e">E</span>' : ''}${esc(artistNames(t))}</div>

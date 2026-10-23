@@ -1,14 +1,14 @@
 // Playback engine.
 //
 // Two <audio> "decks" alternate: while one plays, the next song buffers on the other, so the
-// change-over is gapless (or crossfaded, if enabled) and skipping is instant. Video mode uses a
-// separate <video> element. Listening time is tracked per song for history and insights.
+// change-over is gapless (or crossfaded, if enabled) and skipping is instant. OpenWave plays audio
+// tracks only: a music video in the queue is swapped for its song version before it plays.
+// Listening time is tracked per song for history and insights.
 
 import { get, img } from './api.js';
 import { store, slim } from './store.js';
 import { offline } from './offline.js';
 
-const video = document.getElementById('video');
 const decks = [document.getElementById('audio'), Object.assign(document.createElement('audio'), { preload: 'auto' })];
 document.body.appendChild(decks[1]);
 const deckBlobs = [null, null];
@@ -31,30 +31,15 @@ function shuffleInPlace(arr) {
   return arr;
 }
 
-let hlsLib = null;
-function loadHls() {
-  if (window.Hls) return Promise.resolve(window.Hls);
-  hlsLib ??= new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = '/vendor/hls.min.js';
-    s.onload = () => resolve(window.Hls);
-    s.onerror = () => { hlsLib = null; reject(new Error('Could not load the video player')); };
-    document.head.appendChild(s);
-  });
-  return hlsLib;
-}
-
 class Player extends EventTarget {
   queue = [];
   index = -1;
   shuffle = false;
   repeat = 'off'; // off | all | one
-  mode = 'audio'; // audio | video
   context = null; // {label, href}
   loading = false;
   loaded = false; // has the current track been attached to a media element?
   resumeAt = 0;
-  hls = null;
   token = 0;
   errors = 0;
   extending = null;
@@ -71,7 +56,7 @@ class Player extends EventTarget {
   get current() { return this.queue[this.index] || null; }
   get audioEl() { return decks[this.deck]; }
   get spare() { return decks[1 - this.deck]; }
-  get el() { return this.mode === 'video' ? video : this.audioEl; }
+  get el() { return this.audioEl; }
   get paused() { return this.el.paused; }
   get time() { return this.loaded ? this.el.currentTime : this.resumeAt; }
   get duration() {
@@ -86,17 +71,17 @@ class Player extends EventTarget {
    */
   misreadLength() {
     const known = this.current?.duration || 0;
-    if (this.mode !== 'audio' || !known || !this.loaded || !Number.isFinite(this.el.duration)) return false;
+    if (!known || !this.loaded || !Number.isFinite(this.el.duration)) return false;
     const ratio = this.el.duration / known;
     return ratio > 1.9 && ratio < 2.1 && !this.el.src.includes('codec=opus');
   }
   get upcoming() { return this.queue.slice(this.index + 1); }
-  get dualDeck() { return !IOS && this.mode === 'audio'; }
+  get dualDeck() { return !IOS; }
 
   emit(type, detail) { this.dispatchEvent(new CustomEvent(type, { detail })); }
 
   init() {
-    for (const el of [...decks, video]) {
+    for (const el of decks) {
       const mine = (fn) => (e) => { if (el === this.el) fn(e); };
       el.addEventListener('timeupdate', mine(() => this.onTime()));
       el.addEventListener('play', mine(() => this.emit('state')));
@@ -107,7 +92,7 @@ class Player extends EventTarget {
       el.addEventListener('loadedmetadata', mine(() => { this.emit('time'); this.positionState(); }));
       el.addEventListener('seeking', mine(() => { this.cancelFade(); this.lastPos = null; }));
       el.addEventListener('ended', mine(() => this.onEnded()));
-      el.addEventListener('error', mine(() => { if (el.getAttribute('src') && !this.hls) this.onError(); }));
+      el.addEventListener('error', mine(() => { if (el.getAttribute('src')) this.onError(); }));
     }
     this.setVolume(store.settings.volume ?? 0.8);
     this.restore();
@@ -142,9 +127,21 @@ class Player extends EventTarget {
 
   stopMedia() {
     decks.forEach((d) => d.pause());
-    video.pause();
-    if (this.hls) { this.hls.destroy(); this.hls = null; }
-    if (video.getAttribute('src')) { video.removeAttribute('src'); video.load(); }
+  }
+
+  /** Swap a music video in the queue for its audio track (no film dialogue, intros or skits). */
+  async ensureAudio(i) {
+    const t = this.queue[i];
+    if (!t || t.type !== 'video' || t._checked || offline.has(t.videoId) || !navigator.onLine) return t;
+    t._checked = true;
+    try {
+      const song = await get.audio(t.videoId);
+      if (song?.videoId && this.queue[i] === t) {
+        this.queue[i] = { ...tag(song), _k: t._k, _checked: true };
+        this.emit('queue');
+      }
+    } catch { /* no audio version: play what we have */ }
+    return this.queue[i];
   }
 
   // ---------------------------------------------------------------- listening accounting
@@ -168,6 +165,15 @@ class Player extends EventTarget {
   async load({ autoplay = true, at = 0, fresh = true } = {}) {
     let t = this.current;
     if (!t) return;
+    const token = ++this.token;
+    if (t.type === 'video') {
+      // Silence the previous song right away while we look up this one's audio version.
+      this.cancelFade();
+      this.stopMedia();
+      this.setLoading(true);
+      t = await this.ensureAudio(this.index);
+      if (token !== this.token) return;
+    }
     if (!navigator.onLine && !offline.has(t.videoId)) {
       // No connection: jump to the next track that is saved on this device.
       const i = this.queue.findIndex((x, n) => n > this.index && offline.has(x.videoId));
@@ -180,8 +186,6 @@ class Player extends EventTarget {
       this.emit('queue');
       t = this.current;
     }
-    if (this.mode === 'video' && !navigator.onLine) { this.mode = 'audio'; this.emit('mode', 'audio'); }
-    const token = ++this.token;
     if (fresh) this.commitListen();
     this.cancelFade();
     this.clearPreload();
@@ -192,15 +196,11 @@ class Player extends EventTarget {
     if (fresh) { this.errors = 0; this.beginTrack(t); }
     this.updateMetadata();
     try {
-      if (this.mode === 'video') {
-        await this.attachVideo(t.videoId, at, token);
-      } else {
-        const src = await this.sourceFor(t);
-        if (token !== this.token) { if (src.blob) URL.revokeObjectURL(src.url); return; }
-        this.setSrc(this.deck, src);
-        this.audioEl.volume = this.vol;
-        if (at) this.audioEl.addEventListener('loadedmetadata', () => { this.audioEl.currentTime = at; }, { once: true });
-      }
+      const src = await this.sourceFor(t);
+      if (token !== this.token) { if (src.blob) URL.revokeObjectURL(src.url); return; }
+      this.setSrc(this.deck, src);
+      this.audioEl.volume = this.vol;
+      if (at) this.audioEl.addEventListener('loadedmetadata', () => { this.audioEl.currentTime = at; }, { once: true });
       if (token !== this.token) return;
       if (autoplay) await this.el.play();
       else this.setLoading(false);
@@ -210,43 +210,6 @@ class Player extends EventTarget {
       if (e.name === 'NotAllowedError') { this.emit('state'); return; } // browser blocked autoplay; user can press play
       this.onError(e.message);
     }
-  }
-
-  async attachVideo(id, at, token) {
-    const src = await get.video(id);
-    if (token !== this.token) return;
-    const Hls = src.hls ? await loadHls().catch(() => null) : null;
-    if (token !== this.token) return;
-    video.volume = this.vol;
-    if (src.hls && Hls?.isSupported()) {
-      const hls = new Hls({ startPosition: at || -1, maxBufferLength: 30, backBufferLength: 30 });
-      this.hls = hls;
-      hls.on(Hls.Events.ERROR, (_, data) => {
-        if (!data.fatal || this.hls !== hls) return;
-        hls.destroy();
-        this.hls = null;
-        if (src.mp4) { video.src = src.mp4; video.play().catch(() => {}); } else this.onError('Video stream failed');
-      });
-      hls.loadSource(src.hls);
-      hls.attachMedia(video);
-      return;
-    }
-    const url = (src.hls && video.canPlayType('application/vnd.apple.mpegurl')) ? src.hls : src.mp4;
-    if (!url) throw new Error('No video available for this track');
-    video.src = url;
-    if (at) video.addEventListener('loadedmetadata', () => { video.currentTime = at; }, { once: true });
-  }
-
-  async setMode(mode) {
-    if (mode === this.mode) return;
-    const at = this.time;
-    const resume = this.loaded && !this.el.paused;
-    this.cancelFade();
-    this.clearPreload();
-    this.stopMedia();
-    this.mode = mode;
-    this.emit('mode', mode);
-    if (this.current && this.loaded) await this.load({ autoplay: resume, at, fresh: false });
   }
 
   // ---------------------------------------------------------------- gapless / crossfade
@@ -264,11 +227,13 @@ class Player extends EventTarget {
   async preloadNext() {
     const i = this.nextIndex();
     if (i < 0 || !this.dualDeck) return;
-    const t = this.queue[i];
-    if (!navigator.onLine && !offline.has(t.videoId)) return;
     const token = this.token;
-    const p = { videoId: t.videoId, index: i, ready: false };
+    const p = { videoId: this.queue[i].videoId, index: i, ready: false };
     this.preloaded = p;
+    const t = await this.ensureAudio(i);
+    if (token !== this.token || this.preloaded !== p) return;
+    p.videoId = t.videoId;
+    if (!navigator.onLine && !offline.has(t.videoId)) { this.preloaded = null; return; }
     const src = await this.sourceFor(t);
     if (token !== this.token || this.preloaded !== p) { if (src.blob) URL.revokeObjectURL(src.url); return; }
     const spare = 1 - this.deck;
@@ -471,7 +436,7 @@ class Player extends EventTarget {
 
   async next() {
     this.cancelFade();
-    if (this.mode === 'audio' && this.loaded && this.preloadValid()) return this.skipToPreloaded();
+    if (this.loaded && this.preloadValid()) return this.skipToPreloaded();
     if (this.index < this.queue.length - 1) { this.index++; this.emit('queue'); return this.load(); }
     if (this.repeat === 'all' && this.queue.length) { this.index = 0; this.emit('queue'); return this.load(); }
     if (store.settings.autoplay && this.current && navigator.onLine) {
@@ -498,15 +463,14 @@ class Player extends EventTarget {
     v = Math.max(0, Math.min(1, v));
     this.vol = v;
     if (!this.fade) decks.forEach((d) => { d.volume = d === this.audioEl ? v : d.volume && v; });
-    video.volume = v;
-    [...decks, video].forEach((d) => { d.muted = false; });
+    decks.forEach((d) => { d.muted = false; });
     if (store.settings.volume !== v) store.setting('volume', v);
     this.emit('volume');
   }
 
   toggleMute() {
     const m = !this.audioEl.muted;
-    [...decks, video].forEach((d) => { d.muted = m; });
+    decks.forEach((d) => { d.muted = m; });
     this.emit('volume');
   }
 
@@ -581,7 +545,7 @@ class Player extends EventTarget {
       return;
     }
     if (this.repeat === 'one') { this.el.currentTime = 0; this.el.play().catch(() => {}); return; }
-    if (this.mode === 'audio' && store.settings.gapless !== false && this.preloadValid()) return this.skipToPreloaded();
+    if (store.settings.gapless !== false && this.preloadValid()) return this.skipToPreloaded();
     this.next();
   }
 

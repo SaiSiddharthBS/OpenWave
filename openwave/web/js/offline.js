@@ -67,6 +67,12 @@ async function fetchWithProgress(url, onProgress) {
 }
 
 async function downloadOne(track) {
+  if (track.type === 'video') {
+    try {
+      const song = await (await fetch(`/api/audio/${track.videoId}`)).json();
+      if (song?.videoId) track = slim(song);
+    } catch { /* keep the original */ }
+  }
   const id = track.videoId;
   active.set(id, 0);
   emit('progress', { id, progress: 0 });

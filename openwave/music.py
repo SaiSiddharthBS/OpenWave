@@ -186,21 +186,78 @@ def parse_youtube_url(text: str) -> tuple[str, str] | None:
     return None
 
 
+# --------------------------------------------------------------------------- songs, not videos
+#
+# OpenWave plays audio tracks ("songs") only. A music video often has film dialogue, intros or
+# skits in its soundtrack, so whenever YouTube hands us a video we look up the plain audio track.
+
+_NOISE = re.compile(
+    r"\s*[\(\[](?:official|music|lyric|lyrics|audio|video|visuali[sz]er|hd|4k|mv|m/v|full song|full video)[^\)\]]*[\)\]]"
+    r"|\s*[\(\[](?:feat|ft|with)\.?[^\)\]]*[\)\]]|\s+(?:feat|ft)\.?\s.*$|\s*\|.*$",
+    re.I,
+)
+
+
+def clean_title(title: str) -> str:
+    return _NOISE.sub("", title or "").strip(" -–") or (title or "")
+
+
+def _norm(s: str) -> str:
+    return " ".join(re.sub(r"[^\w\s]", " ", clean_title(s).lower()).split())
+
+
+def similar(a: str, b: str) -> float:
+    from difflib import SequenceMatcher
+    return SequenceMatcher(None, _norm(a), _norm(b)).ratio()
+
+
+def match_score(title: str, artist: str, duration: int | None, cand: dict) -> float:
+    s = similar(title, cand["title"]) * 0.6
+    names = " ".join(a["name"] for a in cand.get("artists") or [])
+    s += (similar(artist, names) if artist else 0.5) * 0.3
+    if duration and cand.get("duration"):
+        diff = abs(duration - cand["duration"])
+        s += 0.1 if diff <= 5 else (0.05 if diff <= 15 else -0.15)
+    return s
+
+
+async def match_song(title: str, artist: str = "", duration: int | None = None) -> dict | None:
+    """Best audio-track match on YouTube Music for a title/artist, or None."""
+    query = f"{artist} {clean_title(title)}".strip()
+    try:
+        res = await search(query, "songs")
+    except Exception:  # noqa: BLE001 - a miss is fine
+        return None
+    candidates = [r for r in res.get("results", [])[:6] if r.get("videoId") and r["type"] == "song"]
+    if not candidates:
+        return None
+    best = max(candidates, key=lambda c: match_score(title, artist, duration, c))
+    return best if match_score(title, artist, duration, best) >= 0.45 else None
+
+
+@cached(ttl=86400)
+async def audio_version(video_id: str) -> dict | None:
+    """The audio-track ("song") version of any YouTube video, or None if there isn't one."""
+    info = await track_info(video_id)
+    if not info:
+        return None
+    if info["type"] == "song":
+        return info
+    artist = info["artists"][0]["name"] if info["artists"] else ""
+    # Videos run longer (intros, skits), so don't let duration veto the match.
+    return await match_song(info["title"], artist)
+
+
 @cached(ttl=600)
 async def search(query: str, kind: str = "all") -> dict:
     link = parse_youtube_url(query)
     if link and link[0] == "video":
-        t = await track_info(link[1])
-        return {"query": query, "kind": kind, "top": t, "results": [t] if t else []}
+        t = await audio_version(link[1]) or await track_info(link[1])
+        return {"query": query, "kind": kind, "top": t, "results": []}
     if link and link[0] == "playlist":
         return {"query": query, "kind": kind, "redirect": f"#/playlist/{link[1]}", "results": []}
 
-    if kind == "youtube":
-        from . import youtube
-
-        return {"query": query, "kind": kind, "results": await youtube.search_videos(query)}
-
-    filters = {"songs": "songs", "videos": "videos", "albums": "albums", "artists": "artists", "playlists": "playlists"}
+    filters = {"songs": "songs", "albums": "albums", "artists": "artists", "playlists": "playlists"}
     if kind in filters:
         raw = await _call("search", query, filter=filters[kind], limit=40)
         songs_only = []
@@ -210,7 +267,8 @@ async def search(query: str, kind: str = "all") -> dict:
             _call("search", query, limit=20),
             _call("search", query, filter="songs", limit=20),
         )
-    artists_by_id = {s["videoId"]: s["artists"] for s in _compact(track(x) for x in songs_only) if s["artists"]}
+    songs = _compact(track(x) for x in songs_only)
+    artists_by_id = {s["videoId"]: s["artists"] for s in songs if s["artists"]}
     top = None
     results = []
     for item in raw:
@@ -220,9 +278,17 @@ async def search(query: str, kind: str = "all") -> dict:
         if norm.get("videoId") and not norm["artists"]:
             norm["artists"] = artists_by_id.get(norm["videoId"], [])
         if item.get("category") == "Top result" and top is None:
+            if norm.get("type") == "video":
+                # Show the song rather than its music video.
+                artist = norm["artists"][0]["name"] if norm["artists"] else ""
+                norm = next((s for s in songs if similar(norm["title"], s["title"]) > 0.7), None) or await match_song(norm["title"], artist)
             top = norm
             continue
+        if norm.get("type") == "video":
+            continue
         results.append(norm)
+    if top and top.get("videoId"):
+        results = [r for r in results if r.get("videoId") != top["videoId"]]
     return {"query": query, "kind": kind, "top": top, "results": results}
 
 
@@ -235,7 +301,7 @@ async def suggest(query: str) -> list[str]:
 async def home() -> list[dict]:
     sections = []
     for sec in await _call("get_home", limit=8):
-        items = _compact(_any(i) for i in sec.get("contents") or [])
+        items = [i for i in _compact(_any(i) for i in sec.get("contents") or []) if i.get("type") != "video"]
         if items:
             sections.append({"title": sec.get("title"), "items": items})
     return sections
@@ -246,6 +312,18 @@ async def album(browse_id: str) -> dict:
     a = await _call("get_album", browse_id)
     art = thumb(a.get("thumbnails"))
     ref = {"name": a.get("title"), "id": browse_id}
+    tracks = _compact(track({**t, "videoType": None}, album=ref, fallback_thumb=art) for t in a.get("tracks") or [])
+    # Some album entries point at the music video. The album's audio playlist has the plain tracks.
+    if a.get("audioPlaylistId") and any(t.get("videoType") not in (None, "MUSIC_VIDEO_TYPE_ATV") for t in a.get("tracks") or []):
+        try:
+            audio = (await _call("get_playlist", a["audioPlaylistId"], limit=300)).get("tracks") or []
+            if len(audio) == len(tracks):
+                for t, at in zip(tracks, audio):
+                    if at.get("videoId") and similar(t["title"], at.get("title") or "") > 0.6:
+                        t["videoId"] = at["videoId"]
+                        t["duration"] = at.get("duration_seconds") or t["duration"]
+        except Exception:  # noqa: BLE001 - fall back to the album's own ids
+            pass
     return {
         "type": "album",
         "id": browse_id,
@@ -258,7 +336,7 @@ async def album(browse_id: str) -> dict:
         "trackCount": a.get("trackCount"),
         "duration": a.get("duration"),
         "playlistId": a.get("audioPlaylistId"),
-        "tracks": _compact(track({**t, "videoType": None}, album=ref, fallback_thumb=art) for t in a.get("tracks") or []),
+        "tracks": tracks,
     }
 
 
@@ -275,6 +353,7 @@ async def playlist(playlist_id: str) -> dict:
         "description": p.get("description"),
         "trackCount": p.get("trackCount"),
         "duration": p.get("duration"),
+        # Video entries stay listed; the player swaps each for its audio track when it plays.
         "tracks": _compact(track(t) for t in p.get("tracks") or []),
     }
 
@@ -298,25 +377,38 @@ async def artist(channel_id: str) -> dict:
         "radioId": a.get("radioId"),
         "shuffleId": a.get("shuffleId"),
         "songsPlaylistId": _strip_vl(songs["browseId"]) if songs.get("browseId") else None,
-        "songs": _compact(track(t) for t in section("songs")),
+        "songs": [t for t in _compact(track(t) for t in section("songs")) if t["type"] == "song"],
         "albums": _compact(card({**x, "resultType": "album"}) for x in section("albums")),
         "singles": _compact(card({**x, "resultType": "album"}) for x in section("singles")),
-        "videos": _compact(track({**x, "resultType": "video"}) for x in section("videos")),
         "related": _compact(card({**x, "resultType": "artist"}) for x in section("related")),
     }
 
 
 @cached(ttl=900)
-async def up_next(video_id: str, playlist_id: str | None = None) -> dict:
+async def _watch(video_id: str, playlist_id: str | None = None) -> dict:
     w = await _call("get_watch_playlist", videoId=video_id, playlistId=playlist_id, limit=50)
     tracks = _compact(track(t) for t in w.get("tracks") or [])
     return {"tracks": tracks, "lyricsId": w.get("lyrics"), "relatedId": w.get("related")}
 
 
+@cached(ttl=900)
+async def up_next(video_id: str, playlist_id: str | None = None) -> dict:
+    """Radio for a song. Seeded from the audio track, a radio is (almost) all audio tracks."""
+    seed = video_id
+    if not playlist_id:
+        first = await track_info(video_id)
+        if first and first["type"] == "video":
+            audio = await audio_version(video_id)
+            if audio:
+                seed = audio["videoId"]
+    data = await _watch(seed, playlist_id)
+    songs = [t for t in data["tracks"] if t["type"] == "song"]
+    return {**data, "tracks": songs or data["tracks"]}
+
+
 @cached(ttl=86400)
 async def track_info(video_id: str) -> dict | None:
-    data = await up_next(video_id)
-    for t in data["tracks"]:
+    for t in (await _watch(video_id))["tracks"]:
         if t["videoId"] == video_id:
             return t
     return None
@@ -324,7 +416,7 @@ async def track_info(video_id: str) -> dict | None:
 
 @cached(ttl=86400)
 async def lyrics(video_id: str) -> dict:
-    lyrics_id = (await up_next(video_id)).get("lyricsId")
+    lyrics_id = (await _watch(video_id)).get("lyricsId")
     if not lyrics_id:
         return {"found": False}
     try:
