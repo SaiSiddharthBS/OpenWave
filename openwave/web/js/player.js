@@ -1,11 +1,24 @@
-// Playback engine: queue, shuffle/repeat, autoplay radio, audio <-> video switching, media session.
+// Playback engine.
+//
+// Two <audio> "decks" alternate: while one plays, the next song buffers on the other, so the
+// change-over is gapless (or crossfaded, if enabled) and skipping is instant. Video mode uses a
+// separate <video> element. Listening time is tracked per song for history and insights.
 
 import { get, img } from './api.js';
 import { store, slim } from './store.js';
 import { offline } from './offline.js';
 
-const audio = document.getElementById('audio');
 const video = document.getElementById('video');
+const decks = [document.getElementById('audio'), Object.assign(document.createElement('audio'), { preload: 'auto' })];
+document.body.appendChild(decks[1]);
+const deckBlobs = [null, null];
+
+// iOS only lets one element play in the background and ignores element.volume: use a single deck there.
+const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const PRELOAD_AT = 30; // seconds before the end to start buffering the next song
+
+/** Opus wherever it plays (sounds better, and WebKit misreads AAC lengths); AAC otherwise. */
+export const audioCodec = () => (decks[0].canPlayType('audio/webm; codecs="opus"') ? 'opus' : 'aac');
 
 let seq = 0;
 const tag = (t) => ({ ...slim(t), _k: ++seq }); // _k remembers insertion order so shuffle can be undone
@@ -46,34 +59,60 @@ class Player extends EventTarget {
   errors = 0;
   extending = null;
   lastSave = 0;
-  blobUrl = null; // object URL of a downloaded track currently attached to <audio>
+  deck = 0;
+  vol = 0.8;
+  preloaded = null; // {videoId, index, ready}
+  fade = null;
+  sleep = null; // {at} | {endOfTrack: true}
+  listenTrack = null;
+  listened = 0;
+  lastPos = null;
 
   get current() { return this.queue[this.index] || null; }
-  get el() { return this.mode === 'video' ? video : audio; }
+  get audioEl() { return decks[this.deck]; }
+  get spare() { return decks[1 - this.deck]; }
+  get el() { return this.mode === 'video' ? video : this.audioEl; }
   get paused() { return this.el.paused; }
   get time() { return this.loaded ? this.el.currentTime : this.resumeAt; }
-  get duration() { return (this.loaded && Number.isFinite(this.el.duration) && this.el.duration) || this.current?.duration || 0; }
+  get duration() {
+    const media = this.loaded && Number.isFinite(this.el.duration) ? this.el.duration : 0;
+    const known = this.current?.duration || 0;
+    return this.misreadLength() ? known : media || known;
+  }
+
+  /**
+   * WebKit reports exactly double the real length for YouTube's AAC files, then plays silence.
+   * (A genuinely longer file — e.g. a music video's audio — is not ~2x, and Opus is unaffected.)
+   */
+  misreadLength() {
+    const known = this.current?.duration || 0;
+    if (this.mode !== 'audio' || !known || !this.loaded || !Number.isFinite(this.el.duration)) return false;
+    const ratio = this.el.duration / known;
+    return ratio > 1.9 && ratio < 2.1 && !this.el.src.includes('codec=opus');
+  }
   get upcoming() { return this.queue.slice(this.index + 1); }
+  get dualDeck() { return !IOS && this.mode === 'audio'; }
 
   emit(type, detail) { this.dispatchEvent(new CustomEvent(type, { detail })); }
 
   init() {
-    for (const el of [audio, video]) {
+    for (const el of [...decks, video]) {
       const mine = (fn) => (e) => { if (el === this.el) fn(e); };
       el.addEventListener('timeupdate', mine(() => this.onTime()));
       el.addEventListener('play', mine(() => this.emit('state')));
-      el.addEventListener('pause', mine(() => { this.emit('state'); this.saveSession(); }));
+      el.addEventListener('pause', mine(() => { this.emit('state'); this.saveQueue(); }));
       el.addEventListener('waiting', mine(() => this.setLoading(true)));
       el.addEventListener('playing', mine(() => { this.setLoading(false); this.errors = 0; this.prefetchNext(); }));
       el.addEventListener('canplay', mine(() => this.setLoading(false)));
       el.addEventListener('loadedmetadata', mine(() => { this.emit('time'); this.positionState(); }));
+      el.addEventListener('seeking', mine(() => { this.cancelFade(); this.lastPos = null; }));
       el.addEventListener('ended', mine(() => this.onEnded()));
       el.addEventListener('error', mine(() => { if (el.getAttribute('src') && !this.hls) this.onError(); }));
     }
     this.setVolume(store.settings.volume ?? 0.8);
     this.restore();
     this.mediaSession();
-    window.addEventListener('pagehide', () => this.saveSession(true));
+    window.addEventListener('pagehide', () => { this.saveQueue(true); this.commitListen(true); });
   }
 
   setLoading(on) {
@@ -82,21 +121,50 @@ class Player extends EventTarget {
     this.emit('state');
   }
 
-  // ---------------------------------------------------------------- loading
+  // ---------------------------------------------------------------- sources
   streamUrl(id) {
-    let q = store.settings.quality;
-    if (q === 'high' && !audio.canPlayType('audio/webm; codecs="opus"')) q = 'normal';
-    return `/api/stream/${id}?q=${q}`;
+    return `/api/stream/${id}?q=${store.settings.quality}&codec=${audioCodec()}`;
+  }
+
+  async sourceFor(t) {
+    if (offline.has(t.videoId)) {
+      const url = await offline.audioUrl(t.videoId);
+      if (url) return { url, blob: true };
+    }
+    return { url: this.streamUrl(t.videoId), blob: false };
+  }
+
+  setSrc(i, src) {
+    if (deckBlobs[i]) URL.revokeObjectURL(deckBlobs[i]);
+    deckBlobs[i] = src.blob ? src.url : null;
+    decks[i].src = src.url;
   }
 
   stopMedia() {
-    audio.pause();
-    if (this.blobUrl) { URL.revokeObjectURL(this.blobUrl); this.blobUrl = null; }
+    decks.forEach((d) => d.pause());
     video.pause();
     if (this.hls) { this.hls.destroy(); this.hls = null; }
     if (video.getAttribute('src')) { video.removeAttribute('src'); video.load(); }
   }
 
+  // ---------------------------------------------------------------- listening accounting
+  beginTrack(t) {
+    this.forcedEnd = false;
+    this.listenTrack = t;
+    this.listened = 0;
+    this.lastPos = null;
+    this.emit('track', t);
+    this.saveQueue(true);
+    this.maybeExtend();
+  }
+
+  commitListen(keepalive = false) {
+    if (this.listenTrack && this.listened >= 1 && store.session) store.recordPlay(this.listenTrack, this.listened, { keepalive });
+    this.listenTrack = null;
+    this.listened = 0;
+  }
+
+  // ---------------------------------------------------------------- loading
   async load({ autoplay = true, at = 0, fresh = true } = {}) {
     let t = this.current;
     if (!t) return;
@@ -114,27 +182,24 @@ class Player extends EventTarget {
     }
     if (this.mode === 'video' && !navigator.onLine) { this.mode = 'audio'; this.emit('mode', 'audio'); }
     const token = ++this.token;
+    if (fresh) this.commitListen();
+    this.cancelFade();
+    this.clearPreload();
     this.loaded = true;
     this.resumeAt = 0;
     this.stopMedia();
     this.setLoading(true);
-    if (fresh) {
-      this.errors = 0;
-      this.emit('track', t);
-      store.pushHistory(t);
-      this.saveSession(true);
-      this.maybeExtend();
-    }
+    if (fresh) { this.errors = 0; this.beginTrack(t); }
     this.updateMetadata();
     try {
       if (this.mode === 'video') {
         await this.attachVideo(t.videoId, at, token);
       } else {
-        const local = offline.has(t.videoId) ? await offline.audioUrl(t.videoId) : null;
-        if (token !== this.token) { if (local) URL.revokeObjectURL(local); return; }
-        this.blobUrl = local;
-        audio.src = local || this.streamUrl(t.videoId);
-        if (at) audio.addEventListener('loadedmetadata', () => { audio.currentTime = at; }, { once: true });
+        const src = await this.sourceFor(t);
+        if (token !== this.token) { if (src.blob) URL.revokeObjectURL(src.url); return; }
+        this.setSrc(this.deck, src);
+        this.audioEl.volume = this.vol;
+        if (at) this.audioEl.addEventListener('loadedmetadata', () => { this.audioEl.currentTime = at; }, { once: true });
       }
       if (token !== this.token) return;
       if (autoplay) await this.el.play();
@@ -152,6 +217,7 @@ class Player extends EventTarget {
     if (token !== this.token) return;
     const Hls = src.hls ? await loadHls().catch(() => null) : null;
     if (token !== this.token) return;
+    video.volume = this.vol;
     if (src.hls && Hls?.isSupported()) {
       const hls = new Hls({ startPosition: at || -1, maxBufferLength: 30, backBufferLength: 30 });
       this.hls = hls;
@@ -175,10 +241,96 @@ class Player extends EventTarget {
     if (mode === this.mode) return;
     const at = this.time;
     const resume = this.loaded && !this.el.paused;
+    this.cancelFade();
+    this.clearPreload();
     this.stopMedia();
     this.mode = mode;
     this.emit('mode', mode);
     if (this.current && this.loaded) await this.load({ autoplay: resume, at, fresh: false });
+  }
+
+  // ---------------------------------------------------------------- gapless / crossfade
+  nextIndex() {
+    if (this.index < this.queue.length - 1) return this.index + 1;
+    if (this.repeat === 'all' && this.queue.length > 1) return 0;
+    return -1;
+  }
+
+  preloadValid() {
+    const p = this.preloaded;
+    return !!p?.ready && p.index === this.nextIndex() && this.queue[p.index]?.videoId === p.videoId;
+  }
+
+  async preloadNext() {
+    const i = this.nextIndex();
+    if (i < 0 || !this.dualDeck) return;
+    const t = this.queue[i];
+    if (!navigator.onLine && !offline.has(t.videoId)) return;
+    const token = this.token;
+    const p = { videoId: t.videoId, index: i, ready: false };
+    this.preloaded = p;
+    const src = await this.sourceFor(t);
+    if (token !== this.token || this.preloaded !== p) { if (src.blob) URL.revokeObjectURL(src.url); return; }
+    const spare = 1 - this.deck;
+    decks[spare].volume = 0;
+    this.setSrc(spare, src);
+    decks[spare].load();
+    decks[spare].addEventListener('canplaythrough', () => { if (this.preloaded === p) p.ready = true; }, { once: true });
+    decks[spare].addEventListener('error', () => { if (this.preloaded === p) this.preloaded = null; }, { once: true });
+  }
+
+  clearPreload() {
+    if (!this.preloaded) return;
+    this.preloaded = null;
+    const s = this.spare;
+    s.pause();
+    if (deckBlobs[1 - this.deck]) { URL.revokeObjectURL(deckBlobs[1 - this.deck]); deckBlobs[1 - this.deck] = null; }
+    s.removeAttribute('src');
+    s.load();
+  }
+
+  /** Switch to the preloaded deck: the queue moves on without reloading anything. */
+  advanceTo(i) {
+    this.commitListen();
+    this.index = i;
+    this.deck = 1 - this.deck;
+    this.preloaded = null;
+    this.loaded = true;
+    this.errors = 0;
+    this.beginTrack(this.current);
+    this.updateMetadata();
+    this.emit('queue');
+    this.emit('state');
+  }
+
+  startCrossfade(seconds) {
+    const incoming = this.spare;
+    const outgoing = this.audioEl;
+    const ms = Math.max(1, seconds) * 1000;
+    const started = performance.now();
+    // The buffered deck is already at 0; seeking it would fire 'seeking' and cancel the fade.
+    if (incoming.currentTime > 0) incoming.currentTime = 0;
+    incoming.volume = 0;
+    incoming.muted = outgoing.muted;
+    incoming.play().catch(() => {});
+    this.fade = {
+      incoming, outgoing,
+      timer: setInterval(() => {
+        const p = Math.min(1, (performance.now() - started) / ms);
+        outgoing.volume = this.vol * Math.cos((p * Math.PI) / 2); // equal-power curve
+        incoming.volume = this.vol * Math.sin((p * Math.PI) / 2);
+        if (p >= 1) this.cancelFade();
+      }, 50),
+    };
+    this.advanceTo(this.preloaded.index);
+  }
+
+  cancelFade() {
+    if (!this.fade) return;
+    clearInterval(this.fade.timer);
+    this.fade.outgoing.pause();
+    this.fade.incoming.volume = this.vol;
+    this.fade = null;
   }
 
   // ---------------------------------------------------------------- queue
@@ -215,15 +367,27 @@ class Player extends EventTarget {
   playNext(tracks) {
     if (!this.current) return this.playList(tracks);
     this.queue.splice(this.index + 1, 0, ...tracks.map(tag));
-    this.emit('queue');
-    this.saveSession(true);
+    this.queueChanged();
   }
 
   addToQueue(tracks) {
     if (!this.current) return this.playList(tracks);
     this.queue.push(...tracks.map(tag));
+    this.queueChanged();
+  }
+
+  move(from, to) {
+    if (from === to || from <= this.index || to <= this.index || from >= this.queue.length) return;
+    const [t] = this.queue.splice(from, 1);
+    this.queue.splice(Math.min(to, this.queue.length), 0, t);
+    this.queueChanged();
+  }
+
+  queueChanged() {
+    const p = this.preloaded;
+    if (p && (p.index !== this.nextIndex() || this.queue[p.index]?.videoId !== p.videoId)) this.clearPreload();
     this.emit('queue');
-    this.saveSession(true);
+    this.saveQueue(true);
   }
 
   removeAt(i) {
@@ -231,17 +395,19 @@ class Player extends EventTarget {
     const wasCurrent = i === this.index;
     this.queue.splice(i, 1);
     if (i < this.index) this.index--;
-    this.emit('queue');
     if (wasCurrent) {
       if (this.index >= this.queue.length) this.index = this.queue.length - 1;
+      this.emit('queue');
       if (this.current) this.load({ autoplay: !this.el.paused });
       else { this.stopMedia(); this.loaded = false; this.emit('track', null); }
+      return;
     }
-    this.saveSession(true);
+    this.queueChanged();
   }
 
   jump(i) {
     if (i < 0 || i >= this.queue.length) return;
+    if (i === this.nextIndex() && this.preloadValid()) return this.skipToPreloaded();
     this.index = i;
     this.emit('queue');
     this.load();
@@ -251,9 +417,14 @@ class Player extends EventTarget {
     if (!seed || this.extending) return this.extending;
     this.extending = (async () => {
       try {
-        const data = await get.next(seed);
+        let tracks;
+        try {
+          // Personal radio skips what this profile played recently.
+          tracks = store.session ? (await store.api(`/api/me/radio/${seed}`)).tracks : null;
+        } catch { tracks = null; }
+        tracks ||= (await get.next(seed)).tracks;
         const have = new Set(this.queue.map((t) => t.videoId));
-        const fresh = data.tracks.filter((t) => !have.has(t.videoId));
+        const fresh = tracks.filter((t) => !have.has(t.videoId));
         if (fresh.length) {
           this.queue.push(...fresh.map(tag));
           this.emit('queue');
@@ -269,7 +440,7 @@ class Player extends EventTarget {
   }
 
   maybeExtend() {
-    if (navigator.onLine && store.settings.autoplay && this.repeat === 'off' && this.queue.length - this.index <= 2) this.extend();
+    if (navigator.onLine && store.settings.autoplay && this.repeat === 'off' && this.queue.length - this.index <= 3) this.extend();
   }
 
   prefetchNext() {
@@ -280,18 +451,30 @@ class Player extends EventTarget {
   // ---------------------------------------------------------------- transport
   toggle() {
     if (!this.current) return;
-    if (!this.loaded) return this.load({ at: this.resumeAt, fresh: false });
+    if (!this.loaded) return this.load({ at: this.resumeAt, fresh: true });
     if (this.el.paused) this.el.play().catch(() => {});
     else this.el.pause();
   }
 
-  play() { if (this.el.paused) this.toggle(); }
-  pause() { if (!this.el.paused) this.el.pause(); }
+  play() { if (!this.current) return; if (!this.loaded || this.el.paused) this.toggle(); }
+  pause() { if (this.loaded && !this.el.paused) this.el.pause(); }
+
+  skipToPreloaded() {
+    const incoming = this.spare;
+    this.audioEl.pause();
+    if (incoming.currentTime > 0) incoming.currentTime = 0;
+    incoming.volume = this.vol;
+    incoming.muted = this.audioEl.muted;
+    this.advanceTo(this.preloaded.index);
+    incoming.play().catch(() => this.load({ fresh: false }));
+  }
 
   async next() {
+    this.cancelFade();
+    if (this.mode === 'audio' && this.loaded && this.preloadValid()) return this.skipToPreloaded();
     if (this.index < this.queue.length - 1) { this.index++; this.emit('queue'); return this.load(); }
     if (this.repeat === 'all' && this.queue.length) { this.index = 0; this.emit('queue'); return this.load(); }
-    if (store.settings.autoplay && this.current) {
+    if (store.settings.autoplay && this.current && navigator.onLine) {
       await this.extend(this.current.videoId);
       if (this.index < this.queue.length - 1) { this.index++; this.emit('queue'); return this.load(); }
     }
@@ -299,6 +482,7 @@ class Player extends EventTarget {
   }
 
   prev() {
+    this.cancelFade();
     if (this.time > 3 || this.index <= 0) return this.seek(0);
     this.index--;
     this.emit('queue');
@@ -312,20 +496,22 @@ class Player extends EventTarget {
 
   setVolume(v) {
     v = Math.max(0, Math.min(1, v));
-    audio.volume = video.volume = v;
-    audio.muted = video.muted = false;
+    this.vol = v;
+    if (!this.fade) decks.forEach((d) => { d.volume = d === this.audioEl ? v : d.volume && v; });
+    video.volume = v;
+    [...decks, video].forEach((d) => { d.muted = false; });
     if (store.settings.volume !== v) store.setting('volume', v);
     this.emit('volume');
   }
 
   toggleMute() {
-    const m = !audio.muted;
-    audio.muted = video.muted = m;
+    const m = !this.audioEl.muted;
+    [...decks, video].forEach((d) => { d.muted = m; });
     this.emit('volume');
   }
 
-  get muted() { return audio.muted; }
-  get volume() { return audio.volume; }
+  get muted() { return this.audioEl.muted; }
+  get volume() { return this.vol; }
 
   toggleShuffle() {
     this.shuffle = !this.shuffle;
@@ -333,19 +519,69 @@ class Player extends EventTarget {
     const rest = this.upcoming;
     if (this.shuffle) shuffleInPlace(rest); else rest.sort((a, b) => a._k - b._k);
     this.queue = [...head, ...rest];
-    this.emit('queue');
+    this.queueChanged();
     this.emit('state');
-    this.saveSession(true);
   }
 
   cycleRepeat() {
     this.repeat = { off: 'all', all: 'one', one: 'off' }[this.repeat];
+    if (this.preloaded && !this.preloadValid()) this.clearPreload();
     this.emit('state');
-    this.saveSession(true);
+    this.saveQueue(true);
+  }
+
+  // ---------------------------------------------------------------- sleep timer
+  setSleep(value) {
+    this.sleep = value === 'track' ? { endOfTrack: true } : value ? { at: Date.now() + value * 60000, minutes: value } : null;
+    this.emit('sleep');
+  }
+
+  checkSleep() {
+    if (!this.sleep?.at || Date.now() < this.sleep.at) return;
+    this.sleep = null;
+    this.emit('sleep');
+    const el = this.el;
+    const start = el.volume;
+    let n = 0;
+    const t = setInterval(() => {
+      n++;
+      el.volume = Math.max(0, start * (1 - n / 60));
+      if (n >= 60) { clearInterval(t); el.pause(); el.volume = this.vol; this.emit('slept'); }
+    }, 100);
+  }
+
+  // ---------------------------------------------------------------- events
+  onTime() {
+    const pos = this.el.currentTime;
+    if (this.lastPos != null && !this.el.paused) {
+      const d = pos - this.lastPos;
+      if (d > 0 && d < 2) this.listened += d;
+    }
+    this.lastPos = pos;
+    this.emit('time');
+    if (Date.now() - this.lastSave > 10000) this.saveQueue();
+    this.checkSleep();
+    if (!this.forcedEnd && this.misreadLength() && pos >= this.duration - 0.3) {
+      this.forcedEnd = true; // the real audio has ended; don't sit through the phantom second half
+      return this.onEnded();
+    }
+    if (!this.dualDeck || !this.loaded || this.repeat === 'one') return;
+    const remaining = this.duration - pos;
+    const xfade = +store.settings.crossfade || 0;
+    if (!this.preloaded && remaining > 0 && remaining < Math.max(PRELOAD_AT, xfade + 15)) this.preloadNext();
+    if (xfade > 0 && !this.fade && this.preloadValid() && remaining <= xfade && !this.sleep?.endOfTrack) this.startCrossfade(remaining);
   }
 
   onEnded() {
+    if (this.sleep?.endOfTrack) {
+      this.sleep = null;
+      this.commitListen();
+      this.emit('sleep');
+      this.emit('slept');
+      return;
+    }
     if (this.repeat === 'one') { this.el.currentTime = 0; this.el.play().catch(() => {}); return; }
+    if (this.mode === 'audio' && store.settings.gapless !== false && this.preloadValid()) return this.skipToPreloaded();
     this.next();
   }
 
@@ -370,17 +606,12 @@ class Player extends EventTarget {
     if (this.index < this.queue.length - 1) setTimeout(() => this.current === t && this.next(), 1500);
   }
 
-  onTime() {
-    this.emit('time');
-    if (Date.now() - this.lastSave > 10000) this.saveSession();
-  }
-
   // ---------------------------------------------------------------- persistence
-  saveSession(force = false) {
+  saveQueue(force = false) {
     if (!force && Date.now() - this.lastSave < 3000) return;
     this.lastSave = Date.now();
     const start = Math.max(0, this.index - 50);
-    store.saveSession({
+    store.saveQueue({
       queue: this.queue.slice(start, this.index + 200).map(slim),
       index: this.index - start,
       time: this.time,
@@ -391,7 +622,7 @@ class Player extends EventTarget {
   }
 
   restore() {
-    const s = store.loadSession();
+    const s = store.loadQueue();
     if (!s?.queue?.length) return;
     this.queue = s.queue.map(tag);
     this.index = Math.min(Math.max(0, s.index), this.queue.length - 1);

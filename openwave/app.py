@@ -15,7 +15,10 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 
-from . import __version__, music, youtube
+from . import __version__, music, updater, youtube
+from .api_library import error_response, router as library_router
+from .config import FROZEN, data_dir
+from .library import LibraryError
 
 WEB = Path(__file__).parent / "web"
 CHUNK = 4 * 1024 * 1024  # bytes per upstream request; mirrors how YouTube's own players fetch
@@ -34,6 +37,10 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(title="OpenWave", version=__version__, docs_url="/api/docs", redoc_url=None, lifespan=lifespan)
+
+
+app.include_router(library_router)
+app.add_exception_handler(LibraryError, lambda _req, exc: error_response(exc))
 
 
 @app.exception_handler(youtube.StreamError)
@@ -64,7 +71,19 @@ async def _guard(coro):
 
 @app.get("/api/health")
 async def health():
-    return {"ok": True, "version": __version__, "jsRuntimes": list(youtube.BASE_OPTS["js_runtimes"])}
+    import yt_dlp.version
+    import ytmusicapi
+
+    return {
+        "ok": True,
+        "version": __version__,
+        "jsRuntimes": list(youtube.BASE_OPTS["js_runtimes"]),
+        "ytDlp": yt_dlp.version.__version__,
+        "ytmusicapi": ytmusicapi.__version__,
+        "packaged": FROZEN,
+        "dataDir": str(data_dir()),
+        "extractorUpdates": updater._state().get("pending", {}),
+    }
 
 
 @app.get("/api/search")
@@ -156,11 +175,11 @@ def _clamp_range(header: str | None, size: int | None) -> str:
     return f"bytes={start}-{end}"
 
 
-async def _open_upstream(video_id: str, kind: str, quality: str, range_header: str | None):
+async def _open_upstream(video_id: str, kind: str, quality: str, range_header: str | None, codec: str | None = None):
     robust = False
     for attempt in range(4):
         info = await youtube.resolve(video_id, force=attempt == 3, robust=robust)
-        fmt = youtube.pick_muxed(info) if kind == "video" else youtube.pick_audio(info, quality)
+        fmt = youtube.pick_muxed(info) if kind == "video" else youtube.pick_audio(info, quality, codec)
         if not fmt:
             raise youtube.StreamError("No suitable stream for this video")
         wait = fmt["available_at"] - time.time()
@@ -191,8 +210,8 @@ def _relay(resp: httpx.Response, extra: dict | None = None) -> StreamingResponse
 
 
 @app.get("/api/stream/{video_id}")
-async def stream(video_id: str, request: Request, kind: str = "audio", q: str = "normal"):
-    resp = await _open_upstream(_check_id(video_id), kind, q, request.headers.get("range"))
+async def stream(video_id: str, request: Request, kind: str = "audio", q: str = "normal", codec: str | None = None):
+    resp = await _open_upstream(_check_id(video_id), kind, q, request.headers.get("range"), codec)
     return _relay(resp)
 
 
@@ -202,10 +221,10 @@ def _total_size(resp: httpx.Response) -> int | None:
 
 
 @app.get("/api/download/{video_id}")
-async def download(video_id: str, q: str = "normal"):
+async def download(video_id: str, q: str = "normal", codec: str | None = None):
     """The whole audio file in one response (fetched upstream chunk by chunk) for offline saving."""
     _check_id(video_id)
-    first = await _open_upstream(video_id, "audio", q, "bytes=0-")
+    first = await _open_upstream(video_id, "audio", q, "bytes=0-", codec)
     total = _total_size(first)
 
     async def body():
@@ -218,7 +237,7 @@ async def download(video_id: str, q: str = "normal"):
                 await resp.aclose()
                 if total is None or pos >= total:
                     break
-                resp = await _open_upstream(video_id, "audio", q, f"bytes={pos}-")
+                resp = await _open_upstream(video_id, "audio", q, f"bytes={pos}-", codec)
         finally:
             await resp.aclose()
 

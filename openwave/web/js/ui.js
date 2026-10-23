@@ -238,3 +238,21 @@ export function sampleTint(src) {
     im.src = src;
   });
 }
+
+/** Show arbitrary content in the shared <dialog>; resolves when it closes. */
+export function openDialog(html, { wide = false, onMount } = {}) {
+  const d = $('#dialog');
+  d.classList.toggle('wide', wide);
+  d.innerHTML = html;
+  d.returnValue = '';
+  return new Promise((resolve) => {
+    d.onclose = () => resolve(d.returnValue);
+    d.showModal();
+    onMount?.(d);
+  });
+}
+
+export function avatar(profile, size = 32) {
+  const initial = esc((profile?.name || '?').trim()[0]?.toUpperCase() || '?');
+  return `<span class="avatar" style="--av:${esc(profile?.color || '#7b7bff')};width:${size}px;height:${size}px;font-size:${Math.round(size * 0.45)}px">${initial}</span>`;
+}

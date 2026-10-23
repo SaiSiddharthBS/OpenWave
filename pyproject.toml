@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openwave"
-version = "0.1.0"
+version = "0.2.0"
 description = "Free, open-source music & video player backed by YouTube. No ads, no accounts, no premium."
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }

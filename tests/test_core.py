@@ -138,7 +138,7 @@ def test_download_stitches_chunks(monkeypatch):
 
     mock = httpx.AsyncClient(transport=httpx.MockTransport(upstream))
 
-    async def fake_open(video_id, kind, quality, range_header):
+    async def fake_open(video_id, kind, quality, range_header, codec=None):
         requested.append(int(range_header.split("=")[1].split("-")[0]))
         return await mock.send(mock.build_request("GET", "https://rr1.googlevideo.com/x", headers={"range": range_header}), stream=True)
 
@@ -149,3 +149,21 @@ def test_download_stitches_chunks(monkeypatch):
     assert r.content == data
     assert r.headers["content-length"] == str(len(data))
     assert requested == [0, 4096, 8192]
+
+
+def test_updated_extractors_take_priority(tmp_path, monkeypatch):
+    """Downloaded extractor updates must shadow the bundled copies on the next launch."""
+    import importlib
+    import sys
+
+    from openwave import updater
+
+    pkg = tmp_path / "current" / "fake_extractor_pkg"
+    pkg.mkdir(parents=True)
+    (pkg / "__init__.py").write_text("VERSION = 'updated'\n")
+    finder = updater._UpdatedFirst(tmp_path / "current", {"fake_extractor_pkg"})
+    monkeypatch.setattr(sys, "meta_path", [finder, *sys.meta_path])
+    sys.modules.pop("fake_extractor_pkg", None)
+    assert importlib.import_module("fake_extractor_pkg").VERSION == "updated"
+    assert finder.find_spec("json") is None  # everything else resolves normally
+    assert updater._newer("2026.11.1", "2026.10.21") and not updater._newer("2026.10.21", "2026.10.21")

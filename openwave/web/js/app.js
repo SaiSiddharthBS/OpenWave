@@ -1,13 +1,17 @@
 // App shell: routing, event delegation, player UI bindings, now-playing panel.
 
-import { get, img, enc } from './api.js';
+import { api, get, img, enc } from './api.js';
 import { store } from './store.js';
 import { player } from './player.js';
 import { offline } from './offline.js';
 import * as views from './views.js';
+import { insights, shareInsights } from './insights.js';
+import { openImport } from './importer.js';
+import { ensureProfile, switchProfile } from './profiles.js';
+import { initNative } from './native.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
-  confirmDialog, sampleTint, artistLinks, errorBox, skeleton, empty,
+  confirmDialog, sampleTint, artistLinks, errorBox, skeleton, empty, avatar,
 } from './ui.js';
 
 const view = $('#view');
@@ -29,10 +33,24 @@ const ROUTES = [
   [/^\/downloads$/, 'downloads', () => views.downloads(), 'detail'],
   [/^\/my\/(.+)$/, 'library', (m) => views.myPlaylist({ id: id(m) }), 'detail'],
   [/^\/settings$/, 'settings', () => views.settings(), 'home'],
+  [/^\/insights$/, 'insights', (m, q) => insights({ days: q.get('days') || 30 }), 'home'],
+  [/^\/play\/([A-Za-z0-9_-]{11})$/, 'home', (m) => playLink(m[1]), 'home'],
 ];
 
 let page = {};
 let renderToken = 0;
+
+/** Shared song links (#/play/<videoId>): start that song's radio, then show Home. */
+async function playLink(videoId) {
+  try {
+    const track = await api(`/api/track/${videoId}`);
+    player.playRadio(track);
+  } catch (e) {
+    toast(`Couldn’t open that song — ${e.message}`);
+  }
+  setTimeout(() => location.replace('#/home'));
+  return { html: '' };
+}
 
 async function render({ keepScroll = false } = {}) {
   const [path, qs] = (location.hash.slice(1) || '/home').split('?');
@@ -62,6 +80,7 @@ async function render({ keepScroll = false } = {}) {
     main.scrollTop = keepScroll ? scroll : 0;
     out.mount?.(view);
     markDownloads();
+    enableDrag();
     view.style.removeProperty('--tint');
     if (out.tintColor) view.style.setProperty('--tint', out.tintColor);
     else if (out.tint) sampleTint(img(out.tint, 120)).then((c) => c && token === renderToken && view.style.setProperty('--tint', c));
@@ -76,14 +95,39 @@ async function render({ keepScroll = false } = {}) {
 
 window.addEventListener('hashchange', () => { closeNP(); render(); });
 
-// Library-backed pages refresh themselves when the library changes.
-store.on((what) => {
+// Library-backed pages refresh themselves when the library changes (here or on another device).
+store.on(async (what) => {
+  if (what === 'auth' || what === 'signout') {
+    await ensureProfile(what === 'auth' ? 'Your session ended. Pick your profile to continue.' : '');
+    renderProfileChip();
+    render();
+    return;
+  }
   renderSidebar();
+  renderProfileChip();
   bindLike();
-  const live = { library: true, settings: what === 'settings' || what === 'all' };
+  if (dragging) return;
+  const live = { library: true, settings: what === 'settings' || what === 'all' || what === 'profile', home: what === 'all' };
   if (what === 'history' && !location.hash.startsWith('#/history')) return;
-  if (live[page.name] || (page.collection && ['liked', 'local', 'history'].includes(page.collection.kind))) render({ keepScroll: true });
+  if (live[page.name] || (page.collection && ['liked', 'local', 'history'].includes(page.collection.kind) && what !== 'history')
+    || (what === 'all' && page.collection?.kind === 'history')) render({ keepScroll: true });
 });
+
+function renderProfileChip() {
+  const chip = $('#profile-chip');
+  if (chip) chip.innerHTML = store.profile ? avatar(store.profile, 30) : icon('person');
+}
+
+function profileMenu(anchor) {
+  const p = store.profile;
+  openMenu(anchor, [
+    { icon: 'chart', label: 'Your insights', run: () => { location.hash = '#/insights'; } },
+    { icon: 'download', label: 'Import playlists…', run: () => openImport() },
+    { icon: 'settings', label: 'Settings', run: () => { location.hash = '#/settings'; } },
+    'sep',
+    { icon: 'person', label: 'Switch profile', run: async () => { await switchProfile(); renderProfileChip(); render(); } },
+  ], p ? `<div class="menu-head">${avatar(p, 40)}<div class="ellipsis"><b class="ellipsis">${esc(p.name)}</b><small>${store.pending ? 'Syncing…' : 'Synced'}</small></div></div>` : '');
+}
 
 // ================================================================== sidebar
 function renderSidebar() {
@@ -209,7 +253,7 @@ function trackMenu(anchor, track, { list, i } = {}) {
       ? { icon: 'trash', label: 'Remove download', run: () => offline.remove(track.videoId).then(() => toast('Download removed')) }
       : { icon: 'download', label: 'Download', run: () => { if (!offline.isBusy(track.videoId)) offline.download([track]); } },
   ];
-  if (list?.localId) items.push({ icon: 'trash', label: 'Remove from this playlist', run: () => store.removeFromPlaylist(list.localId, i) });
+  if (list?.localId) items.push({ icon: 'trash', label: 'Remove from this playlist', run: () => store.removeFromPlaylist(list.localId, track.videoId) });
   if (list?.queue) items.push({ icon: 'trash', label: 'Remove from queue', run: () => player.removeAt(i) });
   items.push('sep');
   if (artist) items.push({ icon: 'person', label: 'Go to artist', run: () => { location.hash = `#/artist/${enc(artist.id)}`; } });
@@ -254,6 +298,12 @@ function collectionMenu(anchor) {
     { icon: 'download', label: 'Download all', run: () => downloadCollection(c, false) },
   ];
   if (c.tracks[0]) items.push({ icon: 'radio', label: 'Start radio', run: () => player.playRadio(c.tracks[0], { label: `${c.context.label} radio` }) });
+  if (['album', 'playlist', 'artist', 'insights', 'downloads'].includes(c.kind) && c.tracks.length) {
+    items.push({ icon: 'queue', label: 'Save as my playlist', run: () => {
+      const p = store.createPlaylist(c.context.label || 'My playlist', c.tracks);
+      toast(`Created “${p.name}”`);
+    } });
+  }
   if (c.kind === 'album' || c.kind === 'playlist') {
     const url = c.kind === 'album' ? `https://music.youtube.com/browse/${c.card.id}` : `https://music.youtube.com/playlist?list=${c.card.id}`;
     items.push('sep', { icon: 'link', label: 'Copy link', run: () => copyText(url) });
@@ -303,12 +353,33 @@ const ACTIONS = {
   },
   'delete-playlist': async () => {
     const p = store.playlist(page.collection.localId);
-    if (await confirmDialog('Delete playlist?', `“${p.name}” will be removed from this device.`)) {
+    if (await confirmDialog('Delete playlist?', `“${p.name}” will be deleted from your library on every device.`)) {
       store.deletePlaylist(p.id);
       location.hash = '#/library';
     }
   },
   'clear-history': () => store.clearHistory(),
+  'import-playlists': () => openImport(),
+  'share-insights': () => shareInsights(),
+  'profile-menu': (el) => profileMenu(el),
+  sleep: (el) => sleepMenu(el),
+  'edit-profile': async () => {
+    const name = await askText('Your name', { value: store.profile.name });
+    if (name) { await store.updateProfile({ name }); toast('Profile updated'); }
+  },
+  'profile-color': (el) => store.updateProfile({ color: el.dataset.color }),
+  'set-pin': async () => {
+    const pin = await askText('Set a 4–8 digit PIN', { placeholder: '••••', ok: 'Save PIN' });
+    if (!pin) return;
+    try { await store.updateProfile({ pin }); toast('PIN set'); } catch (e) { toast(e.message); }
+  },
+  'remove-pin': async () => { await store.updateProfile({ removePin: true }); toast('PIN removed'); },
+  'switch-profile': async () => { await switchProfile(); renderProfileChip(); render(); },
+  'delete-profile': async () => {
+    if (await confirmDialog('Delete this profile?', `“${store.profile.name}” and all its likes, playlists and history will be permanently deleted from the server.`, 'Delete profile')) {
+      await store.deleteProfile();
+    }
+  },
   'download-collection': () => downloadCollection(page.collection, true),
   'clear-downloads': async () => {
     if (await confirmDialog('Delete all downloads?', 'Downloaded songs will be removed from this device. Your playlists and likes stay.', 'Delete')) {
@@ -330,10 +401,9 @@ const ACTIONS = {
     input.click();
   },
   reset: async () => {
-    if (await confirmDialog('Reset OpenWave?', 'This deletes your liked songs, playlists, history and settings on this device.', 'Reset')) {
+    if (await confirmDialog('Clear your library?', 'This removes your liked songs, playlists, follows, history and settings from this profile on every device.', 'Clear library')) {
       store.reset();
-      localStorage.clear();
-      location.reload();
+      toast('Library cleared');
     }
   },
 };
@@ -381,6 +451,75 @@ document.addEventListener('click', async (e) => {
   if (sw) { store.setting(sw.dataset.settingToggle, !store.settings[sw.dataset.settingToggle]); }
 });
 
+// ================================================================== sleep timer
+function sleepMenu(anchor) {
+  const set = (v, label) => () => { player.setSleep(v); toast(v ? `Sleep timer: ${label}` : 'Sleep timer off'); };
+  openMenu(anchor, [
+    ...[5, 15, 30, 45, 60, 90].map((m) => ({ icon: 'moon', label: `${m} minutes`, run: set(m, `${m} minutes`) })),
+    { icon: 'moon', label: 'End of this song', run: set('track', 'end of this song') },
+    ...(player.sleep ? ['sep', { icon: 'close', label: 'Turn off timer', run: set(null) }] : []),
+  ], `<div class="menu-head"><div><b>Sleep timer</b><small>${player.sleep ? sleepLabel() : 'Music fades out and stops'}</small></div></div>`);
+}
+
+function sleepLabel() {
+  if (!player.sleep) return '';
+  if (player.sleep.endOfTrack) return 'Stops after this song';
+  return `Stops in ${Math.max(1, Math.round((player.sleep.at - Date.now()) / 60000))} min`;
+}
+
+function bindSleep() {
+  $$('[data-act="sleep"]').forEach((b) => { b.classList.toggle('on', !!player.sleep); b.title = player.sleep ? sleepLabel() : 'Sleep timer'; });
+}
+player.addEventListener('sleep', bindSleep);
+player.addEventListener('slept', () => toast('Sleep timer: music stopped. Good night 🌙', 4000));
+setInterval(() => { if (player.sleep) bindSleep(); }, 30000);
+
+// ================================================================== drag to reorder (queue & your playlists)
+let dragging = null;
+
+function enableDrag() {
+  const local = page.collection?.kind === 'local';
+  if (local) $$('#view .tracks .row').forEach((r) => { r.draggable = true; });
+}
+
+document.addEventListener('dragstart', (e) => {
+  const row = e.target.closest?.('.row[draggable="true"]');
+  if (!row) return;
+  dragging = { row, list: row.dataset.list, from: +row.dataset.i };
+  row.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', row.dataset.vid);
+});
+document.addEventListener('dragover', (e) => {
+  const row = dragging && e.target.closest?.(`.row[data-list="${dragging.list}"]`);
+  if (!row || row === dragging.row) return;
+  e.preventDefault();
+  $$('.row.drop-above, .row.drop-below').forEach((r) => r.classList.remove('drop-above', 'drop-below'));
+  const below = e.clientY > row.getBoundingClientRect().top + row.offsetHeight / 2;
+  row.classList.add(below ? 'drop-below' : 'drop-above');
+});
+document.addEventListener('drop', (e) => {
+  const row = dragging && e.target.closest?.(`.row[data-list="${dragging.list}"]`);
+  if (!row) return;
+  e.preventDefault();
+  let to = +row.dataset.i + (row.classList.contains('drop-below') ? 1 : 0);
+  const { from } = dragging;
+  if (to > from) to--;
+  const list = getList(dragging.list);
+  if (list?.queue) player.move(from, to);
+  else if (list?.localId) {
+    const ids = list.tracks.map((t) => t.videoId);
+    const [moved] = ids.splice(from, 1);
+    ids.splice(to, 0, moved);
+    dragging = null;
+    store.reorderPlaylist(list.localId, ids);
+  }
+});
+document.addEventListener('dragend', () => {
+  $$('.row.dragging, .row.drop-above, .row.drop-below').forEach((r) => r.classList.remove('dragging', 'drop-above', 'drop-below'));
+  dragging = null;
+});
+
 document.addEventListener('contextmenu', (e) => {
   const d = rowData(e.target);
   if (!d || e.target.closest('a')) return;
@@ -391,7 +530,7 @@ document.addEventListener('contextmenu', (e) => {
 document.addEventListener('change', (e) => {
   const sel = e.target.closest('[data-setting]');
   if (sel) {
-    store.setting(sel.dataset.setting, sel.value);
+    store.setting(sel.dataset.setting, sel.dataset.type === 'number' ? +sel.value : sel.value);
     if (sel.dataset.setting === 'quality') toast('Applies from the next track');
   }
 });
@@ -640,6 +779,7 @@ function renderQueue() {
   box.innerHTML = `<div class="queue-label">Now playing</div>${trackRow(t, player.index, key, { playing: true })}
     <div class="queue-label">Next${player.context?.label ? ` from ${esc(player.context.label)}` : ''}</div>
     ${upcoming.map((u, n) => trackRow(u, player.index + 1 + n, key)).join('') || `<p class="muted" style="padding:0 10px">${store.settings.autoplay && navigator.onLine ? 'Finding similar songs…' : 'Nothing queued.'}</p>`}`;
+  box.querySelectorAll('.row').forEach((r) => { if (+r.dataset.i > player.index) r.draggable = true; });
   markDownloads();
 }
 
@@ -695,12 +835,37 @@ lyricsBox.addEventListener('click', (e) => {
 });
 
 // ================================================================== boot
+initNative({
+  toggle: () => player.toggle(),
+  play: () => player.play(),
+  pause: () => player.pause(),
+  next: () => player.next(),
+  prev: () => player.prev(),
+  seek: (s) => player.seek(+s),
+  like: () => ACTIONS['like-current'](),
+  shuffle: () => player.toggleShuffle(),
+  repeat: () => player.cycleRepeat(),
+  volumeUp: () => player.setVolume(player.volume + 0.1),
+  volumeDown: () => player.setVolume(player.volume - 0.1),
+  navigate: (hash) => { location.hash = hash; },
+  search: () => { searchInput.focus(); },
+  nowPlaying: () => openNP(),
+  importPlaylists: () => openImport(),
+  sleep: (m) => player.setSleep(m === 'off' ? null : m === 'track' ? 'track' : +m),
+});
 renderSidebar();
+renderProfileChip();
 player.init();
 bindState();
 bindVolume();
 bindTrack(player.current);
-offline.init().finally(render);
+bindSleep();
+Promise.all([offline.init(), ensureProfile()]).finally(() => {
+  renderProfileChip();
+  renderSidebar();
+  render();
+  store.pull();
+});
 
 if ('serviceWorker' in navigator && window.isSecureContext) {
   navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('service worker', e));

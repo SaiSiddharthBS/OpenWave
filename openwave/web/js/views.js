@@ -4,7 +4,7 @@ import { get, img, enc } from './api.js';
 import { store } from './store.js';
 import { offline, fmtBytes } from './offline.js';
 import {
-  esc, icon, fmtTotal, trackList, trackCards, cards, section, registerList, trackRow, artistLinks, empty,
+  esc, icon, fmtTotal, trackList, trackCards, cards, section, registerList, trackRow, artistLinks, empty, avatar,
 } from './ui.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -29,8 +29,16 @@ export async function home() {
   let failed = null;
   try { sections = await get.home(); } catch (e) { failed = e; }
 
-  let html = `<h1 class="greeting">${greeting()}</h1>`;
-  if (recent.length) html += section('Recently played', trackCards(recent, { mode: 'radio', context: { label: 'Recently played' } }));
+  let personal = null;
+  if (store.session && store.history.length) {
+    try { personal = await store.api('/api/me/mixes'); } catch { /* recommendations still load */ }
+  }
+  let html = `<h1 class="greeting">${greeting()}${store.profile ? `, ${esc(store.profile.name)}` : ''}</h1>`;
+  if (personal?.mixes.length) html += section(`Made for ${store.profile.name}`, personal.mixes.map(mixCard).join(''));
+  if (recent.length) html += section('Jump back in', trackCards(recent, { mode: 'radio', context: { label: 'Recently played' } }));
+  if (personal?.topArtists.length >= 3) {
+    html += section('Your top artists', personal.topArtists.filter((a) => a.id).map((a) => cards([{ type: 'artist', id: a.id, title: a.name, subtitle: `${a.plays} plays`, thumbnail: a.thumbnail }])).join(''));
+  }
   sections.forEach((sec, n) => {
     const tracks = sec.items.filter((x) => x.videoId);
     const others = sec.items.filter((x) => !x.videoId);
@@ -47,6 +55,17 @@ export async function home() {
     html += empty('radio', "Couldn't load recommendations", failed.message, '<p><a class="btn" href="#/search">Search instead</a></p>');
   }
   return { html };
+}
+
+const MIX_TINTS = ['#2fc8ff', '#7b7bff', '#c45cff', '#ff6fae', '#ffb648', '#3ddc97'];
+let mixN = 0;
+function mixCard(m) {
+  const key = registerList([m.seed], { mode: 'radio', context: { label: m.title } });
+  const tint = MIX_TINTS[mixN++ % MIX_TINTS.length];
+  return `<div class="card mix" data-list="${key}" data-i="0" data-vid="${esc(m.seed.videoId)}" role="button" tabindex="0" style="--mix:${tint}">
+    <div class="art"><img loading="lazy" src="${img(m.seed.thumbnail, 300)}" alt=""><span class="mix-label">${esc(m.title)}</span>
+      <span class="hover-play">${icon('play')}</span></div>
+    <div class="title">${esc(m.title)}</div><div class="sub">${esc(m.subtitle)}</div></div>`;
 }
 
 function trackListRows(tracks, opts) {
@@ -302,38 +321,54 @@ export function library({ tab = 'playlists' }) {
         tab === 'albums' ? 'Tap the heart on an album to save it.' : 'Tap Follow on an artist page.');
   }
   return {
-    html: `<div class="lib-head"><h1>Your Library</h1><button class="btn" data-act="new-playlist">${icon('plus')} New playlist</button></div>
+    html: `<div class="lib-head"><h1>Your Library</h1><div class="lib-actions"><button class="btn" data-act="import-playlists">${icon('download')} Import</button><button class="btn" data-act="new-playlist">${icon('plus')} New playlist</button></div></div>
       <div class="chips">${tabs.map(([k, l]) => `<a class="chip ${k === tab ? 'on' : ''}" href="#/library?tab=${k}">${l}</a>`).join('')}</div>${body}`,
   };
 }
 
 // ------------------------------------------------------------------ settings
+const PROFILE_COLORS = ['#7b7bff', '#2fc8ff', '#c45cff', '#ff6fae', '#ffb648', '#3ddc97', '#ff6b6b', '#8f7cff'];
+
 export async function settings() {
   const s = store.settings;
+  const p = store.profile;
   let health = null;
   try { health = await (await fetch('/api/health')).json(); } catch { /* offline */ }
   const sw = (key) => `<button class="switch ${s[key] ? 'on' : ''}" data-setting-toggle="${key}" role="switch" aria-checked="${!!s[key]}" aria-label="${key}"></button>`;
+  const select = (key, options, type = '') => `<select class="select" data-setting="${key}" ${type ? `data-type="${type}"` : ''}>
+    ${options.map(([v, l]) => `<option value="${v}" ${String(s[key]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
   return {
     html: `<div class="settings"><h1>Settings</h1>
+      ${p ? `<h2>Profile</h2>
+      <div class="setting profile-setting"><div class="profile-row">${avatar(p, 56)}<div><b>${esc(p.name)}</b><p>Your likes, playlists, history and insights sync to every device using this server.</p></div></div>
+        <div class="btn-row"><button class="btn" data-act="edit-profile">${icon('edit')} Rename</button><button class="btn" data-act="switch-profile">Switch profile</button></div></div>
+      <div class="setting"><div><b>Colour</b></div><div class="swatches">${PROFILE_COLORS.map((c) => `<button class="swatch ${c === p.color ? 'on' : ''}" data-act="profile-color" data-color="${c}" style="background:${c}" aria-label="Colour"></button>`).join('')}</div></div>
+      <div class="setting"><div><b>PIN</b><p>${p.hasPin ? 'This profile is protected with a PIN.' : 'Stop others on your server from opening your profile.'}</p></div>
+        ${p.hasPin ? '<div class="btn-row"><button class="btn" data-act="set-pin">Change PIN</button><button class="btn" data-act="remove-pin">Remove</button></div>' : '<button class="btn" data-act="set-pin">Set a PIN</button>'}</div>` : ''}
       <h2>Playback</h2>
-      <div class="setting"><div><b>Audio quality</b><p>High uses Opus (~160 kbps). Normal uses AAC (~128 kbps) and plays on every device.</p></div>
-        <select class="select" data-setting="quality">
-          ${[['high', 'High'], ['normal', 'Normal'], ['low', 'Data saver']].map(([v, l]) => `<option value="${v}" ${s.quality === v ? 'selected' : ''}>${l}</option>`).join('')}
-        </select></div>
-      <div class="setting"><div><b>Autoplay</b><p>When your queue ends, keep playing similar songs.</p></div>${sw('autoplay')}</div>
+      <div class="setting"><div><b>Audio quality</b><p>OpenWave picks the best format your device plays (Opus or AAC, up to ~160 kbps). Data saver uses about a third of the data.</p></div>
+        ${select('quality', [['high', 'High'], ['normal', 'Normal'], ['low', 'Data saver']])}</div>
+      <div class="setting"><div><b>Crossfade</b><p>Blend the end of one song into the start of the next.</p></div>
+        ${select('crossfade', [[0, 'Off'], [2, '2 seconds'], [4, '4 seconds'], [6, '6 seconds'], [8, '8 seconds'], [10, '10 seconds'], [12, '12 seconds']], 'number')}</div>
+      <div class="setting"><div><b>Gapless playback</b><p>The next song is buffered ahead of time, so albums play without silence between tracks.</p></div>${sw('gapless')}</div>
+      <div class="setting"><div><b>Autoplay</b><p>When your queue ends, keep playing similar songs, skipping ones you heard recently.</p></div>${sw('autoplay')}</div>
+      ${document.documentElement.classList.contains('native-app') ? `<div class="setting"><div><b>Song notifications</b><p>Show a notification when the song changes while OpenWave is in the background.</p></div>${sw('notifications')}</div>` : ''}
       <h2>Downloads</h2>
       <div class="setting"><div><b>Saved on this device</b><p id="dl-usage">${plural(offline.count, 'song')} • ${fmtBytes(await offline.usage().catch(() => 0))}. Downloads use the audio quality above.</p></div>
         <button class="btn danger" data-act="clear-downloads" ${offline.count ? '' : 'disabled'}>Delete all</button></div>
       <h2>Your data</h2>
-      <div class="setting"><div><b>Back up library</b><p>Liked songs, playlists and follows live only in this browser. Export them to move to another device.</p></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" data-act="export">Export</button><button class="btn" data-act="import">Import</button></div></div>
-      <div class="setting"><div><b>Reset</b><p>Delete everything stored by OpenWave in this browser.</p></div><button class="btn danger" data-act="reset">Reset</button></div>
+      <div class="setting"><div><b>Import playlists</b><p>From Spotify links, Exportify CSV files, YouTube playlists or plain song lists.</p></div><button class="btn" data-act="import-playlists">${icon('download')} Import</button></div>
+      <div class="setting"><div><b>Back up library</b><p>Download your library as a file, or restore one.</p></div>
+        <div class="btn-row"><button class="btn" data-act="export">Export</button><button class="btn" data-act="import">Restore</button></div></div>
+      ${p ? `<div class="setting"><div><b>Clear library</b><p>Remove likes, playlists, follows and history from this profile.</p></div><button class="btn danger" data-act="reset">Clear</button></div>
+      <div class="setting"><div><b>Delete profile</b><p>Permanently delete “${esc(p.name)}” from this server.</p></div><button class="btn danger" data-act="delete-profile">Delete</button></div>` : ''}
       <h2>About</h2>
       <div class="prose">
-        <p><b>OpenWave ${esc(health?.version || '')}</b> — free and open-source software under the GNU GPL v3. No ads, no accounts, no tracking, no premium tier. Ever.</p>
+        <p><b>OpenWave ${esc(health?.version || '')}</b> — free and open-source software under the GNU GPL v3. No ads, no subscriptions, no tracking, no premium tier. Ever.</p>
         <p>Catalog and streams come from YouTube's public endpoints via <a href="https://github.com/sigma67/ytmusicapi" target="_blank" rel="noopener">ytmusicapi</a> and <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener">yt-dlp</a>. OpenWave is not affiliated with or endorsed by YouTube or Google.</p>
-        <p>Server: ${health ? `online • JS runtime: ${esc(health.jsRuntimes.join(', ') || 'none found (install Deno or Node)')}` : 'unreachable'}</p>
-        <p>Keyboard: <b>Space</b> play/pause • <b>←/→</b> seek • <b>Shift+←/→</b> previous/next • <b>L</b> like • <b>M</b> mute • <b>/</b> search</p>
+        <p>Server: ${health ? `online • yt-dlp ${esc(health.ytDlp)} • JS runtime: ${esc(health.jsRuntimes.join(', ') || 'none found (install Deno or Node)')}${Object.keys(health.extractorUpdates || {}).length ? ' • update downloaded, restart OpenWave to apply' : ''}` : 'unreachable'}</p>
+        <p>Keyboard: <b>Space</b> play/pause • <b>←/→</b> seek • <b>Shift+←/→</b> previous/next • <b>L</b> like • <b>M</b> mute • <b>S</b> shuffle • <b>R</b> repeat • <b>/</b> search</p>
+        <p><a href="https://github.com/SaiSiddharthBS/OpenWave" target="_blank" rel="noopener">Source code on GitHub</a> · <a href="https://github.com/SaiSiddharthBS/OpenWave/issues" target="_blank" rel="noopener">Report a problem</a></p>
       </div></div>`,
   };
 }

@@ -1,148 +1,176 @@
 <div align="center">
 
-<img src="docs/logo.svg" width="96" alt="OpenWave logo">
+<img src="docs/logo.png" width="200" alt="OpenWave logo">
 
 # OpenWave
 
-**A free, open-source music and video player. You can search almost anything on YouTube, play it, and download it for offline listening.**
-<br>No ads. No accounts. No tracking. No premium tier.
+**Free, open-source music for everyone.** Search almost any song on YouTube, play it with no ads and no gaps, download it for offline listening, and keep your playlists in sync across your Mac, PC and phone.
+<br>No subscriptions. No accounts. No tracking. No premium tier. Ever.
 
 [![CI](https://github.com/SaiSiddharthBS/OpenWave/actions/workflows/ci.yml/badge.svg)](https://github.com/SaiSiddharthBS/OpenWave/actions/workflows/ci.yml)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-8f7cff.svg)](LICENSE)
-![Python](https://img.shields.io/badge/python-3.10%2B-ff6fae.svg)
-![Platforms](https://img.shields.io/badge/runs%20on-Android%20·%20iOS%20·%20Windows%20·%20macOS%20·%20Linux-555.svg)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-7b7bff.svg)](LICENSE)
+![Platforms](https://img.shields.io/badge/macOS%20app%20·%20Web%20·%20Android%20·%20iOS%20·%20Windows%20·%20Linux-2fc8ff.svg)
 
-[Features](#-features) · [Quick start](#-quick-start) · [Phone](#-use-it-on-your-phone) · [Offline](#-offline-listening) · [How it works](#-how-it-works) · [FAQ](#-faq) · [Contributing](#-contributing)
+[Get it](#-get-openwave) · [Features](#-features) · [Mac app](#-the-mac-app) · [Phone](#-on-your-phone) · [Switch from Spotify](#-bring-your-playlists) · [How it works](#-how-it-works) · [FAQ](#-faq) · [Contribute](#-contributing)
 
-<img src="docs/screenshots/home.png" alt="OpenWave home screen" width="100%">
+<img src="docs/screenshots/home.png" alt="OpenWave home with personal mixes" width="100%">
 
 </div>
 
+## ⬇️ Get OpenWave
+
+| You have | Do this |
+|---|---|
+| **A Mac** | Download the latest **OpenWave-…-macOS.dmg** from [Releases](https://github.com/SaiSiddharthBS/OpenWave/releases), drag OpenWave to Applications, then right-click → **Open** the first time. [More](#-the-mac-app) |
+| **Windows / Linux** | [Run the server](#-run-the-server) with one command, then open `http://localhost:8787` and use **Install app** in Chrome/Edge |
+| **A phone** | Open the address your Mac or PC shows (see [On your phone](#-on-your-phone)) and **Add to Home Screen** |
+| **A home server / VPS** | `docker compose up -d` and share it with your family. [More](#-run-the-server) |
+
 ## ✨ Features
 
-| | |
-|---|---|
-| 🔎 **Search YouTube** | Songs, music videos, albums, artists and playlists from YouTube Music, plus an **All of YouTube** tab for any other video. You can also paste a YouTube link. |
-| 🎧 **Background playback** | Audio-only streaming saves data, keeps playing with the screen off, and works with lock-screen and media-key controls. |
-| 🎬 **Song ⇄ Video toggle** | Switch between the song and its music video without losing your place. |
-| ⬇️ **Offline downloads** | Save songs, albums, playlists or your liked songs, then listen with no internet. |
-| 📻 **Autoplay radio** | When your queue ends, similar music keeps playing. You can also start a radio from any song or artist. |
-| 🎤 **Synced lyrics** | Lyrics scroll with the music, and you can tap a line to jump to it. |
-| 📚 **Your library** | Liked songs, playlists, saved albums, followed artists and history, all stored on your device. You can export and import it as a file. |
-| 🎛️ **Full player** | Queue, play next, shuffle, repeat one or all, three audio-quality levels, keyboard shortcuts. The queue is still there after you reload. |
-| 📱 **Installable everywhere** | A Progressive Web App for Android, iOS, Windows, macOS, Linux and ChromeOS. |
-| 🔒 **Private by design** | Your devices never talk to Google directly, and the server stores nothing about you. |
+**Listening**
+- 🔎 **Search almost anything on YouTube:** songs, albums, artists, playlists, music videos, plus an "All of YouTube" tab. You can also paste a YouTube or YouTube Music link.
+- 🎧 **Gapless playback** with optional **crossfade** (0–12 s). The next song buffers while the current one plays, so skipping is instant.
+- 📻 **Never-ending autoplay.** When the queue ends, similar music keeps playing, and songs you heard recently are skipped.
+- 🎤 **Synced lyrics** scroll with the song. Tap any line to jump to it.
+- 🌙 **Sleep timer** (5–90 minutes, or end of song) that fades the music out gently.
+- ⬇️ **Offline downloads.** Save songs, albums or playlists and listen with no internet.
+- 🎚️ **Audio quality:** OpenWave picks the best format your device plays (Opus or AAC, up to about 160 kbps), with a Data saver option.
+
+**Your music, remembered**
+- 👤 **Profiles** for everyone in the house, each with its own likes, playlists and history. You can add an optional PIN.
+- 🔄 **Sync** across every device that uses your OpenWave: your Mac, your phone and the family PC.
+- ❤️ **Liked songs, playlists you can drag to reorder, saved albums and followed artists.**
+- ✨ **Personal mixes on Home** ("Made for you", "Because you liked…"), built from what you actually play.
+- 📊 **Insights:** minutes listened, top artists, top songs and when you listen. You get a **shareable card** for social media.
+- 📥 **Import** from Spotify (paste a link or use an Exportify CSV), any YouTube playlist, or a plain song list.
+
+**Everywhere**
+- 🍎 **Native Mac app** with media keys, Control Center, a menu-bar mini player, notifications, a Dock menu and keyboard shortcuts.
+- 📱 **Installable web app** for Android, iPhone, Windows, Linux and ChromeOS.
+- 🔒 **Private by design.** Your devices never talk to Google directly, and nothing ever leaves the server you run.
 
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/now-playing-lyrics.png" alt="Now playing with synced lyrics"><p align="center"><sub>Now playing with synced lyrics</sub></p></td>
-    <td width="50%"><img src="docs/screenshots/video-queue.png" alt="Video mode with up-next queue"><p align="center"><sub>Video mode and the up-next queue</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/insights.png" alt="Listening insights"><p align="center"><sub>Your insights</sub></p></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/artist.png" alt="Artist page"><p align="center"><sub>Artist page</sub></p></td>
-    <td width="50%"><img src="docs/screenshots/offline.png" alt="Offline mode"><p align="center"><sub>Offline mode with downloads</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/profiles.png" alt="Profiles"><p align="center"><sub>A profile for everyone, synced everywhere</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/import.png" alt="Import from Spotify"><p align="center"><sub>Importing a Spotify playlist: 50 of 50 songs found</sub></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/artist.png" alt="Artist page"><p align="center"><sub>Artist pages</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/offline.png" alt="Offline mode"><p align="center"><sub>Offline mode plays your downloads</sub></p></td>
   </tr>
 </table>
 
 <p align="center">
-  <img src="docs/screenshots/mobile-search.png" width="260" alt="Search on a phone">
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/mobile-now-playing.png" width="260" alt="Now playing on a phone">
+  <img src="docs/screenshots/mobile-home.png" width="250" alt="Home on a phone">
+  &nbsp;
+  <img src="docs/screenshots/mobile-now-playing.png" width="250" alt="Now playing on a phone">
+  &nbsp;
+  <img src="docs/screenshots/share-card.png" width="250" alt="Shareable insights card">
 </p>
 
-## 🚀 Quick start
+## 🍎 The Mac app
 
-OpenWave is a small server plus a web app. Run the server once, on a PC, a home server or a VPS, and open it from any device.
+<img src="docs/screenshots/mac-app.png" alt="OpenWave for macOS" width="100%">
 
-### Option 1: one command (macOS / Linux / Windows)
+The Mac app runs everything itself, so there's nothing to install or configure:
+- **Media keys and Control Center:** play/pause, next and previous work from your keyboard, AirPods and the lock screen, with album art.
+- **Menu-bar mini player:** control the music without opening the window.<br><img src="docs/screenshots/mac-miniplayer.png" width="300" alt="Menu bar mini player">
+- **Keeps playing when you close the window,** just like Music.app.
+- **Native menus and shortcuts:** ⌘→ / ⌘← next/previous, ⌘L like, ⌘F search, ⌘1–5 to jump between sections, ⌘⇧I import.
+- **Song notifications** when OpenWave is in the background, and a Dock menu with playback controls.
+- **Listen on your phone:** in Settings → Phone, switch it on and scan the QR code.
+- **Stays working when YouTube changes.** The app updates its YouTube support automatically in the background.
+- `openwave://` links, for example `openwave://play/<videoId>`.
 
-You need [Python 3.10+](https://www.python.org/downloads/) and a JavaScript runtime, either [Deno](https://deno.com) or [Node.js 20+](https://nodejs.org). yt-dlp uses the runtime to solve YouTube's player challenges.
+> **First launch:** the app isn't notarised by Apple (that costs $99/year), so macOS asks you to confirm it. Right-click OpenWave in Applications → **Open** → **Open**. You only need to do this once.
+
+**Build it yourself** (requires Xcode and Python 3.11+ or [uv](https://docs.astral.sh/uv/)):
 
 ```bash
-git clone https://github.com/SaiSiddharthBS/OpenWave.git
-cd OpenWave
+./macos/build.sh        # → macos/dist/OpenWave.app and OpenWave-<version>-macOS-<arch>.dmg
+```
+
+## 🖥️ Run the server
+
+You run the server once on a PC, Mac, home server or VPS, and then open OpenWave from any device.
+
+**One command** (macOS / Linux / Windows). You need [Python 3.10+](https://www.python.org/downloads/) and [Deno](https://deno.com) or [Node.js 20+](https://nodejs.org):
+
+```bash
+git clone https://github.com/SaiSiddharthBS/OpenWave.git && cd OpenWave
 ./scripts/start.sh          # Windows: scripts\start.bat
 ```
 
-The first run sets everything up. Every run also updates `yt-dlp` and `ytmusicapi`, because YouTube changes often. Your browser then opens **http://localhost:8787**.
-
-### Option 2: Docker (home server, NAS or VPS)
+**Docker:**
 
 ```bash
-git clone https://github.com/SaiSiddharthBS/OpenWave.git
-cd OpenWave
-docker compose up -d --build
+git clone https://github.com/SaiSiddharthBS/OpenWave.git && cd OpenWave
+docker compose up -d --build        # profiles & libraries persist in the openwave-data volume
 ```
 
-Once a release is tagged, a prebuilt multi-arch image (amd64 + arm64) will be published, and this will work:
-
-```bash
-docker run -d --name openwave -p 8787:8787 --restart unless-stopped ghcr.io/saisiddharthbs/openwave:latest
-```
-
-### Option 3: pip
+**pip:**
 
 ```bash
 pip install git+https://github.com/SaiSiddharthBS/OpenWave.git
-openwave                    # options: --port 8787  --host 0.0.0.0  --no-browser
+openwave                    # --port 8787  --host 0.0.0.0  --no-browser
 ```
 
-## 📱 Use it on your phone
+## 📱 On your phone
 
-1. Start OpenWave on your computer. It prints an address like `Your phone: http://192.168.1.20:8787`.
-2. Open that address on your phone while it's on the **same Wi-Fi**.
-3. Install it as an app:
-   - **Android (Chrome):** use **⋮ → Install app**.
-   - **iPhone (Safari):** use **Share → Add to Home Screen**.
+1. Start OpenWave on your computer. Use the Mac app's **Settings → Phone** QR code, or the `Your phone: http://192.168.x.x:8787` address the server prints.
+2. Open it on your phone while you're on the same Wi-Fi, and pick your profile. Your library is already there.
+3. Install it:
+   - **iPhone:** in Safari, use **Share → Add to Home Screen**.
+   - **Android:** in Chrome, use **⋮ → Install app**.
 
-To install it as a full app and listen offline away from home, browsers require **HTTPS**. Any of these free options work:
+To listen away from home and use offline mode on a phone, use HTTPS. Tailscale is the easiest way (`tailscale serve 8787`); a Cloudflare Tunnel or a VPS with [Caddy](https://caddyserver.com) also work.
 
-| Option | Command |
-|---|---|
-| [Tailscale](https://tailscale.com) (private, only your devices) | `tailscale serve 8787` |
-| [Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/) | `cloudflared tunnel --url http://localhost:8787` |
-| VPS + [Caddy](https://caddyserver.com) | `caddy reverse-proxy --from your.domain --to localhost:8787` |
+## 🔁 Bring your playlists
 
-## ⬇️ Offline listening
+Go to **Library → Import** (or ⌘⇧I on Mac) and use any of these:
+- **A Spotify playlist or album link.** Public playlists work; Spotify only shares the first 100 songs of a link.
+- **An [Exportify](https://exportify.app) CSV** with all your Spotify playlists, at any size.
+- **A YouTube or YouTube Music playlist link.**
+- **A pasted list,** one `Artist - Title` per line.
 
-- **One song:** use **⋯ → Download**.
-- **A whole collection:** on an album, a playlist, Liked songs or one of your own playlists, use the **download button** next to Play.
-- **Badges and storage:** downloaded songs show a ↓ badge and are listed under **Downloads**. **Settings → Downloads** shows how much space they use.
-- **Without a connection:** the app still opens and plays your downloads, and skips anything that isn't downloaded.
-- **Size:** downloads use your **Audio quality** setting, roughly 1 MB per minute.
-- **Where they're stored:** downloads stay inside the app, in this browser on this device. Clearing the site's data removes them.
+OpenWave matches every song on YouTube Music, comparing title, artist and length, and builds the playlist for you. In testing, it matched 50 of 50 songs from Spotify's "Today's Top Hits" in about 12 seconds.
 
 ## 🧠 How it works
 
 ```
- Your phone / PC (PWA)                        OpenWave server (FastAPI)                 YouTube
-┌───────────────────────────┐  /api/search   ┌───────────────────────────────┐
-│ UI · queue · lyrics       │ ─────────────▶ │ ytmusicapi → search, albums,  │ ───▶ music.youtube.com
-│ library (localStorage)    │  /api/album…   │   artists, radio, lyrics      │
-│ downloads (IndexedDB)     │                │                               │
-│ <audio> / <video>+hls.js  │  /api/stream   │ yt-dlp → stream URLs          │ ───▶ youtube.com
-│ service worker (offline)  │ ◀───────────── │ byte-range proxy              │ ◀─── googlevideo.com
-└───────────────────────────┘                └───────────────────────────────┘
+ Mac app / browser / phone                     OpenWave server (FastAPI)                     YouTube
+┌──────────────────────────────┐ /api/search  ┌──────────────────────────────────┐
+│ UI · queue · lyrics          │────────────▶ │ ytmusicapi → catalog, radio,     │ ──▶ music.youtube.com
+│ 2 audio decks (gapless/xfade)│ /api/me/*    │   lyrics                         │
+│ downloads (IndexedDB)        │────────────▶ │ SQLite → profiles, likes,        │
+│ offline outbox → sync        │              │   playlists, plays, insights     │
+│                              │ /api/stream  │ yt-dlp (+Deno) → streams         │ ──▶ youtube.com
+│ Mac: Swift shell + bridge    │◀──────────── │ byte-range proxy                 │ ◀── googlevideo.com
+└──────────────────────────────┘              └──────────────────────────────────┘
 ```
 
-- **Why a server?** YouTube ties every stream URL to the IP address that asked for it, and browsers can't call YouTube's APIs directly. The server resolves streams and proxies the bytes. It supports range requests, so seeking works.
-- **Fast starts.** yt-dlp first tries a client whose URLs play immediately, so a song starts in about 3 seconds. If YouTube refuses that client, the server switches to sturdier clients in the middle of the song. The files are byte-identical, so you won't hear a glitch. The next track is fetched ahead of time, so skipping is instant.
-- **Privacy.** Thumbnails go through the same proxy, so your devices never contact Google. Your library and downloads never leave your device.
+- **Streaming:** YouTube ties stream URLs to the IP that asked for them, so the server proxies the audio with range requests. Your devices never contact Google.
+- **Your library:** it lives in a SQLite database on your server, one per profile. Changes apply instantly on the device you're using, queue up while you're offline, and sync when you're back. Other devices pick them up within seconds.
+- **The Mac app:** a native Swift app (AppKit + SwiftUI) that runs a self-contained copy of the server and shows the same interface, so every feature reaches every platform at once.
 
 <details>
-<summary><b>HTTP API</b>: build your own client (interactive docs at <code>/api/docs</code>)</summary>
+<summary><b>HTTP API</b> (interactive docs at <code>/api/docs</code>)</summary>
 
 | Endpoint | Returns |
 |---|---|
 | `GET /api/search?q=&type=all\|songs\|videos\|albums\|artists\|playlists\|youtube` | normalised results |
-| `GET /api/suggest?q=` | search suggestions |
-| `GET /api/home` | recommendation shelves |
-| `GET /api/album/{browseId}` · `/api/playlist/{id}` · `/api/artist/{channelId}` | detail pages |
-| `GET /api/next/{videoId}` | radio / up-next tracks |
-| `GET /api/lyrics/{videoId}` | synced or plain lyrics |
-| `GET /api/stream/{videoId}?q=high\|normal\|low` | audio bytes (range requests supported) |
-| `GET /api/video/{videoId}` | HLS manifest for video mode |
-| `GET /api/download/{videoId}?q=` | the complete audio file (for offline downloads) |
+| `GET /api/home` · `/api/album/{id}` · `/api/playlist/{id}` · `/api/artist/{id}` | catalog pages |
+| `GET /api/next/{videoId}` · `/api/lyrics/{videoId}` | radio, lyrics |
+| `GET /api/stream/{videoId}?q=&codec=opus\|aac` · `/api/download/{videoId}` | audio |
+| `GET/POST /api/profiles` · `POST /api/profiles/{id}/login` | profiles & sign-in |
+| `GET /api/me/library` · `POST /api/me/ops` · `GET /api/me/version` | library sync |
+| `GET /api/me/stats` · `/api/me/mixes` · `/api/me/radio/{videoId}` | insights, mixes, personal radio |
+| `POST /api/import/parse` · `/api/import/match` | playlist import |
 
 </details>
 
@@ -151,56 +179,42 @@ To install it as a full app and listen offline away from home, browsers require 
 
 | Env var | Effect |
 |---|---|
+| `OPENWAVE_DATA` | Where profiles and libraries are stored (default: your OS's app-data folder; `/data` in Docker) |
 | `OPENWAVE_LOCATION` | Region for recommendations, e.g. `US`, `IN`, `GB` |
 | `OPENWAVE_LANGUAGE` | Metadata language, e.g. `en`, `hi`, `es` |
-
-</details>
-
-<details>
-<summary><b>Keyboard shortcuts</b></summary>
-
-| Key | Action |
-|---|---|
-| `Space` / `K` | Play / pause |
-| `←` / `→` | Seek 5 s |
-| `Shift + ←` / `Shift + →` | Previous / next |
-| `L` | Like |
-| `M` | Mute |
-| `S` / `R` | Shuffle / repeat |
-| `/` | Search |
 
 </details>
 
 ## ❓ FAQ
 
 **Is it really free?**
-Yes, and it always will be. There are no ads, no subscriptions and no paid features. The GPL-3.0 license means every distributed version must stay free and open source.
+Yes, forever. There's nothing to buy, and the GPL-3.0 license keeps every version of OpenWave free and open source.
 
-**Playback suddenly stopped working for everything.**
-YouTube changes its internals often. Update the extractors with `pip install -U "yt-dlp[default]" ytmusicapi`. The start scripts do this automatically, and Docker users can rebuild or pull the image. **Settings → About** shows whether the server found a JavaScript runtime.
+**Do I need an account?**
+No. Profiles are just names, with an optional PIN, stored on your own server. There's no email and no sign-up.
+
+**Playback stopped working for everything.**
+YouTube changes things now and then. The Mac app updates its YouTube support by itself. For a server, run `pip install -U "yt-dlp[default]" ytmusicapi` (the start scripts do this automatically) or rebuild the Docker image.
 
 **Does it work on iPhone?**
-Yes, in Safari. Use the **Normal** audio quality, which uses AAC and plays everywhere. iOS is stricter than Android about background playback for installed web apps.
+Yes, in Safari: use **Add to Home Screen**. OpenWave automatically uses formats iOS plays well.
 
-**Do I need a YouTube or Google account?**
-No. OpenWave never asks you to sign in.
-
-**Can I host it for my friends or family?**
-Yes. Run it with Docker on any server and put HTTPS in front of it. Each person's library and downloads stay on their own device.
+**Can my family use it?**
+Yes. Run it on one computer or server and give everyone their own profile.
 
 ## 🗺️ Roadmap
 
-- [ ] Native Android / iOS apps (Capacitor) and desktop app (Tauri)
-- [ ] Sleep timer, crossfade, equalizer
-- [ ] Drag-to-reorder in the queue and playlists
-- [ ] Import playlists from other services
+- [ ] Windows desktop app (the macOS shell ported to Windows)
+- [ ] Native Android & iOS wrappers
+- [ ] Equalizer and loudness normalisation
+- [ ] Collaborative playlists across profiles
 - [ ] Translations
 
-Ideas and help are welcome. [Open an issue](https://github.com/SaiSiddharthBS/OpenWave/issues).
+Ideas are welcome: [open an issue](https://github.com/SaiSiddharthBS/OpenWave/issues).
 
 ## 🤝 Contributing
 
-Contributions of any size are welcome: code, design, docs, translations and bug reports. See **[CONTRIBUTING.md](CONTRIBUTING.md)** to get started.
+OpenWave is built by people who believe music should be free to enjoy. Code, design, translations, docs and bug reports all help. Start with **[CONTRIBUTING.md](CONTRIBUTING.md)**.
 
 ```bash
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
@@ -208,22 +222,16 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest
 ```
 
-The frontend in `openwave/web/` is plain HTML, CSS and ES modules with no build step: edit a file and reload.
-
 ## 🙏 Built with
 
-- [yt-dlp](https://github.com/yt-dlp/yt-dlp) for stream extraction
-- [ytmusicapi](https://github.com/sigma67/ytmusicapi) for the YouTube Music catalog
-- [FastAPI](https://fastapi.tiangolo.com) and [httpx](https://www.python-httpx.org) for the server
-- [hls.js](https://github.com/video-dev/hls.js) (Apache-2.0, vendored) for video playback
-- Inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io)
+[yt-dlp](https://github.com/yt-dlp/yt-dlp) · [ytmusicapi](https://github.com/sigma67/ytmusicapi) · [FastAPI](https://fastapi.tiangolo.com) · [hls.js](https://github.com/video-dev/hls.js) · [Deno](https://deno.com) · [PyInstaller](https://pyinstaller.org). Inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
 
 ## ⚖️ Disclaimer
 
-OpenWave is an independent project. It is **not affiliated with, endorsed by, or connected to YouTube or Google**. It hosts no content: it is a client for publicly available content, built on the same open-source libraries other community projects use. Using third-party clients may go against YouTube's Terms of Service. OpenWave is meant for personal use; please respect copyright and the artists you listen to.
+OpenWave is an independent project. It is **not affiliated with, endorsed by, or connected to YouTube, Google or Spotify**. It hosts no content: it's a client for publicly available content, built on the same open-source libraries other community projects use. Using third-party clients may go against YouTube's Terms of Service. OpenWave is meant for personal use; please support the artists you love.
 
 ## 📄 License
 
 [GNU General Public License v3.0 or later](LICENSE).
 
-<div align="center"><sub>Made with ♥ so that everyone can enjoy music freely.</sub></div>
+<div align="center"><sub>Made with ♥ so that everyone, everywhere, can enjoy music freely.</sub></div>

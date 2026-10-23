@@ -14,12 +14,21 @@ from urllib.parse import parse_qs, urlparse
 
 import yt_dlp
 
+from .config import bin_dir
 from .music import cached, parse_duration
 
 
 def _js_runtimes() -> dict:
     # yt-dlp needs a JavaScript runtime to solve YouTube's player challenges.
-    return {name: {} for name in ("deno", "node", "bun") if shutil.which(name)}
+    # A packaged app ships its own Deno; otherwise use whatever is on PATH.
+    found = {}
+    bundled = bin_dir()
+    for name in ("deno", "node", "bun"):
+        if bundled and (bundled / name).is_file():
+            found[name] = {"path": str(bundled / name)}
+        elif shutil.which(name):
+            found[name] = {}
+    return found
 
 
 BASE_OPTS = {
@@ -31,11 +40,20 @@ BASE_OPTS = {
     "js_runtimes": _js_runtimes(),
 }
 
+# Preference order of itags per codec and quality. Opus/WebM is preferred wherever the client can
+# play it: besides sounding better, WebKit misreads the length of YouTube's AAC files (it reports
+# double), which breaks seeking and end-of-track detection in Safari and the macOS app.
 AUDIO_QUALITY = {
-    # preference order of itags per quality setting
-    "high": ["251", "140", "250", "249", "139"],  # opus 160k first
-    "normal": ["140", "251", "250", "249", "139"],  # aac 128k: plays everywhere, incl. Safari
-    "low": ["249", "139", "250", "140", "251"],
+    "opus": {
+        "high": ["251", "250", "140", "249", "139"],
+        "normal": ["251", "250", "140", "249", "139"],
+        "low": ["249", "250", "139", "251", "140"],
+    },
+    "aac": {
+        "high": ["140", "251", "250", "249", "139"],
+        "normal": ["140", "251", "250", "249", "139"],
+        "low": ["139", "140", "249", "250", "251"],
+    },
 }
 
 # The visionOS client hands out URLs that work immediately. yt-dlp's default clients are
@@ -129,9 +147,11 @@ async def resolve(video_id: str, force: bool = False, robust: bool = False) -> d
     return info
 
 
-def pick_audio(info: dict, quality: str = "normal") -> dict | None:
+def pick_audio(info: dict, quality: str = "normal", codec: str | None = None) -> dict | None:
     fmts = info["formats"]
-    for itag in AUDIO_QUALITY.get(quality, AUDIO_QUALITY["normal"]):
+    codec = codec if codec in AUDIO_QUALITY else ("opus" if quality == "high" else "aac")  # older clients sent no codec
+    table = AUDIO_QUALITY[codec]
+    for itag in table.get(quality, table["normal"]):
         if itag in fmts:
             return fmts[itag]
     audio_only = [f for f in fmts.values() if f["audio"] and not f["video"]]

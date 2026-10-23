@@ -19,6 +19,13 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: pytest -q
 
+  macos-app:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile the Swift app
+        run: cd macos && swift build -c release
+
   docker:
     runs-on: ubuntu-latest
     steps:

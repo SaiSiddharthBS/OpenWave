@@ -5,14 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>OpenWave</title>
   <meta name="description" content="Free and open-source music & video player. No ads, no accounts, no premium.">
-  <meta name="theme-color" content="#0b0b10">
+  <meta name="theme-color" content="#0a0b14">
   <meta name="color-scheme" content="dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
-  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="icon" href="/icons/favicon-64.png" type="image/png" sizes="64x64">
+  <link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
   <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
@@ -34,6 +35,12 @@
   <symbol id="i-download" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></symbol>
   <symbol id="i-downloaded" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path fill="none" stroke="#0b0b10" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M12 7v8m-3.5-3.5L12 15l3.5-3.5"/></symbol>
   <symbol id="i-offline" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M8.5 8.6A6 6 0 0 0 6.2 10 4.5 4.5 0 0 0 7 19h10m3.3-1.8A4 4 0 0 0 17 10.2a6 6 0 0 0-6.6-4.6"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="10.5" width="14" height="10" rx="2"/><path fill="none" stroke="currentColor" stroke-width="2" d="M8 10.5V8a4 4 0 0 1 8 0v2.5"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 14.6A8.5 8.5 0 0 1 9.4 3.5a.6.6 0 0 0-.8-.7A9.5 9.5 0 1 0 21.2 15.4a.6.6 0 0 0-.7-.8z"/></symbol>
+  <symbol id="i-chart" viewBox="0 0 24 24"><rect x="4" y="12" width="3.5" height="8" rx="1.2"/><rect x="10.25" y="6" width="3.5" height="14" rx="1.2"/><rect x="16.5" y="9" width="3.5" height="11" rx="1.2"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12M7.5 7.5 12 3l4.5 4.5M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></symbol>
+  <symbol id="i-grip" viewBox="0 0 24 24"><circle cx="9" cy="6" r="1.6"/><circle cx="15" cy="6" r="1.6"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/><circle cx="9" cy="18" r="1.6"/><circle cx="15" cy="18" r="1.6"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path d="M12 2.5l2.2 6.3 6.3 2.2-6.3 2.2L12 19.5l-2.2-6.3L3.5 11l6.3-2.2zM19 16l.9 2.1L22 19l-2.1.9L19 22l-.9-2.1L16 19l2.1-.9z"/></symbol>
   <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
   <symbol id="i-queue" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 6h13M3 12h13M3 18h8"/><path d="M15 15.2v6.6a.6.6 0 0 0 .9.5l5-3.3a.6.6 0 0 0 0-1l-5-3.3a.6.6 0 0 0-.9.5z"/></symbol>
   <symbol id="i-lyrics" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8 8h8M8 12h5"/></symbol>
@@ -53,17 +60,17 @@
   <symbol id="i-next-up" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 6h12M3 12h12M3 18h7"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M18 13v8m-4-4h8"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
   <symbol id="i-expand" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
-  <symbol id="i-logo" viewBox="0 0 32 32"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M5 16h2.5M10.5 10v12M16 6v20M21.5 11v10M27 16h0"/></symbol>
 </svg>
 
 <div class="app">
   <aside class="sidebar">
-    <a class="brand" href="#/home"><span class="logo"><svg><use href="#i-logo"/></svg></span>OpenWave</a>
+    <a class="brand" href="#/home"><img class="logo-img" src="/icons/logo-mark-64.png" alt="">OpenWave</a>
     <nav class="side-nav">
       <a href="#/home" data-route="home"><svg><use href="#i-home"/></svg>Home</a>
       <a href="#/search" data-route="search"><svg><use href="#i-search"/></svg>Search</a>
       <a href="#/library" data-route="library"><svg><use href="#i-library"/></svg>Your Library</a>
       <a href="#/downloads" data-route="downloads"><svg><use href="#i-download"/></svg>Downloads</a>
+      <a href="#/insights" data-route="insights"><svg><use href="#i-chart"/></svg>Insights</a>
     </nav>
     <div class="offline-pill" hidden><svg><use href="#i-offline"/></svg>Offline — playing downloads</div>
     <div class="side-lib">
@@ -81,13 +88,16 @@
         <button class="icon-btn round" data-act="back" aria-label="Back"><svg><use href="#i-back"/></svg></button>
         <button class="icon-btn round" data-act="forward" aria-label="Forward"><svg><use href="#i-forward"/></svg></button>
       </div>
-      <a class="brand mobile-only" href="#/home"><span class="logo"><svg><use href="#i-logo"/></svg></span>OpenWave</a>
+      <a class="brand mobile-only" href="#/home"><img class="logo-img" src="/icons/logo-mark-64.png" alt="">OpenWave</a>
       <form class="searchbar" id="search-form" role="search" autocomplete="off">
         <svg><use href="#i-search"/></svg>
         <input id="search-input" type="search" enterkeyhint="search" placeholder="Songs, artists, videos — or paste a YouTube link" aria-label="Search">
         <div class="suggest" id="suggest" hidden></div>
       </form>
-      <a class="icon-btn round" href="#/settings" aria-label="Settings"><svg><use href="#i-settings"/></svg></a>
+      <div class="top-actions">
+        <a class="icon-btn round" href="#/settings" aria-label="Settings"><svg><use href="#i-settings"/></svg></a>
+        <button class="profile-chip" id="profile-chip" data-act="profile-menu" aria-label="Profile"></button>
+      </div>
     </header>
     <div class="view" id="view"></div>
   </main>
@@ -121,6 +131,7 @@
     <button class="icon-btn toggle" data-act="np-video" data-bind="video-mode" title="Watch video" aria-label="Video"><svg><use href="#i-video"/></svg></button>
     <button class="icon-btn" data-act="np-lyrics" title="Lyrics" aria-label="Lyrics"><svg><use href="#i-lyrics"/></svg></button>
     <button class="icon-btn" data-act="np-queue" title="Queue" aria-label="Queue"><svg><use href="#i-queue"/></svg></button>
+    <button class="icon-btn toggle" data-act="sleep" title="Sleep timer" aria-label="Sleep timer"><svg><use href="#i-moon"/></svg></button>
     <button class="icon-btn" data-act="mute" data-bind="mute" aria-label="Mute"><svg><use href="#i-volume"/></svg></button>
     <input type="range" class="range vol" id="volume" min="0" max="100" value="80" aria-label="Volume">
     <button class="icon-btn" data-act="open-np" title="Now playing" aria-label="Expand"><svg><use href="#i-expand"/></svg></button>
@@ -139,6 +150,7 @@
   <header class="np-head">
     <button class="icon-btn round" data-act="close-np" aria-label="Close"><svg><use href="#i-down"/></svg></button>
     <div class="np-from ellipsis"><small>Playing from</small><b data-bind="context">Queue</b></div>
+    <button class="icon-btn toggle" data-act="sleep" title="Sleep timer" aria-label="Sleep timer"><svg><use href="#i-moon"/></svg></button>
     <div class="seg" role="tablist">
       <button data-act="mode-audio" data-bind="mode-audio">Song</button>
       <button data-act="mode-video" data-bind="mode-video">Video</button>

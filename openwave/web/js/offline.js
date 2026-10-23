@@ -39,9 +39,8 @@ async function tx(mode, fn) {
 const emit = (type, detail) => events.dispatchEvent(new CustomEvent(type, { detail }));
 
 function quality() {
-  let q = store.settings.quality;
-  if (q === 'high' && !document.createElement('audio').canPlayType('audio/webm; codecs="opus"')) q = 'normal';
-  return q;
+  const codec = document.createElement('audio').canPlayType('audio/webm; codecs="opus"') ? 'opus' : 'aac';
+  return `${store.settings.quality}&codec=${codec}`;
 }
 
 async function fetchWithProgress(url, onProgress) {
