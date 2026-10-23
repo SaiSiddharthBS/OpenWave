@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openwave"
+version = "0.1.0"
+description = "Free, open-source music & video player backed by YouTube. No ads, no accounts, no premium."
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.10"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "httpx>=0.27",
+  "ytmusicapi>=1.10",
+  "yt-dlp[default]>=2025.11.12",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "playwright>=1.48"]
+
+[project.scripts]
+openwave = "openwave.__main__:main"
+
+[tool.setuptools]
+packages = ["openwave"]
+
+[tool.setuptools.package-data]
+openwave = ["web/*", "web/**/*"]

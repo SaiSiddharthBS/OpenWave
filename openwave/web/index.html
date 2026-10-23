@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>OpenWave</title>
+  <meta name="description" content="Free and open-source music & video player. No ads, no accounts, no premium.">
+  <meta name="theme-color" content="#0b0b10">
+  <meta name="color-scheme" content="dark">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5.5v-6h-5v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M10.5 18a7.5 7.5 0 1 0 0-15 7.5 7.5 0 0 0 0 15zM16 16l5 5"/></symbol>
+  <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 3h2.5v18H4zM9 3h2.5v18H9zm4.6 1.2 2.4-.7 5 17.3-2.4.7z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5.1v13.8a1 1 0 0 0 1.5.86l11-6.9a1 1 0 0 0 0-1.72l-11-6.9A1 1 0 0 0 8 5.1z"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><rect x="6" y="4.5" width="4" height="15" rx="1.2"/><rect x="14" y="4.5" width="4" height="15" rx="1.2"/></symbol>
+  <symbol id="i-next" viewBox="0 0 24 24"><path d="M5 5.6v12.8a.8.8 0 0 0 1.2.7l9.3-6.4a.8.8 0 0 0 0-1.4L6.2 4.9a.8.8 0 0 0-1.2.7zM17 5h2.4v14H17z"/></symbol>
+  <symbol id="i-prev" viewBox="0 0 24 24"><path d="M19 5.6v12.8a.8.8 0 0 1-1.2.7L8.5 12.7a.8.8 0 0 1 0-1.4l9.3-6.4a.8.8 0 0 1 1.2.7zM4.6 5H7v14H4.6z"/></symbol>
+  <symbol id="i-shuffle" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3"/></symbol>
+  <symbol id="i-repeat-one" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m17 2 4 4-4 4M3 11V9a3 3 0 0 1 3-3h15M7 22l-4-4 4-4m14-1v2a3 3 0 0 1-3 3H3"/><path d="M11 10h2v5h-2z"/></symbol>
+  <symbol id="i-heart" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 20.5s-8-4.9-8-11A4.5 4.5 0 0 1 12 6.7a4.5 4.5 0 0 1 8 2.8c0 6.1-8 11-8 11z"/></symbol>
+  <symbol id="i-heart-fill" viewBox="0 0 24 24"><path d="M12 20.5s-8-4.9-8-11A4.5 4.5 0 0 1 12 6.7a4.5 4.5 0 0 1 8 2.8c0 6.1-8 11-8 11z"/></symbol>
+  <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></symbol>
+  <symbol id="i-close" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="m6 6 12 12M18 6 6 18"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></symbol>
+  <symbol id="i-downloaded" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path fill="none" stroke="#0b0b10" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M12 7v8m-3.5-3.5L12 15l3.5-3.5"/></symbol>
+  <symbol id="i-offline" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M8.5 8.6A6 6 0 0 0 6.2 10 4.5 4.5 0 0 0 7 19h10m3.3-1.8A4 4 0 0 0 17 10.2a6 6 0 0 0-6.6-4.6"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-queue" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 6h13M3 12h13M3 18h8"/><path d="M15 15.2v6.6a.6.6 0 0 0 .9.5l5-3.3a.6.6 0 0 0 0-1l-5-3.3a.6.6 0 0 0-.9.5z"/></symbol>
+  <symbol id="i-lyrics" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H9l-5 4z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M8 8h8M8 12h5"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="2.5" y="5" width="14" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="m17 10.5 4.5-3v9l-4.5-3z"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M3 9.5v5a1 1 0 0 0 1 1h3l4.4 3.7a.6.6 0 0 0 1-.5V5.3a.6.6 0 0 0-1-.5L7 8.5H4a1 1 0 0 0-1 1z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M16 8.5a5 5 0 0 1 0 7M18.8 5.5a9 9 0 0 1 0 13"/></symbol>
+  <symbol id="i-mute" viewBox="0 0 24 24"><path d="M3 9.5v5a1 1 0 0 0 1 1h3l4.4 3.7a.6.6 0 0 0 1-.5V5.3a.6.6 0 0 0-1-.5L7 8.5H4a1 1 0 0 0-1 1z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="m16 9.5 5 5m0-5-5 5"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-up" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m6 15 6-6 6 6"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m15 5-7 7 7 7"/></symbol>
+  <symbol id="i-forward" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="m9 5 7 7-7 7"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 0 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 0 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 0 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 0 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+  <symbol id="i-radio" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M7.8 7.8a6 6 0 0 0 0 8.4m8.4 0a6 6 0 0 0 0-8.4M5 5a10 10 0 0 0 0 14m14 0a10 10 0 0 0 0-14"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1 1M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1-1"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M9 7V4h6v3m-9 0 1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13"/></symbol>
+  <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0z"/></symbol>
+  <symbol id="i-album" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.5"/></symbol>
+  <symbol id="i-next-up" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 6h12M3 12h12M3 18h7"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M18 13v8m-4-4h8"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
+  <symbol id="i-expand" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 32 32"><path fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" d="M5 16h2.5M10.5 10v12M16 6v20M21.5 11v10M27 16h0"/></symbol>
+</svg>
+
+<div class="app">
+  <aside class="sidebar">
+    <a class="brand" href="#/home"><span class="logo"><svg><use href="#i-logo"/></svg></span>OpenWave</a>
+    <nav class="side-nav">
+      <a href="#/home" data-route="home"><svg><use href="#i-home"/></svg>Home</a>
+      <a href="#/search" data-route="search"><svg><use href="#i-search"/></svg>Search</a>
+      <a href="#/library" data-route="library"><svg><use href="#i-library"/></svg>Your Library</a>
+      <a href="#/downloads" data-route="downloads"><svg><use href="#i-download"/></svg>Downloads</a>
+    </nav>
+    <div class="offline-pill" hidden><svg><use href="#i-offline"/></svg>Offline — playing downloads</div>
+    <div class="side-lib">
+      <div class="side-head">
+        <span>Playlists</span>
+        <button class="icon-btn sm" data-act="new-playlist" title="New playlist" aria-label="New playlist"><svg><use href="#i-plus"/></svg></button>
+      </div>
+      <div class="side-list" id="side-list"></div>
+    </div>
+  </aside>
+
+  <main class="main" id="main">
+    <header class="topbar" id="topbar">
+      <div class="nav-arrows">
+        <button class="icon-btn round" data-act="back" aria-label="Back"><svg><use href="#i-back"/></svg></button>
+        <button class="icon-btn round" data-act="forward" aria-label="Forward"><svg><use href="#i-forward"/></svg></button>
+      </div>
+      <a class="brand mobile-only" href="#/home"><span class="logo"><svg><use href="#i-logo"/></svg></span>OpenWave</a>
+      <form class="searchbar" id="search-form" role="search" autocomplete="off">
+        <svg><use href="#i-search"/></svg>
+        <input id="search-input" type="search" enterkeyhint="search" placeholder="Songs, artists, videos — or paste a YouTube link" aria-label="Search">
+        <div class="suggest" id="suggest" hidden></div>
+      </form>
+      <a class="icon-btn round" href="#/settings" aria-label="Settings"><svg><use href="#i-settings"/></svg></a>
+    </header>
+    <div class="view" id="view"></div>
+  </main>
+</div>
+
+<footer class="playerbar" id="playerbar" data-empty>
+  <div class="pb-progress-mini"><i data-bind="progress"></i></div>
+  <div class="pb-left" data-act="open-np">
+    <img class="pb-art" data-bind="art-sm" alt="">
+    <div class="pb-meta">
+      <div class="pb-title ellipsis" data-bind="title">Nothing playing</div>
+      <div class="pb-artist ellipsis" data-bind="artists">Search for something to play</div>
+    </div>
+    <button class="icon-btn like-btn desktop-only" data-act="like-current" aria-label="Like"><svg><use href="#i-heart"/></svg></button>
+  </div>
+  <div class="pb-center">
+    <div class="controls">
+      <button class="icon-btn toggle desktop-only" data-act="shuffle" data-bind="shuffle" aria-label="Shuffle"><svg><use href="#i-shuffle"/></svg></button>
+      <button class="icon-btn desktop-only" data-act="prev" aria-label="Previous"><svg><use href="#i-prev"/></svg></button>
+      <button class="play-btn" data-act="toggle" data-bind="play" aria-label="Play"><svg><use href="#i-play"/></svg></button>
+      <button class="icon-btn" data-act="next" aria-label="Next"><svg><use href="#i-next"/></svg></button>
+      <button class="icon-btn toggle desktop-only" data-act="repeat" data-bind="repeat" aria-label="Repeat"><svg><use href="#i-repeat"/></svg></button>
+    </div>
+    <div class="seek desktop-only">
+      <span class="time" data-bind="cur">0:00</span>
+      <input type="range" class="range" data-bind="seek" min="0" max="1000" value="0" step="1" aria-label="Seek">
+      <span class="time" data-bind="dur">0:00</span>
+    </div>
+  </div>
+  <div class="pb-right desktop-only">
+    <button class="icon-btn toggle" data-act="np-video" data-bind="video-mode" title="Watch video" aria-label="Video"><svg><use href="#i-video"/></svg></button>
+    <button class="icon-btn" data-act="np-lyrics" title="Lyrics" aria-label="Lyrics"><svg><use href="#i-lyrics"/></svg></button>
+    <button class="icon-btn" data-act="np-queue" title="Queue" aria-label="Queue"><svg><use href="#i-queue"/></svg></button>
+    <button class="icon-btn" data-act="mute" data-bind="mute" aria-label="Mute"><svg><use href="#i-volume"/></svg></button>
+    <input type="range" class="range vol" id="volume" min="0" max="100" value="80" aria-label="Volume">
+    <button class="icon-btn" data-act="open-np" title="Now playing" aria-label="Expand"><svg><use href="#i-expand"/></svg></button>
+  </div>
+</footer>
+
+<nav class="tabbar">
+  <a href="#/home" data-route="home"><svg><use href="#i-home"/></svg><span>Home</span></a>
+  <a href="#/search" data-route="search"><svg><use href="#i-search"/></svg><span>Search</span></a>
+  <a href="#/library" data-route="library"><svg><use href="#i-library"/></svg><span>Library</span></a>
+  <a href="#/downloads" data-route="downloads"><svg><use href="#i-download"/></svg><span>Downloads</span></a>
+</nav>
+
+<section class="np" id="np" hidden aria-label="Now playing">
+  <div class="np-bg" data-bind="np-bg"></div>
+  <header class="np-head">
+    <button class="icon-btn round" data-act="close-np" aria-label="Close"><svg><use href="#i-down"/></svg></button>
+    <div class="np-from ellipsis"><small>Playing from</small><b data-bind="context">Queue</b></div>
+    <div class="seg" role="tablist">
+      <button data-act="mode-audio" data-bind="mode-audio">Song</button>
+      <button data-act="mode-video" data-bind="mode-video">Video</button>
+    </div>
+  </header>
+  <div class="np-body">
+    <div class="np-stage" id="np-stage">
+      <img class="np-art" data-bind="art" alt="">
+      <video id="video" playsinline preload="none"></video>
+      <div class="np-spinner" data-bind="spinner"></div>
+    </div>
+    <div class="np-panel">
+      <div class="tabs">
+        <button data-tab="queue" class="on">Up next</button>
+        <button data-tab="lyrics">Lyrics</button>
+      </div>
+      <div class="np-tab" id="np-queue"></div>
+      <div class="np-tab" id="np-lyrics" hidden></div>
+    </div>
+  </div>
+  <div class="np-controls">
+    <div class="np-meta">
+      <div class="ellipsis">
+        <div class="np-title ellipsis" data-bind="title"></div>
+        <div class="np-artist ellipsis" data-bind="artists"></div>
+      </div>
+      <button class="icon-btn like-btn" data-act="like-current" aria-label="Like"><svg><use href="#i-heart"/></svg></button>
+    </div>
+    <input type="range" class="range" data-bind="seek" min="0" max="1000" value="0" step="1" aria-label="Seek">
+    <div class="np-times"><span data-bind="cur">0:00</span><span data-bind="dur">0:00</span></div>
+    <div class="controls big">
+      <button class="icon-btn toggle" data-act="shuffle" data-bind="shuffle" aria-label="Shuffle"><svg><use href="#i-shuffle"/></svg></button>
+      <button class="icon-btn" data-act="prev" aria-label="Previous"><svg><use href="#i-prev"/></svg></button>
+      <button class="play-btn" data-act="toggle" data-bind="play" aria-label="Play"><svg><use href="#i-play"/></svg></button>
+      <button class="icon-btn" data-act="next" aria-label="Next"><svg><use href="#i-next"/></svg></button>
+      <button class="icon-btn toggle" data-act="repeat" data-bind="repeat" aria-label="Repeat"><svg><use href="#i-repeat"/></svg></button>
+    </div>
+    <div class="np-sheet-btns">
+      <button data-act="sheet-queue"><svg><use href="#i-queue"/></svg>Up next</button>
+      <button data-act="sheet-lyrics"><svg><use href="#i-lyrics"/></svg>Lyrics</button>
+    </div>
+  </div>
+</section>
+
+<div class="menu" id="menu" hidden role="menu"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<dialog class="dialog" id="dialog"></dialog>
+<audio id="audio" preload="auto"></audio>
+
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+services:
+  openwave:
+    build: .
+    image: openwave
+    ports:
+      - "8787:8787"
+    restart: unless-stopped
+    environment:
+      # Optional: shape recommendations, e.g. OPENWAVE_LOCATION=IN, OPENWAVE_LANGUAGE=en
+      - OPENWAVE_LOCATION=
+      - OPENWAVE_LANGUAGE=
