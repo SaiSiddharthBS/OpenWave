@@ -11,8 +11,6 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.media.AudioAttributes
-import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.os.Build
 import android.os.IBinder
@@ -29,14 +27,14 @@ import java.util.concurrent.Executors
 
 /**
  * Keeps OpenWave alive while music plays and connects it to Android: the media notification,
- * lock screen, Bluetooth/headset buttons, audio focus (calls, other apps) and "headphones unplugged".
+ * lock screen, Bluetooth/headset buttons and "headphones unplugged".
+ *
+ * Audio focus (calls, other apps) is left to the WebView: it requests focus itself when the page
+ * plays and pauses or ducks on loss. Requesting it here as well would steal focus from the
+ * WebView and pause every song the moment it starts.
  */
 class PlaybackService : Service() {
     private lateinit var session: MediaSessionCompat
-    private lateinit var audio: AudioManager
-    private var focusRequest: AudioFocusRequest? = null
-    private var hasFocus = false
-    private var pausedForFocusLoss = false
     private var noisyRegistered = false
     private val artworkLoader = Executors.newSingleThreadExecutor()
     private var artwork: Pair<String, Bitmap>? = null
@@ -44,7 +42,6 @@ class PlaybackService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        audio = getSystemService(AUDIO_SERVICE) as AudioManager
         createChannel()
         session = MediaSessionCompat(this, "OpenWave").apply {
             setCallback(object : MediaSessionCompat.Callback() {
@@ -75,7 +72,6 @@ class PlaybackService : Service() {
 
     override fun onDestroy() {
         Bridge.unobserve(onTrack)
-        abandonFocus()
         setNoisyReceiver(false)
         session.release()
         super.onDestroy()
@@ -111,10 +107,6 @@ class PlaybackService : Service() {
                     .build(),
             )
             if (t.artwork != null && artwork?.first != t.artwork) loadArtwork(t.artwork)
-            if (t.playing) {
-                requestFocus()
-                pausedForFocusLoss = false
-            }
             setNoisyReceiver(t.playing)
         }
         getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, buildNotification(t))
@@ -175,41 +167,7 @@ class PlaybackService : Service() {
     private fun foregroundType(): Int =
         if (Build.VERSION.SDK_INT >= 29) ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK else 0
 
-    // ------------------------------------------------------------------ audio focus & unplugging
-
-    private val focusListener = AudioManager.OnAudioFocusChangeListener { change ->
-        when (change) {
-            AudioManager.AUDIOFOCUS_LOSS -> { hasFocus = false; Bridge.command("pause") }
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
-                if (Bridge.track?.playing == true) { pausedForFocusLoss = true; Bridge.command("pause") }
-            }
-            AudioManager.AUDIOFOCUS_GAIN -> {
-                hasFocus = true
-                if (pausedForFocusLoss) { pausedForFocusLoss = false; Bridge.command("play") }
-            }
-        }
-    }
-
-    private fun requestFocus() {
-        if (hasFocus) return
-        hasFocus = if (Build.VERSION.SDK_INT >= 26) {
-            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
-                .setAudioAttributes(AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).build())
-                .setOnAudioFocusChangeListener(focusListener)
-                .build()
-            focusRequest = req
-            audio.requestAudioFocus(req) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        } else {
-            @Suppress("DEPRECATION")
-            audio.requestAudioFocus(focusListener, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN) == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-        }
-    }
-
-    private fun abandonFocus() {
-        if (Build.VERSION.SDK_INT >= 26) focusRequest?.let { audio.abandonAudioFocusRequest(it) }
-        else @Suppress("DEPRECATION") audio.abandonAudioFocus(focusListener)
-        hasFocus = false
-    }
+    // ------------------------------------------------------------------ unplugging
 
     private val noisy = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {

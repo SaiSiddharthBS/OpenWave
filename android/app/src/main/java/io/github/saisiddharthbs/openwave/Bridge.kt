@@ -77,6 +77,7 @@ object Bridge {
 
     /** Runs a player command in the page (queued until the page says it's ready). */
     fun command(name: String, arg: String? = null) {
+        android.util.Log.i(Engine.TAG, "command $name${arg?.let { " $it" } ?: ""}")
         main.post {
             val view = webView.get()
             if (!ready || view == null) {
