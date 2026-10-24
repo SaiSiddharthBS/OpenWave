@@ -1,11 +1,12 @@
-# Publishes the download page in site/ to GitHub Pages whenever a release is published
-# (so its download buttons always point at real files), or on demand.
+# Publishes the download page in site/ to GitHub Pages from main (the github-pages
+# environment only accepts deployments from the default branch).
 # One-time setup: repo Settings → Pages → Source: "GitHub Actions".
 name: Website
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
+    paths: ["site/**", "docs/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
