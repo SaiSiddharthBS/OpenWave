@@ -51,7 +51,10 @@ jobs:
         shell: pwsh
         run: |
           $env:OPENWAVE_VERSION = (python -c "import openwave; print(openwave.__version__)")
-          & "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" packaging/windows/openwave.iss
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y | Out-Null }
+          & $iscc packaging/windows/openwave.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
       - uses: actions/upload-artifact@v4
         with:
           name: OpenWave-Windows
