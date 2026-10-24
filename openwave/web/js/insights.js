@@ -3,6 +3,7 @@
 import { img } from './api.js';
 import { store } from './store.js';
 import { esc, icon, trackList, empty, toast } from './ui.js';
+import { shareFile } from './native.js';
 
 const RANGES = [[7, 'Last 7 days'], [30, 'Last 30 days'], [365, 'This year'], [3650, 'All time']];
 let last = null;
@@ -108,6 +109,7 @@ export async function shareInsights() {
   ctx.fillText('Free & open source · github.com/SaiSiddharthBS/OpenWave', 80, H - 80);
 
   const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+  if (await shareFile('my-openwave.png', blob)) return;
   const file = new File([blob], 'my-openwave.png', { type: 'image/png' });
   try {
     // Phones get the native share sheet; desktops save the image.

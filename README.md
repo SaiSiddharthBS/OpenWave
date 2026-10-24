@@ -9,7 +9,7 @@
 
 [![CI](https://github.com/SaiSiddharthBS/OpenWave/actions/workflows/ci.yml/badge.svg)](https://github.com/SaiSiddharthBS/OpenWave/actions/workflows/ci.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-7b7bff.svg)](LICENSE)
-![Platforms](https://img.shields.io/badge/macOS%20app%20·%20Web%20·%20Android%20·%20iOS%20·%20Windows%20·%20Linux-2fc8ff.svg)
+![Platforms](https://img.shields.io/badge/Android%20·%20macOS%20·%20Windows%20·%20Linux%20·%20iPhone%20(web)-2fc8ff.svg)
 
 **[⬇️ Download OpenWave](https://saisiddharthbs.github.io/OpenWave/)**
 
@@ -29,7 +29,8 @@ Everything is free. Pick your device:
 | 🍎 **Mac** (Intel) | [OpenWave-macOS-Intel.dmg](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-Intel.dmg) | Same as above |
 | 🪟 **Windows 10/11** | [OpenWave-Windows-Setup.exe](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Windows-Setup.exe) | If you see "Windows protected your PC", click **More info → Run anyway**. No admin needed. |
 | 🐧 **Linux** | [OpenWave-Linux-x86_64.AppImage](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Linux-x86_64.AppImage) | Make it executable (`chmod +x`), then double-click. |
-| 📱 **Phone** | Use the app on your computer: **Settings → Phone → scan the QR code** | Then **Add to Home Screen**. [More](#-on-your-phone) |
+| 🤖 **Android** (64-bit, Android 7+) | [OpenWave-Android.apk](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk) | Open the file and allow your browser to "install unknown apps" when asked. [More](#-on-your-phone) |
+| 📱 **iPhone** | Use OpenWave on your computer: **Settings → Phone → scan the QR code** | Then **Add to Home Screen** in Safari |
 | 🏠 **Home server** | `docker run -d -p 8787:8787 -v openwave:/data ghcr.io/saisiddharthbs/openwave` | Open `http://<server>:8787` on any device |
 
 Each desktop app is self-contained: there's nothing else to install. The files are attached to every [GitHub release](https://github.com/SaiSiddharthBS/OpenWave/releases); until the first release is out, you can [run the server](#-run-the-server) or [build the Mac app](#-the-mac-app) from source.
@@ -57,7 +58,8 @@ Each desktop app is self-contained: there's nothing else to install. The files a
 **Everywhere**
 - 🍎 **Native Mac app** with media keys, Control Center, a menu-bar mini player, notifications, a Dock menu and keyboard shortcuts.
 - 🪟 **Windows and Linux apps** that install in one click and open in their own window.
-- 📱 **Installable web app** for Android, iPhone and ChromeOS.
+- 🤖 **Android app** that runs everything on the phone. No computer needed.
+- 📱 **Installable web app** for iPhone and ChromeOS.
 - 🔒 **Private by design.** Your library stays on your own computer or server, there are no analytics, and your devices never contact Google directly.
 
 <table>
@@ -105,7 +107,7 @@ The Mac app runs everything itself, so there's nothing to install or configure:
 ./macos/build.sh        # → macos/dist/OpenWave.app and OpenWave-macOS-<AppleSilicon|Intel>.dmg
 ```
 
-**Windows and Linux** apps are built by [`.github/workflows/desktop.yml`](.github/workflows/desktop.yml). They bundle the same engine with a small launcher (`openwave/launcher.py`) that opens OpenWave in its own window, using Microsoft Edge on Windows or Chrome/Chromium on Linux.
+**Android** is built with `cd android && ./gradlew assembleRelease` (needs the Android SDK, JDK 17+ and Python 3.12). **Windows and Linux** apps are built by [`.github/workflows/desktop.yml`](.github/workflows/desktop.yml). They bundle the same engine with a small launcher (`openwave/launcher.py`) that opens OpenWave in its own window, using Microsoft Edge on Windows or Chrome/Chromium on Linux.
 
 ## 🖥️ Run the server
 
@@ -134,6 +136,16 @@ openwave                    # --port 8787  --host 0.0.0.0  --no-browser
 
 ## 📱 On your phone
 
+### Android
+1. Download **[OpenWave-Android.apk](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk)** on your phone and open it.
+2. Android asks you to allow your browser to install apps. Allow it, then tap **Install**.
+3. Open OpenWave and create your profile. Everything runs on the phone, so it works anywhere.
+
+**Automatic updates:** install [Obtainium](https://github.com/ImranR98/Obtainium) and add `https://github.com/SaiSiddharthBS/OpenWave`. It installs new versions as soon as they're released.
+
+**One library everywhere:** in **Settings → Library**, tap **Connect to computer** and enter the address shown in OpenWave on your computer (Settings → Phone). The phone then uses the same profiles and playlists as your computer.
+
+### iPhone (and any other phone)
 1. Start OpenWave on your computer. Use the Mac app's **Settings → Phone** QR code, or the `Your phone: http://192.168.x.x:8787` address the server prints.
 2. Open it on your phone while you're on the same Wi-Fi, and pick your profile. Your library is already there.
 3. Install it:
@@ -169,6 +181,7 @@ OpenWave matches every song on YouTube Music, comparing title, artist and length
 - **Streaming:** YouTube ties stream URLs to the IP that asked for them, so the server proxies the audio with range requests. Your devices never contact Google.
 - **Your library:** it lives in a SQLite database on your server, one per profile. Changes apply instantly on the device you're using, queue up while you're offline, and sync when you're back. Other devices pick them up within seconds.
 - **The Mac app:** a native Swift app (AppKit + SwiftUI) that runs a self-contained copy of the server and shows the same interface, so every feature reaches every platform at once.
+- **Android app:** the same Python engine runs on the phone through [Chaquopy](https://chaquo.com/chaquopy/), inside a native Kotlin app with Android's media notification, lock-screen and Bluetooth controls.
 - **Windows and Linux apps:** the same self-contained engine, plus a small launcher that opens OpenWave in an app window using Microsoft Edge or Chrome/Chromium.
 - **Songs, not videos:** when YouTube offers a music video, the server looks up its audio-track ("song") version, and radios are started from songs. You hear the record, not a film scene.
 
@@ -212,13 +225,13 @@ No. Profiles are just names, with an optional PIN, stored on your own server. Th
 No, on purpose. OpenWave always plays the song itself, so you never get film dialogue, intros or skits in the middle of your music.
 
 **Why isn't it on the App Store or Google Play?**
-Both stores reject apps that play YouTube content, which is why projects like NewPipe are distributed directly instead. OpenWave is downloaded from this page (or [the website](https://saisiddharthbs.github.io/OpenWave/)), and the source is open for anyone to check.
+Both stores reject apps that play YouTube content, which is why projects like NewPipe are distributed directly instead. OpenWave is downloaded from this page (or [the website](https://saisiddharthbs.github.io/OpenWave/)), and the source is open for anyone to check. On Android, [Obtainium](https://github.com/ImranR98/Obtainium) gives you store-style automatic updates.
 
 **Playback stopped working for everything.**
 YouTube changes things now and then. The Mac, Windows and Linux apps update their YouTube support by themselves in the background (restart the app to apply). For a server, run `pip install -U "yt-dlp[default]" ytmusicapi` (the start scripts do this automatically) or rebuild the Docker image.
 
-**Does it work on iPhone and Android?**
-Yes, through OpenWave on your computer or home server: open it in Safari or Chrome and use **Add to Home Screen**. OpenWave automatically uses formats iOS plays well. A standalone Android app that needs no computer is on the roadmap.
+**Does it work on Android and iPhone?**
+Android has its own app that runs everything on the phone. On iPhone, use OpenWave on your computer or home server: open it in Safari and use **Add to Home Screen**. OpenWave automatically uses formats iOS plays well.
 
 **Can my family use it?**
 Yes. Run it on one computer or server and give everyone their own profile.
@@ -228,7 +241,9 @@ Yes. Run it on one computer or server and give everyone their own profile.
 See what changed in each version in [CHANGELOG.md](CHANGELOG.md).
 
 
-- [ ] Standalone Android app (no computer needed), distributed as an APK, via Obtainium and on F-Droid
+- [x] Standalone Android app (no computer needed)
+- [ ] OpenWave on F-Droid / IzzyOnDroid
+- [ ] iPhone app (sideloading via AltStore)
 - [ ] Notarised Mac builds and signed Windows builds (no first-launch prompts)
 - [ ] Equalizer and loudness normalisation
 - [ ] Collaborative playlists across profiles
@@ -248,7 +263,7 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 
 ## 🙏 Built with
 
-[yt-dlp](https://github.com/yt-dlp/yt-dlp) · [ytmusicapi](https://github.com/sigma67/ytmusicapi) · [FastAPI](https://fastapi.tiangolo.com) · [Deno](https://deno.com) · [PyInstaller](https://pyinstaller.org). Inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
+[yt-dlp](https://github.com/yt-dlp/yt-dlp) · [ytmusicapi](https://github.com/sigma67/ytmusicapi) · [FastAPI](https://fastapi.tiangolo.com) · [Deno](https://deno.com) · [PyInstaller](https://pyinstaller.org) · [Chaquopy](https://chaquo.com/chaquopy/). Inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
 
 ## ⚖️ Disclaimer
 

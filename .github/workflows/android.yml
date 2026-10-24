@@ -1,0 +1,87 @@
+# Builds the Android app (OpenWave's engine runs on the phone via Chaquopy).
+# Release APKs must always be signed with the same key, so they're attached to a release only when
+# these repository secrets exist: OPENWAVE_KEYSTORE_B64, OPENWAVE_KEYSTORE_PASSWORD,
+# OPENWAVE_KEY_ALIAS, OPENWAVE_KEY_PASSWORD. Without them the APK is still built and tested.
+name: Android app
+
+on:
+  push:
+    tags: ["v*"]
+  pull_request:
+    paths: ["android/**", "openwave/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      HAS_KEY: ${{ secrets.OPENWAVE_KEYSTORE_B64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"   # Chaquopy needs the same Python version on the build machine
+      - name: Signing key
+        if: env.HAS_KEY == 'true'
+        run: |
+          echo "${{ secrets.OPENWAVE_KEYSTORE_B64 }}" | base64 -d > "$RUNNER_TEMP/openwave.jks"
+          echo "OPENWAVE_KEYSTORE_FILE=$RUNNER_TEMP/openwave.jks" >> "$GITHUB_ENV"
+      - name: Build
+        working-directory: android
+        env:
+          OPENWAVE_KEYSTORE_PASSWORD: ${{ secrets.OPENWAVE_KEYSTORE_PASSWORD }}
+          OPENWAVE_KEY_ALIAS: ${{ secrets.OPENWAVE_KEY_ALIAS }}
+          OPENWAVE_KEY_PASSWORD: ${{ secrets.OPENWAVE_KEY_PASSWORD }}
+        run: ./gradlew assembleRelease --no-daemon --console=plain
+      - name: Name and checksum
+        run: |
+          mkdir -p dist
+          cp android/app/build/outputs/apk/release/app-release.apk dist/OpenWave-Android.apk
+          (cd dist && sha256sum OpenWave-Android.apk > OpenWave-Android.apk.sha256)
+          ls -la dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: OpenWave-Android
+          path: dist/*
+      - name: Attach to release
+        if: startsWith(github.ref, 'refs/tags/v') && env.HAS_KEY == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/OpenWave-Android.apk
+            dist/OpenWave-Android.apk.sha256
+
+  emulator-test:
+    # Installs the APK on an Android 14 emulator and checks the whole flow (see android/ci/emulator-test.sh).
+    needs: apk
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: OpenWave-Android
+          path: dist
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules && sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-boot-anim -camera-back none -no-snapshot
+          script: ./android/ci/emulator-test.sh dist/OpenWave-Android.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-test-screenshots
+          path: android-test/

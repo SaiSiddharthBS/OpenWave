@@ -28,7 +28,8 @@ def squircle(size: float, n: float = 5.0, steps: int = 720) -> str:
     return "M" + " L".join(pts) + " Z"
 
 
-def icon_html(body: int, offset: int, shape: str, mark_w: float, shadow: bool) -> str:
+def icon_html(body: int, offset: int, shape: str, mark_w: float, shadow: bool, layer: str = "all") -> str:
+    """layer: "all", "background" (no wave) or "foreground" (wave only, transparent)."""
     clip = f"clip-path:path('{squircle(body)}');" if shape == "squircle" else ""
     rim = (f'<svg class="rim" viewBox="0 0 {body} {body}"><defs><linearGradient id="r" x1="0" y1="0" x2="0" y2="1">'
            '<stop offset="0" stop-color="#fff" stop-opacity=".55"/><stop offset=".5" stop-color="#fff" stop-opacity=".08"/>'
@@ -52,8 +53,9 @@ def icon_html(body: int, offset: int, shape: str, mark_w: float, shadow: bool) -
       -webkit-mask-image:linear-gradient(to top, rgba(0,0,0,.9), transparent 55%)}}
     </style></head><body><div class="canvas">
     {'<div class="shadow"></div>' if shadow else ''}
-    <div class="body"><img class="glow" src="data:image/png;base64,{MARK}"><img class="reflection" src="data:image/png;base64,{MARK}">
-      <img class="mark" src="data:image/png;base64,{MARK}"><div class="glass"></div>{rim}</div>
+    <div class="body" {'style="background:transparent"' if layer == "foreground" else ''}>
+      {'' if layer == "background" else f'<img class="glow" src="data:image/png;base64,{MARK}"><img class="reflection" src="data:image/png;base64,{MARK}"><img class="mark" src="data:image/png;base64,{MARK}">'}
+      {'' if layer == "foreground" else '<div class="glass"></div>'}{rim}</div>
     </div></body></html>"""
 
 
@@ -78,7 +80,34 @@ def main():
         # iOS home screen and Android adaptive icons: full-bleed square, platform applies the mask
         render(icon_html(1024, 0, "square", 860, False), WEB / "apple-touch-icon.png", 180)
         render(icon_html(1024, 0, "square", 700, False), WEB / "maskable-512.png", 512)
+        # Android adaptive icon layers (108dp canvas, wave inside the 66dp safe zone) + legacy icons
+        res = ROOT / "android/app/src/main/res"
+        layers = {"background": icon_html(1024, 0, "square", 600, False, "background"),
+                  "foreground": icon_html(1024, 0, "square", 600, False, "foreground")}
+        for name, html in layers.items():
+            render(html, ROOT / f"assets/android-{name}.png")
+        legacy = ROOT / "assets/android-legacy.png"
+        render(icon_html(1024, 0, "squircle", 860, False), legacy)
         b.close()
+        from PIL import Image
+        for density, scale in {"mdpi": 1, "hdpi": 1.5, "xhdpi": 2, "xxhdpi": 3, "xxxhdpi": 4}.items():
+            d = res / f"mipmap-{density}"
+            d.mkdir(parents=True, exist_ok=True)
+            px = round(108 * scale)
+            for name in layers:
+                Image.open(ROOT / f"assets/android-{name}.png").resize((px, px), Image.LANCZOS).save(d / f"ic_launcher_{name}.png")
+            Image.open(legacy).resize((round(48 * scale),) * 2, Image.LANCZOS).save(d / "ic_launcher.png")
+        # Themed-icon (Android 13+) layer: white wave silhouette in the safe zone
+        mark = Image.open(ROOT / "assets/logo-mark.png").convert("RGBA")
+        sil = Image.new("RGBA", mark.size, (255, 255, 255, 0))
+        sil.putalpha(mark.split()[3].point(lambda v: 255 if v > 90 else 0))
+        canvas = Image.new("RGBA", (432, 432), (0, 0, 0, 0))
+        w = 250
+        canvas.alpha_composite(sil.resize((w, round(mark.height * w / mark.width)), Image.LANCZOS), ((432 - w) // 2, (432 - round(mark.height * w / mark.width)) // 2))
+        (res / "mipmap-xxxhdpi").mkdir(parents=True, exist_ok=True)
+        canvas.save(res / "mipmap-xxxhdpi/ic_launcher_monochrome.png")
+        for f in ("android-background.png", "android-foreground.png", "android-legacy.png"):
+            (ROOT / "assets" / f).unlink()
 
     # Menu-bar template icon: the wave's silhouette, which macOS tints for light/dark menu bars.
     from PIL import Image

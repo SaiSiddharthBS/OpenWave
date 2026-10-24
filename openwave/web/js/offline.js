@@ -10,6 +10,7 @@ const CONCURRENCY = 2;
 
 const events = new EventTarget();
 const ids = new Set();
+const aliases = new Map();    // music-video id -> id of the song version that was actually saved
 const pending = [];           // tracks waiting to download
 const active = new Map();     // videoId -> progress 0..1
 const artUrls = new Map();    // videoId -> object URL for stored artwork
@@ -67,6 +68,7 @@ async function fetchWithProgress(url, onProgress) {
 }
 
 async function downloadOne(track) {
+  const requested = track.videoId;
   if (track.type === 'video') {
     try {
       const song = await (await fetch(`/api/audio/${track.videoId}`)).json();
@@ -74,7 +76,9 @@ async function downloadOne(track) {
     } catch { /* keep the original */ }
   }
   const id = track.videoId;
+  const alias = requested !== id ? requested : null;
   active.set(id, 0);
+  if (alias) active.set(requested, 0);
   emit('progress', { id, progress: 0 });
   try {
     const audio = await fetchWithProgress(`/api/download/${id}?q=${quality()}`, (p) => {
@@ -86,13 +90,15 @@ async function downloadOne(track) {
       const r = await fetch(img(track.thumbnail, 544));
       if (r.ok) art = await r.blob();
     } catch { /* artwork is optional */ }
-    await tx('readwrite', (s) => s.put({ videoId: id, track: slim(track), audio, art, size: audio.size, savedAt: Date.now() }));
+    await tx('readwrite', (s) => s.put({ videoId: id, alias, track: slim(track), audio, art, size: audio.size, savedAt: Date.now() }));
     ids.add(id);
+    if (alias) aliases.set(alias, id);
     emit('change', { id, added: true });
   } catch (e) {
     emit('error', { id, track, message: e.message });
   } finally {
     active.delete(id);
+    if (alias) active.delete(requested);
     emit('progress', { id, progress: null });
   }
 }
@@ -110,15 +116,15 @@ export const offline = {
 
   async init() {
     try {
-      const keys = await tx('readonly', (s) => s.getAllKeys());
-      keys.forEach((k) => ids.add(k));
+      const rows = await tx('readonly', (s) => s.getAll());
+      rows.forEach((r) => { ids.add(r.videoId); if (r.alias) aliases.set(r.alias, r.videoId); });
     } catch (e) {
       console.warn('offline storage unavailable', e);
     }
     emit('change', {});
   },
 
-  has: (id) => ids.has(id),
+  has: (id) => ids.has(id) || aliases.has(id),
   get count() { return ids.size; },
   isBusy: (id) => active.has(id) || pending.some((t) => t.videoId === id),
   progress: (id) => active.get(id),
@@ -139,8 +145,10 @@ export const offline = {
   },
 
   async remove(id) {
+    id = aliases.get(id) || id;
     await tx('readwrite', (s) => s.delete(id));
     ids.delete(id);
+    for (const [a, target] of aliases) if (target === id) aliases.delete(a);
     const url = artUrls.get(id);
     if (url) { URL.revokeObjectURL(url); artUrls.delete(id); }
     emit('change', { id, removed: true });
@@ -150,6 +158,7 @@ export const offline = {
     pending.length = 0;
     await tx('readwrite', (s) => s.clear());
     ids.clear();
+    aliases.clear();
     artUrls.forEach((u) => URL.revokeObjectURL(u));
     artUrls.clear();
     emit('change', { cleared: true });
@@ -168,11 +177,13 @@ export const offline = {
 
   /** Object URL for a downloaded track's audio; the caller revokes it. */
   async audioUrl(id) {
+    id = aliases.get(id) || id;
     const r = await tx('readonly', (s) => s.get(id));
     return r?.audio ? URL.createObjectURL(r.audio) : null;
   },
 
   async artUrl(id) {
+    id = aliases.get(id) || id;
     if (artUrls.has(id)) return artUrls.get(id);
     const r = await tx('readonly', (s) => s.get(id));
     if (!r?.art) return null;

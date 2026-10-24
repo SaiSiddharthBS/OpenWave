@@ -2,6 +2,27 @@
 
 All notable changes to OpenWave. Versions follow [Semantic Versioning](https://semver.org).
 
+## [0.3.0] — 2026-10-24
+
+OpenWave comes to Android, with no computer needed.
+
+### Added
+- **Android app** (64-bit phones, Android 7+). OpenWave's full engine runs on the phone itself: search, songs-only playback, profiles, playlists, imports, insights, offline downloads and lyrics.
+  - Media notification and lock-screen controls, plus headphone and Bluetooth buttons.
+  - Pauses for calls and other apps, and pauses when headphones are unplugged.
+  - Keeps playing in the background.
+  - Share a YouTube or YouTube Music link to OpenWave to play it, and use `openwave://` links.
+  - **Library location:** keep the library on the phone, or connect to OpenWave on your computer to share one library everywhere.
+  - Library backups and insight cards open Android's share sheet.
+- **Checksums** (`.sha256`) next to every installer in each release.
+
+### Changed
+- **New logo in the app's top bar**: a silver glass wave.
+
+### Fixed
+- If you downloaded a song from a music video, the original item now shows as downloaded and plays offline. Before, it tried to stream.
+- Opening the Windows or Linux app a second time now just opens another window, without taking over the running engine.
+
 ## [0.2.0] — 2026-10-24
 
 The first public release: OpenWave becomes a full music app on Mac, Windows and Linux.
@@ -41,4 +62,5 @@ The first public release: OpenWave becomes a full music app on Mac, Windows and 
 
 - First version: search YouTube Music, stream audio through a self-hosted server, synced lyrics, an installable web app, offline downloads and a Docker image.
 
+[0.3.0]: https://github.com/SaiSiddharthBS/OpenWave/releases/tag/v0.3.0
 [0.2.0]: https://github.com/SaiSiddharthBS/OpenWave/releases/tag/v0.2.0

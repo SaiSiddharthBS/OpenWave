@@ -317,6 +317,15 @@ export function library({ tab = 'playlists' }) {
 }
 
 // ------------------------------------------------------------------ settings
+function androidServerSetting() {
+  const current = window.OpenWaveAndroid.getServer();
+  return `<h2>Library</h2>
+    <div class="setting"><div><b>Where your library lives</b><p>${current
+      ? `Using OpenWave on your computer at <b>${esc(current)}</b>, so you get the same profiles and playlists everywhere.`
+      : 'On this phone. To share one library with your computer, open OpenWave on the computer, turn on Settings → Phone, and enter its address here.'}</p></div>
+      <div class="btn-row">${current ? '<button class="btn" data-act="android-use-phone">Use this phone</button>' : ''}<button class="btn" data-act="android-set-server">${current ? 'Change' : 'Connect to computer'}</button></div></div>`;
+}
+
 const PROFILE_COLORS = ['#7b7bff', '#2fc8ff', '#c45cff', '#ff6fae', '#ffb648', '#3ddc97', '#ff6b6b', '#8f7cff'];
 
 export async function settings() {
@@ -342,7 +351,8 @@ export async function settings() {
         ${select('crossfade', [[0, 'Off'], [2, '2 seconds'], [4, '4 seconds'], [6, '6 seconds'], [8, '8 seconds'], [10, '10 seconds'], [12, '12 seconds']], 'number')}</div>
       <div class="setting"><div><b>Gapless playback</b><p>The next song is buffered ahead of time, so albums play without silence between tracks.</p></div>${sw('gapless')}</div>
       <div class="setting"><div><b>Autoplay</b><p>When your queue ends, keep playing similar songs, skipping ones you heard recently.</p></div>${sw('autoplay')}</div>
-      ${document.documentElement.classList.contains('native-app') ? `<div class="setting"><div><b>Song notifications</b><p>Show a notification when the song changes while OpenWave is in the background.</p></div>${sw('notifications')}</div>` : ''}
+      ${document.documentElement.classList.contains('native-mac-app') ? `<div class="setting"><div><b>Song notifications</b><p>Show a notification when the song changes while OpenWave is in the background.</p></div>${sw('notifications')}</div>` : ''}
+      ${window.OpenWaveAndroid ? androidServerSetting() : ''}
       <h2>Downloads</h2>
       <div class="setting"><div><b>Saved on this device</b><p id="dl-usage">${plural(offline.count, 'song')} • ${fmtBytes(await offline.usage().catch(() => 0))}. Downloads use the audio quality above.</p></div>
         <button class="btn danger" data-act="clear-downloads" ${offline.count ? '' : 'disabled'}>Delete all</button></div>

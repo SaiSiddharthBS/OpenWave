@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Monochrome OpenWave wave for the status bar and media notification. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="2.6"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M2.5,13.5 C4,9 6,9 7.5,12 C9,15 10.5,15.5 12,11 C13.2,7.5 14.2,5.5 15.8,9.5 C17.3,13.5 18.8,15 21.5,10.5" />
+</vector>

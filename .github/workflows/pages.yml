@@ -32,6 +32,7 @@ jobs:
           cp -R site/. _site/
           cp -R docs/screenshots _site/screenshots
           cp docs/logo.png _site/logo.png
+          cp openwave/web/icons/navbar-mark-128.png _site/navbar-mark.png
           cp openwave/web/icons/favicon-64.png _site/favicon-64.png
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

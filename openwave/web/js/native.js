@@ -1,17 +1,33 @@
-// Bridge to the native OpenWave macOS app. Inside the app, WKWebView exposes
-// window.webkit.messageHandlers.openwave; the app calls back into window.openwaveNative.
+// Bridge to the native apps. The macOS app (WKWebView) exposes window.webkit.messageHandlers.openwave;
+// the Android app exposes window.OpenWaveAndroid. Both call back into window.openwaveNative.
 
 import { img } from './api.js';
 import { store } from './store.js';
 import { player } from './player.js';
 
-const bridge = window.webkit?.messageHandlers?.openwave;
-export const isNative = !!bridge;
+const mac = window.webkit?.messageHandlers?.openwave;
+const android = window.OpenWaveAndroid;
+export const isNative = !!(mac || android);
+export const isAndroid = !!android;
+
+/** Hand a file to the Android share sheet (WebView can't download blobs). Returns false elsewhere. */
+export async function shareFile(name, blob) {
+  if (!android) return false;
+  const base64 = await new Promise((resolve) => {
+    const r = new FileReader();
+    r.onload = () => resolve(String(r.result).split(',')[1]);
+    r.readAsDataURL(blob);
+  });
+  android.shareFile(name, blob.type || 'application/octet-stream', base64);
+  return true;
+}
 
 export function initNative(commands) {
-  if (!bridge) return;
-  document.documentElement.classList.add('native-app');
-  const send = (msg) => { try { bridge.postMessage(msg); } catch { /* app closing */ } };
+  if (!isNative) return;
+  document.documentElement.classList.add('native-app', mac ? 'native-mac-app' : 'native-android');
+  const send = (msg) => {
+    try { if (mac) mac.postMessage(msg); else android.postMessage(JSON.stringify(msg)); } catch { /* app closing */ }
+  };
 
   const state = () => {
     const t = player.current;

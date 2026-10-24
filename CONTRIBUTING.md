@@ -32,6 +32,7 @@ If you change files the service worker caches, bump `VERSION` in `openwave/web/s
 | `openwave/updater.py` · `desktop.py` | Packaged-app entry point and background yt-dlp / ytmusicapi updates |
 | `openwave/web/js/store.js` | Client library cache + offline outbox that syncs to `/api/me/ops` |
 | `openwave/web/js/profiles.js` · `insights.js` · `importer.js` · `native.js` | Profile picker, insights + share card, import dialog, Mac app bridge |
+| `android/` | Android app (Kotlin): runs the engine on the phone via Chaquopy, WebView UI, media notification / lock screen / Bluetooth controls, audio focus |
 | `macos/` | Native macOS app (Swift: AppKit window, SwiftUI menu-bar player & settings, media keys, Now Playing) and `build.sh` |
 | `openwave/web/js/player.js` | Playback engine: two-deck gapless/crossfade, queue, radio, sleep timer, song-version swapping, media session |
 | `openwave/web/js/offline.js` | Offline downloads in IndexedDB |
@@ -45,6 +46,17 @@ cd macos && swift build                      # compile the Swift shell
 OPENWAVE_DEV_URL=http://localhost:8787 .build/debug/OpenWave   # run it against your dev server
 ./macos/build.sh                             # full .app + .dmg (bundles the engine and Deno)
 ```
+
+## The Android app
+
+```bash
+cd android && ./gradlew assembleDebug    # needs the Android SDK, JDK 17+, and python3.12 on PATH
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```
+
+The engine is copied in from `openwave/` at build time. On the phone it runs FastAPI 0.99 with pydantic 1.x,
+because pydantic 2's Rust core has no Android build. Keep server code compatible with both
+(CI runs the test suite against the desktop versions; `tests/` also passes on the Android set).
 
 ## Pull requests
 

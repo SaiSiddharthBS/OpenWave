@@ -55,15 +55,19 @@ jobs:
           if (-not (Test-Path $iscc)) { choco install innosetup --no-progress -y | Out-Null }
           & $iscc packaging/windows/openwave.iss
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
+          $h = (Get-FileHash dist/OpenWave-Windows-Setup.exe -Algorithm SHA256).Hash.ToLower()
+          "$h  OpenWave-Windows-Setup.exe" | Out-File -Encoding ascii dist/OpenWave-Windows-Setup.exe.sha256
       - uses: actions/upload-artifact@v4
         with:
           name: OpenWave-Windows
-          path: dist/OpenWave-Windows-Setup.exe
+          path: dist/OpenWave-Windows-Setup.exe*
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/OpenWave-Windows-Setup.exe
+          files: |
+            dist/OpenWave-Windows-Setup.exe
+            dist/OpenWave-Windows-Setup.exe.sha256
 
   linux:
     runs-on: ubuntu-22.04   # older glibc = runs on more distros
@@ -87,13 +91,17 @@ jobs:
           for i in $(seq 1 60); do curl -sf localhost:47999/api/health > health.json && break; sleep 1; done
           cat health.json && grep -q '"deno"' health.json
       - name: AppImage
-        run: ./packaging/linux/build-appimage.sh
+        run: |
+          ./packaging/linux/build-appimage.sh
+          (cd dist && sha256sum OpenWave-Linux-x86_64.AppImage > OpenWave-Linux-x86_64.AppImage.sha256)
       - uses: actions/upload-artifact@v4
         with:
           name: OpenWave-Linux
-          path: dist/OpenWave-Linux-x86_64.AppImage
+          path: dist/OpenWave-Linux-x86_64.AppImage*
       - name: Attach to release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/OpenWave-Linux-x86_64.AppImage
+          files: |
+            dist/OpenWave-Linux-x86_64.AppImage
+            dist/OpenWave-Linux-x86_64.AppImage.sha256

@@ -117,8 +117,14 @@ def main() -> None:
                 break
             time.sleep(0.1)
     else:
+        # OpenWave is already running: just open another window onto it and leave its owner in charge.
         url = f"http://127.0.0.1:{PREFERRED_PORT}/"
-        server = None
+        browser = find_app_browser()
+        if browser:
+            subprocess.Popen(app_window_command(browser, url, data_dir() / "window"))
+        else:
+            webbrowser.open(url)
+        return
 
     browser = find_app_browser()
     if browser:
@@ -132,8 +138,7 @@ def main() -> None:
                 time.sleep(3600)
         except KeyboardInterrupt:
             pass
-    if server:
-        server.should_exit = True
+    server.should_exit = True
 
 
 if __name__ == "__main__":

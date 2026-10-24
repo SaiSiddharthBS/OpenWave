@@ -8,7 +8,7 @@ import * as views from './views.js';
 import { insights, shareInsights } from './insights.js';
 import { openImport } from './importer.js';
 import { ensureProfile, switchProfile } from './profiles.js';
-import { initNative } from './native.js';
+import { initNative, shareFile } from './native.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
   confirmDialog, sampleTint, artistLinks, errorBox, skeleton, empty, avatar,
@@ -356,6 +356,14 @@ const ACTIONS = {
     }
   },
   'clear-history': () => store.clearHistory(),
+  'android-set-server': async () => {
+    const url = await askText('OpenWave on your computer', { value: window.OpenWaveAndroid.getServer() || 'http://', placeholder: 'http://192.168.1.20:47878', ok: 'Connect' });
+    if (!url) return;
+    toast('Connecting…');
+    const error = window.OpenWaveAndroid.setServer(url);
+    if (error) toast(error, 5000);
+  },
+  'android-use-phone': () => window.OpenWaveAndroid.setServer(''),
   'import-playlists': () => openImport(),
   'share-insights': () => shareInsights(),
   'profile-menu': (el) => profileMenu(el),
@@ -384,8 +392,9 @@ const ACTIONS = {
       toast('Downloads deleted');
     }
   },
-  export: () => {
+  export: async () => {
     const blob = new Blob([store.exportJSON()], { type: 'application/json' });
+    if (await shareFile(`openwave-library-${new Date().toISOString().slice(0, 10)}.json`, blob)) return;
     const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `openwave-library-${new Date().toISOString().slice(0, 10)}.json` });
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);

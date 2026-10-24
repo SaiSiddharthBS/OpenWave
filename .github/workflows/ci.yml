@@ -19,6 +19,17 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: pytest -q
 
+  android-engine:
+    # The Android app runs the engine on FastAPI 0.99 + pydantic 1.x (pure Python): keep it working there.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "fastapi==0.99.1" "pydantic==1.10.26" "uvicorn==0.30.6" "httpx==0.27.2" ytmusicapi yt-dlp pytest
+      - run: PYTHONPATH=. pytest -q
+
   macos-app:
     runs-on: macos-15
     steps:
