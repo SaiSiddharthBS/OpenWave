@@ -20,7 +20,7 @@ state() { session | grep -A30 "package=$PKG" | grep -oE "state=PlaybackState \{s
 APP_UID=""
 # (grep -c reads all of its input: an early-exiting grep -q would break the pipe and, with pipefail, fail the check)
 audible() { [ "$(adb shell dumpsys audio | tr -d '\r' | grep -E "u/pid:$APP_UID/" | grep -c "state:started")" -gt 0 ]; }
-screen_text() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell cat /sdcard/ui.xml | tr -d '\r'; }
+screen_text() { adb shell uiautomator dump /data/local/tmp/ui.xml >/dev/null 2>&1 && adb shell cat /data/local/tmp/ui.xml | tr -d '\r'; }
 # centre of the first on-screen element whose text or hint matches $1
 tap_text() {
   local b
