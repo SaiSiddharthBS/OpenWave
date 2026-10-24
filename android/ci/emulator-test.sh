@@ -50,7 +50,7 @@ echo "✅ app shows the welcome screen"
 
 tap_class "android.widget.EditText" || tap_text "Your name" || fail "name field not found"
 sleep 1; adb shell input text Tester; sleep 1
-tap_text "Start listening" || adb shell input keyevent 66
+adb shell input keyevent 66   # Enter submits the form (the keyboard covers the button)
 for i in $(seq 1 30); do curl -sf localhost:47878/api/profiles | grep -q Tester && break; sleep 2; done
 curl -sf localhost:47878/api/profiles | grep -q Tester || fail "profile was not created"
 echo "✅ profile created from the app"
