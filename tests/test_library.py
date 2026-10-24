@@ -123,3 +123,18 @@ def test_import_parsers():
     good = {"title": "Yellow", "artists": [{"name": "Coldplay"}], "duration": 266}
     bad = {"title": "Yellow Submarine", "artists": [{"name": "The Beatles"}], "duration": 158}
     assert music.match_score("Yellow", "Coldplay", 267, good) > music.match_score("Yellow", "Coldplay", 267, bad)
+
+
+def test_on_repeat_and_rediscover(tmp_path):
+    import time as _t
+
+    from openwave.library import Library
+    lib = Library(tmp_path / "lib.db")
+    p = lib.create_profile("A", "#fff", None, "test")["profile"]["id"]
+    song = lambda v: {"videoId": v, "title": v, "artists": [{"name": "X"}], "duration": 200, "type": "song"}  # noqa: E731
+    now = _t.time()
+    plays = [("onrepeat001", now - 86400 * d) for d in (1, 2, 3)] + [("rediscover1", now - 86400 * d) for d in (100, 120, 150)] + [("playedonce1", now - 86400)]
+    lib.apply_ops(p, [{"op": "play", "track": song(vid), "seconds": 120, "at": at * 1000} for vid, at in plays])
+    lists = lib.smart_lists(p, now)
+    assert [t["videoId"] for t in lists["onRepeat"]] == ["onrepeat001"]
+    assert [t["videoId"] for t in lists["rediscover"]] == ["rediscover1"]

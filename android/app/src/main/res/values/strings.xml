@@ -3,4 +3,9 @@
     <string name="app_name">OpenWave</string>
     <string name="channel_playback">Now playing</string>
     <string name="channel_playback_description">Playback controls for the song that is playing</string>
+    <string name="widget_description">Now playing, with play and skip buttons</string>
+    <string name="widget_idle">Tap to start listening</string>
+    <string name="widget_prev">Previous</string>
+    <string name="widget_play">Play or pause</string>
+    <string name="widget_next">Next</string>
 </resources>

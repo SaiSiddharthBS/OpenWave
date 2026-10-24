@@ -8,7 +8,7 @@ import * as views from './views.js';
 import { insights, shareInsights } from './insights.js';
 import { openImport } from './importer.js';
 import { ensureProfile, switchProfile } from './profiles.js';
-import { initNative, shareFile, haptic } from './native.js';
+import { initNative, shareFile, shareText, haptic } from './native.js';
 import { initGestures } from './gestures.js';
 import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import {
@@ -34,6 +34,7 @@ const ROUTES = [
   [/^\/history$/, 'library', () => views.history(), 'detail'],
   [/^\/downloads$/, 'downloads', () => views.downloads(), 'detail'],
   [/^\/my\/(.+)$/, 'library', (m) => views.myPlaylist({ id: id(m) }), 'detail'],
+  [/^\/smart\/(on-repeat|rediscover)$/, 'library', (m) => views.smart({ which: m[1] }), 'detail'],
   [/^\/settings$/, 'settings', () => views.settings(), 'home'],
   [/^\/insights$/, 'insights', (m, q) => insights({ days: q.get('days') || 30 }), 'home'],
   [/^\/play\/([A-Za-z0-9_-]{11})$/, 'home', (m) => playLink(m[1]), 'home'],
@@ -88,6 +89,7 @@ async function render({ keepScroll = false } = {}) {
     main.scrollTop = keepScroll ? scroll : 0;
     if (!keepScroll) enter(back ? 'enter-back' : sk === 'detail' ? 'enter-fwd' : 'enter-tab');
     topbarTitle.textContent = view.querySelector('.hero h1, .lib-head h1, .settings h1')?.textContent || '';
+    topbar.classList.toggle('has-title', !!topbarTitle.textContent);
     out.mount?.(view);
     markDownloads();
     enableDrag();
@@ -281,6 +283,12 @@ function copyText(text) {
 
 const watchUrl = (t) => `https://music.youtube.com/watch?v=${t.videoId}`;
 
+/** Share sheet where there is one (phones), otherwise copy the link. */
+async function share(title, text, url) {
+  if (!(await shareText(title, text, url))) copyText(url || text);
+}
+const trackLine = (t) => `${t.title} — ${(t.artists || []).map((a) => a.name).join(', ')}`;
+
 function playlistPicker(anchor, tracks) {
   const items = [
     { icon: 'plus', label: 'New playlist…', run: async () => {
@@ -317,6 +325,7 @@ function trackMenu(anchor, track, { list, i } = {}) {
   items.push('sep');
   if (artist) items.push({ icon: 'person', label: 'Go to artist', run: () => { location.hash = `#/artist/${enc(artist.id)}`; } });
   if (track.album?.id) items.push({ icon: 'album', label: 'Go to album', run: () => { location.hash = `#/album/${enc(track.album.id)}`; } });
+  items.push({ icon: 'share', label: 'Share', run: () => share(track.title, trackLine(track), watchUrl(track)) });
   items.push({ icon: 'link', label: 'Copy link', run: () => copyText(watchUrl(track)) });
   const head = `<div class="menu-head"><img src="${img(track.thumbnail, 120)}" alt=""><div class="ellipsis"><b class="ellipsis">${esc(track.title)}</b><small class="ellipsis">${esc(track.artists.map((a) => a.name).join(', '))}</small></div></div>`;
   openMenu(anchor, items, head);
@@ -363,9 +372,15 @@ function collectionMenu(anchor) {
       toast(`Created “${p.name}”`);
     } });
   }
-  if (c.kind === 'album' || c.kind === 'playlist') {
-    const url = c.kind === 'album' ? `https://music.youtube.com/browse/${c.card.id}` : `https://music.youtube.com/playlist?list=${c.card.id}`;
-    items.push('sep', { icon: 'link', label: 'Copy link', run: () => copyText(url) });
+  const links = { album: 'browse/', playlist: 'playlist?list=', artist: 'channel/' };
+  if (links[c.kind] && c.card?.id) {
+    const url = `https://music.youtube.com/${links[c.kind]}${c.card.id}`;
+    items.push('sep', { icon: 'share', label: 'Share', run: () => share(c.context.label, c.context.label, url) },
+      { icon: 'link', label: 'Copy link', run: () => copyText(url) });
+  } else if (c.tracks.length) {
+    // Your own playlists live on your device, so share them as a song list friends can import.
+    items.push('sep', { icon: 'share', label: 'Share as a song list', run: () => share(c.context.label,
+      `${c.context.label}\n\n${c.tracks.map((t, n) => `${n + 1}. ${(t.artists || []).map((a) => a.name).join(', ')} - ${t.title}`).join('\n')}\n\nImport it in OpenWave: Library → Import → Paste list`) });
   }
   openMenu(anchor, items);
 }
@@ -384,6 +399,7 @@ const ACTIONS = {
   'like-current': () => { if (player.current) { haptic('tick'); toast(store.toggleLike(player.current) ? 'Added to Liked songs' : 'Removed from Liked songs'); } },
   'open-np': () => openNP(),
   'close-np': () => closeNP(),
+  'np-more': (el) => { if (player.current) trackMenu(el, player.current); },
   'np-queue': () => toggleNP('queue'),
   'np-lyrics': () => toggleNP('lyrics'),
   'sheet-queue': () => toggleSheet('queue'),
@@ -419,6 +435,9 @@ const ACTIONS = {
     const info = await checkForUpdate();
     if (info?.available) startUpdate(info);
     else toast(info ? 'You have the latest version' : 'Couldn’t check for updates. Are you online?');
+  },
+  'android-add-widget': () => {
+    if (!window.OpenWaveAndroid.addWidget()) toast('Long-press your home screen, tap Widgets and find OpenWave', 5000);
   },
   'android-set-server': async () => {
     const url = await askText('OpenWave on your computer', { value: window.OpenWaveAndroid.getServer() || 'http://', placeholder: 'http://192.168.1.20:47878', ok: 'Connect' });

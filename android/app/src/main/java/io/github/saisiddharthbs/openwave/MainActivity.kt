@@ -305,6 +305,24 @@ class MainActivity : ComponentActivity() {
         @JavascriptInterface
         fun appVersion(): String = BuildConfig.VERSION_NAME
 
+        /** Ask the launcher to add the player widget (Android shows its own confirmation). */
+        @JavascriptInterface
+        fun addWidget(): Boolean {
+            if (!trusted() || Build.VERSION.SDK_INT < 26) return false
+            val manager = getSystemService(android.appwidget.AppWidgetManager::class.java) ?: return false
+            if (!manager.isRequestPinAppWidgetSupported) return false
+            return manager.requestPinAppWidget(android.content.ComponentName(this@MainActivity, PlayerWidget::class.java), null, null)
+        }
+
+        @JavascriptInterface
+        fun shareText(title: String, text: String) {
+            if (!trusted()) return
+            val send = Intent(Intent.ACTION_SEND).setType("text/plain")
+                .putExtra(Intent.EXTRA_SUBJECT, title)
+                .putExtra(Intent.EXTRA_TEXT, text)
+            runOnUiThread { startActivity(Intent.createChooser(send, title)) }
+        }
+
         @JavascriptInterface
         fun haptic(kind: String) {
             if (!trusted()) return

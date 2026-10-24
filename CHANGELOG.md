@@ -10,6 +10,10 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - YouTube and YouTube Music playlists import every song (before: the first 300).
 - **A smoother, more native phone app.** Pages slide in and out. Swipe the player down to close it, and swipe the artwork or the mini player to change songs. Long-press a song for its menu. Android gives a small vibration for these, images fade in, and everything you tap reacts.
 - **Home shortcuts** to your liked songs, downloads and playlists.
+- **Home-screen widget (Android):** artwork, song and artist, with previous, play/pause and next. Add it from Settings → Add widget.
+- **Share** any song, album, playlist or artist (song menu, the player's ⋯ menu, or a page's ⋯ menu). It shares a normal YouTube Music link anyone can open, and friends with OpenWave on Android can open it straight in the app. Your own playlists share as a song list friends can paste into Import.
+- **On Repeat and Rediscover:** two playlists made only from your own listening. On Repeat has the songs you've played most this month; Rediscover has favourites you haven't played in a while.
+- Shared YouTube Music album and artist links now open the right page.
 - **Faster.** Home opens instantly (the last Home is shown while a fresh one loads). Tapping a music video starts its song about 0.6 s sooner. Songs get ready while your finger is on them, and the song you were last playing is ready when the app opens. The song version of each music video is remembered between launches.
 - On phones, **Library is a list**, and on album, playlist and artist pages the top bar takes the page's colour and shows its title as you scroll.
 
@@ -18,6 +22,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - The back and forward arrows no longer show in the Android app.
 - Home's Quick picks no longer run off the edge of phone screens (long titles like "Gehra Hua" looked cropped).
 - Error pages explain problems in plain words.
+- Right after an update, the phone app could show the previous version's screens until it was opened again. It now always loads the new version.
+- On phones, the page title in the top bar no longer overlaps the OpenWave logo when you scroll Settings or Library.
 - After an update, the app could keep using some old files for hours, because browsers cached them without re-checking. App files are now always re-checked (cheap when unchanged).
 - **Songs no longer stop partway and skip to the next one.** In the Mac app (and Safari), every song longer than about 4 minutes was cut off around the 4-minute mark: the engine answered the player with only the first piece of the song, and WebKit took that as the end. The engine now always sends the whole song, fetching it from YouTube piece by piece behind the scenes, and picks up from the exact spot if YouTube drops the connection (for example during a long pause).
 - If a song ever does stop early, the player now continues it from that point instead of skipping it.

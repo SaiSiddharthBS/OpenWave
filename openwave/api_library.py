@@ -145,6 +145,12 @@ async def smart_radio(video_id: str, pid: str = Depends(me)):
     return {"tracks": fresh or data["tracks"][1:]}
 
 
+@router.get("/me/smart")
+def smart(pid: str = Depends(me)):
+    """On Repeat and Rediscover, from your own listening (no YouTube calls)."""
+    return library().smart_lists(pid)
+
+
 @router.get("/me/mixes")
 async def mixes(pid: str = Depends(me)):
     """Seeds for personal mixes, built from what you actually listen to."""

@@ -45,12 +45,15 @@ export async function home() {
   try { sections = await get.home(); } catch (e) { failed = e; }
 
   let personal = null;
+  let mine = null;
   if (store.session && store.history.length) {
-    try { personal = await store.api('/api/me/mixes'); } catch { /* recommendations still load */ }
+    // Recommendations still load if either of these fails.
+    [personal, mine] = await Promise.all([store.api('/api/me/mixes').catch(() => null), store.api('/api/me/smart').catch(() => null)]);
   }
   let html = `<h1 class="greeting">${greeting()}${store.profile ? `, ${esc(store.profile.name)}` : ''}</h1>`;
   html += shortcuts();
-  if (personal?.mixes.length) html += section(`Made for ${store.profile.name}`, personal.mixes.map(mixCard).join(''));
+  const made = smartCards(mine) + (personal?.mixes || []).map(mixCard).join('');
+  if (made) html += section(`Made for ${store.profile.name}`, made);
   if (recent.length) html += section('Jump back in', trackCards(recent, { mode: 'radio', context: { label: 'Recently played' } }));
   if (personal?.topArtists.length >= 3) {
     html += section('Your top artists', personal.topArtists.filter((a) => a.id).map((a) => cards([{ type: 'artist', id: a.id, title: a.name, subtitle: `${a.plays} plays`, thumbnail: a.thumbnail }])).join(''));
@@ -75,6 +78,31 @@ export async function home() {
 
 const MIX_TINTS = ['#2fc8ff', '#7b7bff', '#c45cff', '#ff6fae', '#ffb648', '#3ddc97'];
 let mixN = 0;
+// Playlists made only from your own listening (see /api/me/smart).
+const SMART = {
+  'on-repeat': ['onRepeat', 'On Repeat', 'Songs you can’t stop playing', '#ff6b6b'],
+  rediscover: ['rediscover', 'Rediscover', 'Favourites you haven’t played lately', '#3ddc97'],
+};
+
+function smartCards(lists) {
+  return Object.entries(SMART).filter(([, [key]]) => lists?.[key]?.length >= 5).map(([slug, [key, title, sub, tint]]) =>
+    `<a class="card mix" href="#/smart/${slug}" style="--mix:${tint}"><div class="art"><img loading="lazy" src="${img(lists[key][0].thumbnail, 300)}" alt="">
+      <span class="mix-label">${title}</span></div><div class="title">${title}</div><div class="sub">${sub}</div></a>`).join('');
+}
+
+export async function smart({ which }) {
+  const [key, title, sub] = SMART[which];
+  const tracks = (await store.api('/api/me/smart'))[key] || [];
+  const context = { label: title, href: `#/smart/${which}` };
+  return {
+    tint: tracks[0]?.thumbnail,
+    collection: { tracks, context, kind: 'smart' },
+    html: collectionHeader({ kind: 'Made for you', title, cover: tracks[0]?.thumbnail, meta: `${sub} • ${plural(tracks.length, 'song')}` })
+      + (tracks.length ? actions({ play: 'play-collection', tracks }) + trackList(tracks, { album: true, context })
+        : empty('repeat', 'Nothing here yet', 'Keep listening. This fills up with the songs you play most.')),
+  };
+}
+
 function mixCard(m) {
   const key = registerList([m.seed], { mode: 'radio', context: { label: m.title } });
   const tint = MIX_TINTS[mixN++ % MIX_TINTS.length];
@@ -377,6 +405,7 @@ export async function settings() {
       <div class="setting"><div><b>Autoplay</b><p>When your queue ends, keep playing similar songs, skipping ones you heard recently.</p></div>${sw('autoplay')}</div>
       ${document.documentElement.classList.contains('native-mac-app') ? `<div class="setting"><div><b>Song notifications</b><p>Show a notification when the song changes while OpenWave is in the background.</p></div>${sw('notifications')}</div>` : ''}
       ${window.OpenWaveAndroid ? androidServerSetting() : ''}
+      ${window.OpenWaveAndroid?.addWidget ? '<div class="setting"><div><b>Home-screen widget</b><p>See what’s playing and skip songs right from your home screen.</p></div><button class="btn" data-act="android-add-widget">Add widget</button></div>' : ''}
       <h2>Downloads</h2>
       <div class="setting"><div><b>Saved on this device</b><p id="dl-usage">${plural(offline.count, 'song')} • ${fmtBytes(await offline.usage().catch(() => 0))}. Downloads use the audio quality above.</p></div>
         <button class="btn danger" data-act="clear-downloads" ${offline.count ? '' : 'disabled'}>Delete all</button></div>

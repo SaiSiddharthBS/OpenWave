@@ -177,7 +177,7 @@ def _compact(items) -> list[dict]:
 
 
 def parse_youtube_url(text: str) -> tuple[str, str] | None:
-    """Return ("video", id) or ("playlist", id) when the query is a YouTube link."""
+    """Return ("video" | "playlist" | "album" | "artist", id) when the query is a YouTube link."""
     text = text.strip()
     if not re.match(r"^(https?://)?([\w-]+\.)?(youtube\.com|youtu\.be)/", text):
         return None
@@ -194,6 +194,12 @@ def parse_youtube_url(text: str) -> tuple[str, str] | None:
         return ("video", m.group(2))
     if "list" in qs:
         return ("playlist", qs["list"][0])
+    m = re.match(r"^/browse/(MPREb_[\w-]+|VL[\w-]+)", url.path)  # YouTube Music album / playlist pages
+    if m:
+        return ("album", m.group(1)) if m.group(1).startswith("MPREb_") else ("playlist", m.group(1)[2:])
+    m = re.match(r"^/channel/(UC[\w-]{22})", url.path)
+    if m:
+        return ("artist", m.group(1))
     return None
 
 
@@ -274,8 +280,8 @@ async def search(query: str, kind: str = "all") -> dict:
     if link and link[0] == "video":
         t = await audio_version(link[1]) or await track_info(link[1])
         return {"query": query, "kind": kind, "top": t, "results": []}
-    if link and link[0] == "playlist":
-        return {"query": query, "kind": kind, "redirect": f"#/playlist/{link[1]}", "results": []}
+    if link and link[0] in ("playlist", "album", "artist"):
+        return {"query": query, "kind": kind, "redirect": f"#/{link[0]}/{link[1]}", "results": []}
 
     filters = {"songs": "songs", "albums": "albums", "artists": "artists", "playlists": "playlists"}
     if kind in filters:

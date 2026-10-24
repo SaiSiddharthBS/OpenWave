@@ -110,6 +110,7 @@ class PlaybackService : Service() {
             setNoisyReceiver(t.playing)
         }
         getSystemService(NotificationManager::class.java).notify(NOTIFICATION_ID, buildNotification(t))
+        PlayerWidget.update(this, t, artwork?.takeIf { it.first == t?.artwork }?.second)
     }
 
     private fun loadArtwork(url: String) {

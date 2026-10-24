@@ -738,8 +738,9 @@ body.offline .offline-pill { display: flex !important; }
   /* Top bar on detail pages: the title appears once the header scrolls away. */
   .topbar { position: sticky; }
   .topbar-title { display: block; position: absolute; left: 20px; right: 110px; font-weight: 750; font-size: 17px; opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; pointer-events: none; }
-  .topbar.solid .topbar-title { opacity: 1; transform: none; }
-  .kind-detail .topbar.solid .brand { opacity: 0; pointer-events: none; }
+  .topbar.solid.has-title .topbar-title { opacity: 1; transform: none; }
+  .topbar.solid.has-title .brand { opacity: 0; pointer-events: none; }
+  .topbar .brand { transition: opacity .2s; }
 
   /* Mini player: readable text; the full-screen player slides up from the bottom. */
   .playerbar .pb-artist { color: rgba(255,255,255,.75); }

@@ -406,6 +406,22 @@ class Library:
             "byDay": dict(sorted(by_day.items())),
         }
 
+    def smart_lists(self, profile_id: str, now: float | None = None) -> dict:
+        """Playlists made only from your own listening: "On Repeat" (played 3+ times in the last 30
+        days) and "Rediscover" (played 3+ times earlier this year, but not in the last 30 days)."""
+        now = now or time.time()
+        month, year = now - 30 * 86400, now - 365 * 86400
+        with self.lock:
+            rows = self._q(
+                "SELECT p.video_id, SUM(p.played_at >= ?) AS recent, SUM(p.played_at < ?) AS earlier, MAX(p.played_at) AS last, t.data "
+                "FROM plays p JOIN tracks t ON t.video_id = p.video_id "
+                "WHERE p.profile_id = ? AND p.played_at >= ? AND p.seconds >= ? GROUP BY p.video_id",
+                (month, month, profile_id, year, PLAY_COUNTS_AFTER)).fetchall()
+        on_repeat = sorted((r for r in rows if r["recent"] >= 3), key=lambda r: (-r["recent"], -r["last"]))
+        rediscover = sorted((r for r in rows if r["recent"] == 0 and r["earlier"] >= 3), key=lambda r: (-r["earlier"], -r["last"]))
+        return {"onRepeat": [json.loads(r["data"]) for r in on_repeat[:50]],
+                "rediscover": [json.loads(r["data"]) for r in rediscover[:50]]}
+
     def recent_video_ids(self, profile_id: str, limit: int = 300) -> list[str]:
         with self.lock:
             return [r["video_id"] for r in self._q(

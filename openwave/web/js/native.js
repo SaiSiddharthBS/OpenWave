@@ -15,6 +15,15 @@ export function haptic(kind = 'light') {
   try { android?.haptic?.(kind); } catch { /* an older app without haptics */ }
 }
 
+/** The system share sheet for a link or text: Android app, or browsers that support it. */
+export async function shareText(title, text, url = '') {
+  if (android?.shareText) { android.shareText(title, url ? `${text}\n${url}` : text); return true; }
+  if (navigator.share && !mac) {
+    try { await navigator.share(url ? { title, text, url } : { title, text }); return true; } catch (e) { return e.name === 'AbortError'; }
+  }
+  return false;
+}
+
 /** Hand a file to the Android share sheet (WebView can't download blobs). Returns false elsewhere. */
 export async function shareFile(name, blob) {
   if (!android) return false;

@@ -1,6 +1,6 @@
 // Caches the app shell and artwork so OpenWave opens and shows your library with no connection.
 // Downloaded songs live in IndexedDB (see js/offline.js); live streams are never cached here.
-const VERSION = 'openwave-v11';
+const VERSION = 'openwave-v12';
 const IMAGES = 'openwave-img-v1';
 const MAX_IMAGES = 600;
 const SHELL = [
@@ -27,9 +27,14 @@ function timeout(ms) {
   return new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), ms));
 }
 
+// The engine on this same device (the Android and desktop apps) is always reachable, just slow
+// while it starts; timing out there would show old cached screens right after an update.
+const LOCAL = ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname);
+
 async function networkFirst(req) {
   try {
-    const res = await Promise.race([fetch(req, { cache: 'no-cache' }), timeout(4000)]);
+    const fresh = fetch(req, { cache: 'no-cache' });
+    const res = await (LOCAL ? fresh : Promise.race([fresh, timeout(4000)]));
     if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
     return res;
   } catch {

@@ -273,3 +273,10 @@ def test_song_versions_are_remembered_across_restarts(tmp_path, monkeypatch):
     assert first == again and calls == ["abcdefghijk"]
     kv.put("gone", 1, -1)
     assert kv.get("gone") is kv.MISSING and kv.get("never") is kv.MISSING
+
+
+def test_shared_youtube_music_links_open_the_right_page():
+    assert music.parse_youtube_url("https://music.youtube.com/browse/MPREb_tQfaWH32ovE") == ("album", "MPREb_tQfaWH32ovE")
+    assert music.parse_youtube_url("https://music.youtube.com/browse/VLPL4fGSI1pDJn6puJdseH2Rt9sMvt9E2M4i") == ("playlist", "PL4fGSI1pDJn6puJdseH2Rt9sMvt9E2M4i")
+    assert music.parse_youtube_url("https://music.youtube.com/channel/UCDPM_n1atn2ijUwHd0NNRQw") == ("artist", "UCDPM_n1atn2ijUwHd0NNRQw")
+    assert music.parse_youtube_url("https://music.youtube.com/watch?v=dQw4w9WgXcQ") == ("video", "dQw4w9WgXcQ")
