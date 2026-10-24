@@ -5,7 +5,12 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Added
+- **Import from more apps, with no song limit.** Paste a playlist or album link from **Spotify, YouTube Music, Apple Music, Deezer or JioSaavn**. Or import an export file: **Exportify** or Spotify's own data download (every song, every playlist), **TuneMyMusic** (Amazon Music, Tidal, SoundCloud and more), **Soundiiz**, the **Apple Music** app's Export Playlist, and **Google Takeout** for YouTube Music. A file with several playlists becomes several playlists. The import screen explains where to get each file.
+- YouTube and YouTube Music playlists import every song (before: the first 300).
+
 ### Fixed
+- After an update, the app could keep using some old files for hours, because browsers cached them without re-checking. App files are now always re-checked (cheap when unchanged).
 - **Songs no longer stop partway and skip to the next one.** In the Mac app (and Safari), every song longer than about 4 minutes was cut off around the 4-minute mark: the engine answered the player with only the first piece of the song, and WebKit took that as the end. The engine now always sends the whole song, fetching it from YouTube piece by piece behind the scenes, and picks up from the exact spot if YouTube drops the connection (for example during a long pause).
 - If a song ever does stop early, the player now continues it from that point instead of skipping it.
 

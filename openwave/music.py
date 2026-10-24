@@ -341,8 +341,9 @@ async def album(browse_id: str) -> dict:
 
 
 @cached(ttl=1800)
-async def playlist(playlist_id: str) -> dict:
-    p = await _call("get_playlist", _strip_vl(playlist_id), limit=300)
+async def playlist(playlist_id: str, limit: int | None = 300) -> dict:
+    """limit=None fetches every song (imports); browsing shows the first 300."""
+    p = await _call("get_playlist", _strip_vl(playlist_id), limit=limit)
     author = p.get("author")
     return {
         "type": "playlist",

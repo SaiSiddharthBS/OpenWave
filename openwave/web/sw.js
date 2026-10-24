@@ -1,6 +1,6 @@
 // Caches the app shell and artwork so OpenWave opens and shows your library with no connection.
 // Downloaded songs live in IndexedDB (see js/offline.js); live streams are never cached here.
-const VERSION = 'openwave-v8';
+const VERSION = 'openwave-v9';
 const IMAGES = 'openwave-img-v1';
 const MAX_IMAGES = 600;
 const SHELL = [
@@ -10,7 +10,8 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  // cache: 'reload' skips the browser's HTTP cache, so an update never re-caches old files.
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
@@ -28,7 +29,7 @@ function timeout(ms) {
 
 async function networkFirst(req) {
   try {
-    const res = await Promise.race([fetch(req), timeout(4000)]);
+    const res = await Promise.race([fetch(req, { cache: 'no-cache' }), timeout(4000)]);
     if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
     return res;
   } catch {

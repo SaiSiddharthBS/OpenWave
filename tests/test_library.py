@@ -114,13 +114,12 @@ def test_version_bumps_for_other_devices(client):
 
 
 def test_import_parsers():
-    from openwave import importer
+    from openwave import importer, music
     csv_text = 'Track Name,Artist Name(s),Album Name,Duration (ms)\n"Yellow","Coldplay, Other",Parachutes,266773\n'
-    parsed = importer.parse_csv(csv_text)
+    [parsed] = importer.parse_csv(csv_text)
     assert parsed["items"] == [{"title": "Yellow", "artist": "Coldplay", "album": "Parachutes", "duration": 267}]
-    assert importer.parse_text("1. Coldplay - Yellow\nJust A Title")["items"] == [
-        {"title": "Yellow", "artist": "Coldplay"}, {"title": "Just A Title", "artist": ""}]
+    [listed] = importer.parse_text("1. Coldplay - Yellow\nJust A Title")
+    assert [(i["artist"], i["title"]) for i in listed["items"]] == [("Coldplay", "Yellow"), ("", "Just A Title")]
     good = {"title": "Yellow", "artists": [{"name": "Coldplay"}], "duration": 266}
     bad = {"title": "Yellow Submarine", "artists": [{"name": "The Beatles"}], "duration": 158}
-    item = {"title": "Yellow", "artist": "Coldplay", "duration": 267}
-    assert importer._score(item, good) > importer._score(item, bad)
+    assert music.match_score("Yellow", "Coldplay", 267, good) > music.match_score("Yellow", "Coldplay", 267, bad)

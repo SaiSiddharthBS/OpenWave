@@ -631,6 +631,13 @@ body.offline .offline-pill { display: flex !important; }
 .import .hint, .hint { color: var(--faint); font-size: 12.5px; margin: 8px 0 0; }
 .import .hint a { color: var(--accent); }
 .import-progress { margin-top: 16px; }
+.import-help { margin-top: 12px; font-size: 13px; color: var(--muted); }
+.import-help summary { cursor: pointer; color: var(--text); font-weight: 650; padding: 4px 0; }
+.import-help p { margin: 10px 0 0; line-height: 1.5; }
+.import-help a, .import-results a { color: var(--accent); }
+.import-help code { background: var(--surface-3); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+.import-results { display: grid; gap: 8px; margin-top: 10px; }
+.import-result > a { display: flex; justify-content: space-between; gap: 12px; color: var(--text) !important; padding: 8px 10px; border-radius: 8px; background: var(--surface-3); }
 .import-progress .bar { height: 6px; border-radius: 6px; background: var(--surface-3); overflow: hidden; }
 .import-progress .bar i { display: block; height: 100%; width: 0; background: var(--accent-grad); transition: width .3s; }
 .import-progress p { margin: 8px 0 0; }

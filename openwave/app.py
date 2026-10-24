@@ -318,4 +318,14 @@ async def manifest():
     return FileResponse(WEB / "manifest.webmanifest", media_type="application/manifest+json")
 
 
+@app.middleware("http")
+async def revalidate_app_files(request: Request, call_next):
+    """App files must be re-checked on every load (a cheap 304 when unchanged), or browsers and
+    WebViews keep running parts of an old version for hours after OpenWave updates."""
+    response = await call_next(request)
+    if not request.url.path.startswith("/api/"):
+        response.headers.setdefault("cache-control", "no-cache")
+    return response
+
+
 app.mount("/", StaticFiles(directory=WEB, html=True), name="web")
