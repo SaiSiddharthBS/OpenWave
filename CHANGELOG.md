@@ -26,6 +26,7 @@ OpenWave comes to Android, with no computer needed.
 ### Fixed
 - If you downloaded a song from a music video, the original item now shows as downloaded and plays offline. Before, it tried to stream.
 - Opening the Windows or Linux app a second time now just opens another window, without taking over the running engine.
+- The Mac app keeps the same address when it restarts (for example after an update). Before, it sometimes moved, which made downloads and your chosen profile seem to disappear.
 
 ## [0.2.0] — 2026-10-24
 

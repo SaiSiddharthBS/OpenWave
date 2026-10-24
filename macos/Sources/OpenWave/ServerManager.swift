@@ -158,16 +158,30 @@ final class ServerManager: ObservableObject {
 }
 
 enum Network {
+    /// Free means nothing is listening and the engine could bind it. Bound with SO_REUSEADDR like
+    /// the engine (uvicorn) is, so connections left over from the last run, still in TIME_WAIT,
+    /// don't push OpenWave onto another port (which would hide downloads stored for this one).
     static func isPortFree(_ port: Int, anyInterface: Bool) -> Bool {
+        if isListening(port) { return false }
         let fd = socket(AF_INET, SOCK_STREAM, 0)
         guard fd >= 0 else { return false }
         defer { close(fd) }
-        var addr = sockaddr_in()
-        addr.sin_family = sa_family_t(AF_INET)
-        addr.sin_port = in_port_t(UInt16(port).bigEndian)
-        addr.sin_addr.s_addr = anyInterface ? INADDR_ANY : inet_addr("127.0.0.1")
+        var yes: Int32 = 1
+        setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &yes, socklen_t(MemoryLayout<Int32>.size))
+        var addr = sockaddr_in(port: port, host: anyInterface ? INADDR_ANY : inet_addr("127.0.0.1"))
         return withUnsafePointer(to: &addr) {
             $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { bind(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) == 0 }
+        }
+    }
+
+    /// Is something already answering on 127.0.0.1:port?
+    private static func isListening(_ port: Int) -> Bool {
+        let fd = socket(AF_INET, SOCK_STREAM, 0)
+        guard fd >= 0 else { return false }
+        defer { close(fd) }
+        var addr = sockaddr_in(port: port, host: inet_addr("127.0.0.1"))
+        return withUnsafePointer(to: &addr) {
+            $0.withMemoryRebound(to: sockaddr.self, capacity: 1) { connect(fd, $0, socklen_t(MemoryLayout<sockaddr_in>.size)) == 0 }
         }
     }
 
@@ -189,5 +203,14 @@ enum Network {
             best = best ?? ip
         }
         return best
+    }
+}
+
+private extension sockaddr_in {
+    init(port: Int, host: in_addr_t) {
+        self.init()
+        sin_family = sa_family_t(AF_INET)
+        sin_port = in_port_t(UInt16(port).bigEndian)
+        sin_addr.s_addr = host
     }
 }
