@@ -17,7 +17,7 @@ OpenWave comes to Android, with no computer needed.
 - **Checksums** (`.sha256`) next to every installer in each release.
 
 ### Changed
-- **New logo in the app's top bar**: a silver glass wave.
+- **New Mac menu-bar icon**: the silver glass wave, shown in full colour instead of a flat silhouette.
 
 ### Fixed
 - If you downloaded a song from a music video, the original item now shows as downloaded and plays offline. Before, it tried to stream.

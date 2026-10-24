@@ -674,9 +674,3 @@ body.offline .offline-pill { display: flex !important; }
 .topbar .brand .brand-glass { width: 46px; height: 31px; border-radius: 10px; }
 .topbar .brand .brand-glass img { width: 37px; }
 .brand:hover .brand-glass { box-shadow: inset 0 1px 0 rgba(255,255,255,.45), inset 0 -10px 18px rgba(79,107,255,.24), 0 8px 26px rgba(60,80,255,.55); }
-
-/* ------------------------------------------------------------ brand mark (silver glass wave) */
-.brand-mark { height: 26px; width: auto; flex: none; filter: drop-shadow(0 2px 8px rgba(160, 175, 255, .35)) drop-shadow(0 0 1px rgba(255,255,255,.4)); transition: filter .2s, transform .2s; }
-.brand:hover .brand-mark { filter: drop-shadow(0 2px 12px rgba(160, 175, 255, .6)) drop-shadow(0 0 1px rgba(255,255,255,.6)); transform: translateY(-1px); }
-.sidebar .brand .brand-mark { height: 30px; }
-.topbar .brand .brand-mark { height: 24px; }

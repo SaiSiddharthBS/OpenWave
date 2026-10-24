@@ -10,7 +10,6 @@ import base64
 import math
 from pathlib import Path
 
-from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[2]
 MARK = base64.b64encode((ROOT / "assets/logo-mark.png").read_bytes()).decode()
@@ -60,6 +59,8 @@ def icon_html(body: int, offset: int, shape: str, mark_w: float, shadow: bool, l
 
 
 def main():
+    from playwright.sync_api import sync_playwright
+
     with sync_playwright() as p:
         b = p.chromium.launch(channel="chrome")
         pg = b.new_page(viewport={"width": 1024, "height": 1024})
@@ -109,17 +110,29 @@ def main():
         for f in ("android-background.png", "android-foreground.png", "android-legacy.png"):
             (ROOT / "assets" / f).unlink()
 
-    # Menu-bar template icon: the wave's silhouette, which macOS tints for light/dark menu bars.
-    from PIL import Image
-    mark = Image.open(ROOT / "assets/logo-mark.png").convert("RGBA")
-    alpha = mark.split()[3].point(lambda v: 255 if v > 90 else 0)
-    sil = Image.new("RGBA", mark.size, (0, 0, 0, 0))
-    sil.putalpha(alpha)
+    menubar_icon()
+
+
+def menubar_icon():
+    """Menu-bar icon: the silver glass wave (assets/menubar-mark.png, trimmed from
+    assets/menubar-source.png) in its own colours, with a faint shadow so it stays
+    visible on light menu bars too."""
+    from PIL import Image, ImageFilter
+    mark = Image.open(ROOT / "assets/menubar-mark.png").convert("RGBA")
     out = ROOT / "macos/Resources"
     out.mkdir(exist_ok=True)
     for scale, suffix in [(1, ""), (2, "@2x")]:
-        h = 13 * scale
-        sil.resize((round(mark.width * h / mark.height), h), Image.LANCZOS).save(out / f"MenuBarIcon{suffix}.png")
+        h = 16 * scale
+        w = round(mark.width * h / mark.height)
+        pad = 2 * scale
+        icon = mark.resize((w, h), Image.LANCZOS)
+        shadow = Image.new("RGBA", icon.size, (0, 0, 0, 0))
+        shadow.putalpha(icon.split()[3].point(lambda v: v * 0.45))
+        canvas = Image.new("RGBA", (w + 2 * pad, h + 2 * pad), (0, 0, 0, 0))
+        canvas.alpha_composite(shadow, (pad, pad + max(1, scale // 2)))
+        canvas = canvas.filter(ImageFilter.GaussianBlur(0.6 * scale))
+        canvas.alpha_composite(icon, (pad, pad))
+        canvas.save(out / f"MenuBarIcon{suffix}.png")
 
 
 if __name__ == "__main__":

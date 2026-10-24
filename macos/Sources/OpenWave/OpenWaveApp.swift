@@ -12,7 +12,7 @@ struct OpenWaveApp: App {
                 .environmentObject(bridge)
         } label: {
             if let icon = MenuBarIcon.image {
-                Image(nsImage: icon)
+                Image(nsImage: icon).renderingMode(.original)
             } else {
                 Image(systemName: "waveform")
             }
@@ -111,12 +111,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     @objc private func dockLike() { Bridge.shared.command("like") }
 }
 
-/// The OpenWave wave as a template image, so macOS tints it for light and dark menu bars.
+/// The silver OpenWave wave, shown in its own colours (not as a template, which macOS would
+/// flatten to a one-colour silhouette). Its faint shadow keeps it visible on light menu bars.
 enum MenuBarIcon {
     static let image: NSImage? = {
         guard let image = NSImage(named: "MenuBarIcon") else { return nil }
-        image.isTemplate = true
-        image.size = NSSize(width: image.size.width * 13 / max(image.size.height, 1), height: 13)
+        image.isTemplate = false
+        image.size = NSSize(width: image.size.width * 20 / max(image.size.height, 1), height: 20)
         return image
     }()
 }
