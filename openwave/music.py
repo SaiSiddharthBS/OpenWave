@@ -20,6 +20,8 @@ from urllib.parse import parse_qs, urlparse
 
 from ytmusicapi import YTMusic
 
+from . import kv
+
 VIDEO_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
 _local = threading.local()
@@ -38,10 +40,12 @@ def _yt() -> YTMusic:
 
 
 def cached(ttl: int, maxsize: int = 512):
-    """TTL cache for async functions keyed on their arguments."""
+    """TTL cache for async functions keyed on their arguments. A call made while the same lookup
+    is already running joins it (a tap right after a prefetch shouldn't start over)."""
 
     def deco(fn):
         store: dict[tuple, tuple[float, Any]] = {}
+        running: dict[tuple, asyncio.Future] = {}
 
         @wraps(fn)
         async def wrapper(*args, **kwargs):
@@ -49,7 +53,14 @@ def cached(ttl: int, maxsize: int = 512):
             hit = store.get(key)
             if hit and hit[0] > time.monotonic():
                 return hit[1]
-            value = await fn(*args, **kwargs)
+            if key in running:
+                return await asyncio.shield(running[key])
+            task = asyncio.ensure_future(fn(*args, **kwargs))
+            running[key] = task
+            try:
+                value = await asyncio.shield(task)
+            finally:
+                running.pop(key, None)
             if len(store) >= maxsize:
                 store.pop(next(iter(store)))
             store[key] = (time.monotonic() + ttl, value)
@@ -236,16 +247,25 @@ async def match_song(title: str, artist: str = "", duration: int | None = None) 
 
 
 @cached(ttl=86400)
-async def audio_version(video_id: str) -> dict | None:
-    """The audio-track ("song") version of any YouTube video, or None if there isn't one."""
-    info = await track_info(video_id)
-    if not info:
-        return None
-    if info["type"] == "song":
-        return info
-    artist = info["artists"][0]["name"] if info["artists"] else ""
+async def audio_version(video_id: str, title: str = "", artist: str = "") -> dict | None:
+    """The audio-track ("song") version of any YouTube video, or None if there isn't one.
+    With the video's title and artist (the app has them from the list) it's one lookup, not two.
+    Remembered on disk for a month: it rarely changes, and phones restart the engine often."""
+    remembered = kv.get(f"audio:{video_id}")
+    if remembered is not kv.MISSING:
+        return remembered
+    if not title:
+        info = await track_info(video_id)
+        if not info:
+            return None
+        if info["type"] == "song":
+            kv.put(f"audio:{video_id}", info, 30 * 86400)
+            return info
+        title, artist = info["title"], info["artists"][0]["name"] if info["artists"] else ""
     # Videos run longer (intros, skits), so don't let duration veto the match.
-    return await match_song(info["title"], artist)
+    song = await match_song(title, artist)
+    kv.put(f"audio:{video_id}", song, 30 * 86400)
+    return song
 
 
 @cached(ttl=600)
@@ -345,7 +365,7 @@ async def playlist(playlist_id: str, limit: int | None = 300) -> dict:
     """limit=None fetches every song (imports); browsing shows the first 300."""
     p = await _call("get_playlist", _strip_vl(playlist_id), limit=limit)
     author = p.get("author")
-    return {
+    result = {
         "type": "playlist",
         "id": p.get("id") or playlist_id,
         "title": p.get("title"),
@@ -357,6 +377,7 @@ async def playlist(playlist_id: str, limit: int | None = 300) -> dict:
         # Video entries stay listed; the player swaps each for its audio track when it plays.
         "tracks": _compact(track(t) for t in p.get("tracks") or []),
     }
+    return result
 
 
 @cached(ttl=3600)

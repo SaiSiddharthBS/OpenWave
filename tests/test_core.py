@@ -251,3 +251,25 @@ def test_stream_answers_the_whole_requested_range(monkeypatch):
 
         plain = c.get("/api/stream/dQw4w9WgXcQ")
         assert plain.status_code == 200 and plain.content == data
+
+
+def test_song_versions_are_remembered_across_restarts(tmp_path, monkeypatch):
+    import asyncio
+
+    from openwave import kv, music
+
+    monkeypatch.setenv("OPENWAVE_DATA", str(tmp_path))
+    monkeypatch.setattr(kv, "_db", None)
+    calls = []
+
+    async def fake_track_info(video_id):
+        calls.append(video_id)
+        return {"type": "song", "videoId": video_id, "title": "x", "artists": []}
+
+    monkeypatch.setattr(music, "track_info", fake_track_info)
+    first = asyncio.run(music.audio_version.__wrapped__("abcdefghijk"))
+    monkeypatch.setattr(kv, "_db", None)  # a "restart": new connection, empty memory cache
+    again = asyncio.run(music.audio_version.__wrapped__("abcdefghijk"))
+    assert first == again and calls == ["abcdefghijk"]
+    kv.put("gone", 1, -1)
+    assert kv.get("gone") is kv.MISSING and kv.get("never") is kv.MISSING

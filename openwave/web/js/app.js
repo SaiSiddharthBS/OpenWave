@@ -669,13 +669,15 @@ document.body.classList.toggle('offline', !navigator.onLine);
 let hoverTimer;
 const prefetched = new Set();
 document.addEventListener('pointerover', (e) => {
-  const vid = e.target.closest?.('[data-vid]')?.dataset.vid;
+  const el = e.target.closest?.('[data-vid]');
+  const vid = el?.dataset.vid;
   if (!vid || !navigator.onLine || offline.has(vid) || prefetched.has(vid) || vid === player.current?.videoId) return;
   clearTimeout(hoverTimer);
   hoverTimer = setTimeout(() => {
     if (prefetched.size > 300) prefetched.clear();
     prefetched.add(vid);
-    get.prefetch(vid);
+    const t = el.dataset.mv === '1' ? rowData(el)?.track : null;
+    get.prefetch(vid, !!t, t?.title || '', t?.artists?.[0]?.name || '');
   }, e.pointerType === 'mouse' ? 150 : 0);
 });
 

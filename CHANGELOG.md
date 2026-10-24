@@ -10,6 +10,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - YouTube and YouTube Music playlists import every song (before: the first 300).
 - **A smoother, more native phone app.** Pages slide in and out. Swipe the player down to close it, and swipe the artwork or the mini player to change songs. Long-press a song for its menu. Android gives a small vibration for these, images fade in, and everything you tap reacts.
 - **Home shortcuts** to your liked songs, downloads and playlists.
+- **Faster.** Home opens instantly (the last Home is shown while a fresh one loads). Tapping a music video starts its song about 0.6 s sooner. Songs get ready while your finger is on them, and the song you were last playing is ready when the app opens. The song version of each music video is remembered between launches.
 - On phones, **Library is a list**, and on album, playlist and artist pages the top bar takes the page's colour and shows its title as you scroll.
 
 ### Fixed

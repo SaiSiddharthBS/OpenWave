@@ -114,7 +114,7 @@ export async function search({ q = '', type = 'all' }) {
   const data = await get.search(q, type);
   if (data.redirect) { location.replace(data.redirect); return { html: '' }; }
   const first = data.top?.videoId ? data.top : (data.results || []).find((r) => r.videoId);
-  if (first) get.prefetch(first.videoId); // the top hit is the most likely click
+  if (first) get.prefetch(first.videoId, first.type === 'video', first.title, first.artists?.[0]?.name || ''); // the top hit is the most likely click
 
   const chips = `<div class="chips">${TYPES.map(([k, label]) =>
     `<a class="chip ${k === type ? 'on' : ''}" href="#/search?q=${enc(q)}&type=${k}">${label}</a>`).join('')}</div>`;

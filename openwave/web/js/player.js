@@ -135,7 +135,7 @@ class Player extends EventTarget {
     if (!t || t.type !== 'video' || t._checked || offline.has(t.videoId) || !navigator.onLine) return t;
     t._checked = true;
     try {
-      const song = await get.audio(t.videoId);
+      const song = await get.audio(t.videoId, t.title, t.artists?.[0]?.name || '');
       if (song?.videoId && this.queue[i] === t) {
         this.queue[i] = { ...tag(song), _k: t._k, _checked: true };
         this.emit('queue');
@@ -611,6 +611,9 @@ class Player extends EventTarget {
       this.emit('time');
       this.updateMetadata();
     });
+    // Pressing play to carry on is the most likely first tap, so get that song ready now.
+    const t = this.current;
+    if (t && navigator.onLine && !offline.has(t.videoId)) get.prefetch(t.videoId, t.type === 'video', t.title, t.artists?.[0]?.name || '');
   }
 
   // ---------------------------------------------------------------- OS integration

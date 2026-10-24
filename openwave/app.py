@@ -129,9 +129,10 @@ async def up_next(video_id: str, playlistId: str | None = None):
 
 
 @app.get("/api/audio/{video_id}")
-async def audio(video_id: str):
-    """The audio-track version of a video (OpenWave plays songs, not music videos)."""
-    info = await _guard(music.audio_version(_check_id(video_id)))
+async def audio(video_id: str, title: str = "", artist: str = ""):
+    """The audio-track version of a video (OpenWave plays songs, not music videos). Passing the
+    video's title and artist, when the app has them, saves a lookup."""
+    info = await _guard(music.audio_version(_check_id(video_id), title[:200], artist[:200]))
     if not info:
         raise HTTPException(404, "no audio version")
     return info
@@ -154,13 +155,18 @@ async def lyrics(video_id: str):
 
 
 @app.post("/api/prefetch/{video_id}")
-async def prefetch(video_id: str):
-    """Resolve a stream ahead of time so the next track starts instantly."""
+async def prefetch(video_id: str, mv: bool = False, title: str = "", artist: str = ""):
+    """Resolve a stream ahead of time so the next track starts instantly. For a music video (mv=1)
+    the song version is looked up first, since that's what the player will actually play."""
     _check_id(video_id)
 
     async def run():
         try:
-            await youtube.resolve(video_id)
+            target = video_id
+            if mv:
+                song = await music.audio_version(video_id, title[:200], artist[:200])
+                target = song["videoId"] if song else video_id
+            await youtube.resolve(target)
         except Exception:  # noqa: BLE001 - best effort
             pass
 
