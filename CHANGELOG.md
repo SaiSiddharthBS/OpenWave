@@ -5,6 +5,10 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Fixed
+- **Songs no longer stop partway and skip to the next one.** In the Mac app (and Safari), every song longer than about 4 minutes was cut off around the 4-minute mark: the engine answered the player with only the first piece of the song, and WebKit took that as the end. The engine now always sends the whole song, fetching it from YouTube piece by piece behind the scenes, and picks up from the exact spot if YouTube drops the connection (for example during a long pause).
+- If a song ever does stop early, the player now continues it from that point instead of skipping it.
+
 ## [0.3.0] — 2026-10-24
 
 OpenWave comes to Android, with no computer needed.

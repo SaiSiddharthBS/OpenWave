@@ -147,6 +147,7 @@ class Player extends EventTarget {
   // ---------------------------------------------------------------- listening accounting
   beginTrack(t) {
     this.forcedEnd = false;
+    this.resumes = 0;
     this.listenTrack = t;
     this.listened = 0;
     this.lastPos = null;
@@ -537,6 +538,14 @@ class Player extends EventTarget {
   }
 
   onEnded() {
+    // A stream that broke off can look like the end of the song (WebKit even shortens the reported
+    // length to match), so compare with the catalog length too, and pick up where it stopped.
+    const pos = this.el.currentTime;
+    const full = Math.max(this.duration, this.current?.duration || 0);
+    if (!this.forcedEnd && !deckBlobs[this.deck] && full - pos > 5 && this.resumes < 3) {
+      this.resumes++;
+      return this.load({ at: pos, fresh: false });
+    }
     if (this.sleep?.endOfTrack) {
       this.sleep = null;
       this.commitListen();

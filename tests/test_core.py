@@ -200,3 +200,54 @@ def test_app_update_offers_the_right_download(monkeypatch):
     assert asyncio.run(releases.check(None))["download"].endswith("OpenWave-Windows-Setup.exe")
     monkeypatch.setattr(releases.sys, "platform", "darwin")  # no Mac files in this release
     assert not asyncio.run(releases.check(None))["available"]
+
+
+def test_stream_answers_the_whole_requested_range(monkeypatch):
+    """WebKit ends the song when a "bytes=N-" answer stops short, so /api/stream must cover the
+    full range even though upstream is fetched in pieces, and resume if a piece breaks off."""
+    import httpx
+    from fastapi.testclient import TestClient
+
+    data = bytes(range(256)) * 40  # 10240 bytes, served upstream 4096 at a time
+    piece = 4096
+    requested = []
+    broken = {"once": True}
+
+    class Chunked(httpx.AsyncByteStream):
+        def __init__(self, body, fail_after=None):
+            self.body, self.fail_after = body, fail_after
+
+        async def __aiter__(self):
+            for i in range(0, len(self.body), 1000):
+                if self.fail_after is not None and i >= self.fail_after:
+                    raise httpx.ReadError("connection dropped")
+                yield self.body[i:i + 1000]
+
+    def upstream(request):
+        start, _, want = request.headers["range"].split("=")[1].partition("-")
+        start = int(start)
+        end = min(start + piece, len(data), int(want) + 1 if want else len(data)) - 1
+        fail = 2000 if start == 4096 and broken.pop("once", False) else None  # second piece breaks once
+        return httpx.Response(206, stream=Chunked(data[start:end + 1], fail),
+                              headers={"content-range": f"bytes {start}-{end}/{len(data)}", "content-type": "audio/webm"})
+
+    mock = httpx.AsyncClient(transport=httpx.MockTransport(upstream))
+
+    async def fake_open(video_id, quality, range_header, codec=None):
+        requested.append(range_header)
+        return await mock.send(mock.build_request("GET", "https://rr1.googlevideo.com/x", headers={"range": range_header or "bytes=0-"}), stream=True)
+
+    monkeypatch.setattr(app, "_open_upstream", fake_open)
+    with TestClient(app.app) as c:
+        whole = c.get("/api/stream/dQw4w9WgXcQ", headers={"Range": "bytes=0-"})
+        assert whole.status_code == 206 and whole.content == data
+        assert whole.headers["content-range"] == f"bytes 0-{len(data) - 1}/{len(data)}"
+        assert whole.headers["content-length"] == str(len(data))
+        assert requested == ["bytes=0-", "bytes=4096-10239", "bytes=6096-10239", "bytes=10192-10239"]  # resumed at 6096
+
+        part = c.get("/api/stream/dQw4w9WgXcQ", headers={"Range": "bytes=5000-9000"})
+        assert part.status_code == 206 and part.content == data[5000:9001]
+        assert part.headers["content-range"] == f"bytes 5000-9000/{len(data)}"
+
+        plain = c.get("/api/stream/dQw4w9WgXcQ")
+        assert plain.status_code == 200 and plain.content == data

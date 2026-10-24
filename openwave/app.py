@@ -216,8 +216,55 @@ def _relay(resp: httpx.Response, extra: dict | None = None) -> StreamingResponse
 
 @app.get("/api/stream/{video_id}")
 async def stream(video_id: str, request: Request, q: str = "normal", codec: str | None = None):
-    resp = await _open_upstream(_check_id(video_id), q, request.headers.get("range"), codec)
-    return _relay(resp)
+    """Exactly the bytes the player asked for. YouTube is fetched in CHUNK-sized pieces, but the
+    answer always covers the whole requested range: WebKit (Safari, the Mac app) treats a shorter
+    answer to "bytes=N-" as the end of the song, which cut every song longer than one piece."""
+    video_id = _check_id(video_id)
+    range_header = request.headers.get("range")
+    first = await _open_upstream(video_id, q, range_header, codec)
+    total = _total_size(first)
+    m = re.match(r"bytes=(\d+)-(\d*)$", range_header or "")
+    if first.status_code != 206 or total is None or (range_header and not m):
+        return _relay(first)
+    start = int(m.group(1)) if m else 0
+    end = min(int(m.group(2)), total - 1) if m and m.group(2) else total - 1
+    headers = {k: v for k, v in first.headers.items() if k.lower() in ("content-type", "last-modified", "etag")}
+    headers.update({"accept-ranges": "bytes", "cache-control": "no-store", "content-length": str(end - start + 1)})
+    if range_header:
+        headers["content-range"] = f"bytes {start}-{end}/{total}"
+    body = _stitched(first, video_id, q, codec, start, end)
+    return StreamingResponse(body, status_code=206 if range_header else 200, headers=headers)
+
+
+async def _stitched(first: httpx.Response, video_id: str, q: str, codec: str | None, start: int, end: int):
+    """Bytes start..end (inclusive), continuing piece by piece after `first`. A dropped upstream
+    connection (e.g. while the song is paused) resumes from the exact byte rather than ending early."""
+    resp, pos, failures = first, start, 0
+    try:
+        while pos <= end:
+            before = pos
+            try:
+                async for chunk in resp.aiter_raw():
+                    chunk = chunk[: end + 1 - pos]
+                    pos += len(chunk)
+                    yield chunk
+                    if pos > end:
+                        break
+            except httpx.HTTPError:
+                failures += 1
+                if failures > 3:
+                    raise
+            finally:
+                await resp.aclose()
+            if pos > end:
+                break
+            if pos == before:
+                failures += 1
+                if failures > 3:
+                    raise youtube.StreamError(f"YouTube stopped sending audio at byte {pos}")
+            resp = await _open_upstream(video_id, q, f"bytes={pos}-{end}", codec)
+    finally:
+        await resp.aclose()
 
 
 def _total_size(resp: httpx.Response) -> int | None:
@@ -231,25 +278,13 @@ async def download(video_id: str, q: str = "normal", codec: str | None = None):
     _check_id(video_id)
     first = await _open_upstream(video_id, q, "bytes=0-", codec)
     total = _total_size(first)
-
-    async def body():
-        resp, pos = first, 0
-        try:
-            while True:
-                async for chunk in resp.aiter_raw():
-                    pos += len(chunk)
-                    yield chunk
-                await resp.aclose()
-                if total is None or pos >= total:
-                    break
-                resp = await _open_upstream(video_id, q, f"bytes={pos}-", codec)
-        finally:
-            await resp.aclose()
-
-    headers = {"cache-control": "no-store"}
-    if total:
-        headers["content-length"] = str(total)
-    return StreamingResponse(body(), media_type=first.headers.get("content-type", "audio/mp4"), headers=headers)
+    if total is None:
+        return _relay(first)
+    return StreamingResponse(
+        _stitched(first, video_id, q, codec, 0, total - 1),
+        media_type=first.headers.get("content-type", "audio/mp4"),
+        headers={"cache-control": "no-store", "content-length": str(total)},
+    )
 
 
 def _allowed(url: str, hosts: tuple[str, ...]) -> bool:
