@@ -23,8 +23,9 @@ def _js_runtimes() -> dict:
     found = {}
     bundled = bin_dir()
     for name in ("deno", "node", "bun"):
-        if bundled and (bundled / name).is_file():
-            found[name] = {"path": str(bundled / name)}
+        exe = next((bundled / f for f in (name, f"{name}.exe") if bundled and (bundled / f).is_file()), None)
+        if exe:
+            found[name] = {"path": str(exe)}
         elif shutil.which(name):
             found[name] = {}
     return found

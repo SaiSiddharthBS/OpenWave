@@ -162,3 +162,16 @@ def test_updated_extractors_take_priority(tmp_path, monkeypatch):
     assert importlib.import_module("fake_extractor_pkg").VERSION == "updated"
     assert finder.find_spec("json") is None  # everything else resolves normally
     assert updater._newer("2026.11.1", "2026.10.21") and not updater._newer("2026.10.21", "2026.10.21")
+
+
+def test_bundled_js_runtime_found_on_every_os(tmp_path, monkeypatch):
+    """Packaged apps ship Deno next to the engine: 'deno' on macOS/Linux, 'deno.exe' on Windows."""
+    from openwave import youtube
+
+    for filename in ("deno", "deno.exe"):
+        d = tmp_path / filename.replace(".", "_")
+        d.mkdir()
+        (d / filename).write_text("")
+        monkeypatch.setattr(youtube, "bin_dir", lambda d=d: d)
+        monkeypatch.setattr(youtube.shutil, "which", lambda name: None)
+        assert youtube._js_runtimes() == {"deno": {"path": str(d / filename)}}
