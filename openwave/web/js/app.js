@@ -8,7 +8,8 @@ import * as views from './views.js';
 import { insights, shareInsights } from './insights.js';
 import { openImport } from './importer.js';
 import { ensureProfile, switchProfile } from './profiles.js';
-import { initNative, shareFile } from './native.js';
+import { initNative, shareFile, haptic } from './native.js';
+import { initGestures } from './gestures.js';
 import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
@@ -53,6 +54,8 @@ async function playLink(videoId) {
   return { html: '' };
 }
 
+let navBack = false; // the next render is a step back (page slides in from the left)
+
 async function render({ keepScroll = false } = {}) {
   const [path, qs] = (location.hash.slice(1) || '/home').split('?');
   const params = new URLSearchParams(qs || '');
@@ -70,7 +73,11 @@ async function render({ keepScroll = false } = {}) {
   hideSuggest();
   if (name === 'search' && document.activeElement !== searchInput) searchInput.value = params.get('q') || '';
 
+  document.body.classList.toggle('kind-detail', sk === 'detail');
+  topbar.classList.remove('solid');
   const scroll = main.scrollTop;
+  const back = navBack;
+  navBack = false;
   const slow = setTimeout(() => { if (token === renderToken) { view.innerHTML = skeleton(sk); main.scrollTop = 0; } }, 150);
   try {
     const out = await load(match, params);
@@ -79,12 +86,14 @@ async function render({ keepScroll = false } = {}) {
     page = { ...out, name };
     view.innerHTML = out.html;
     main.scrollTop = keepScroll ? scroll : 0;
+    if (!keepScroll) enter(back ? 'enter-back' : sk === 'detail' ? 'enter-fwd' : 'enter-tab');
+    topbarTitle.textContent = view.querySelector('.hero h1, .lib-head h1, .settings h1')?.textContent || '';
     out.mount?.(view);
     markDownloads();
     enableDrag();
-    view.style.removeProperty('--tint');
-    if (out.tintColor) view.style.setProperty('--tint', out.tintColor);
-    else if (out.tint) sampleTint(img(out.tint, 120)).then((c) => c && token === renderToken && view.style.setProperty('--tint', c));
+    main.style.removeProperty('--tint');
+    if (out.tintColor) main.style.setProperty('--tint', out.tintColor);
+    else if (out.tint) sampleTint(img(out.tint, 120)).then((c) => c && token === renderToken && main.style.setProperty('--tint', c));
     markPlaying();
   } catch (e) {
     if (token !== renderToken) return;
@@ -95,6 +104,55 @@ async function render({ keepScroll = false } = {}) {
 }
 
 window.addEventListener('hashchange', () => { closeNP(); render(); });
+
+/** Slide the new page in: forward from the right, back from the left, tabs fade up. */
+function enter(kind) {
+  view.classList.remove('enter-fwd', 'enter-back', 'enter-tab');
+  void view.offsetWidth; // restart the animation
+  view.classList.add(kind);
+}
+
+// On album, playlist and artist pages the top bar turns solid (in the page's colour) and shows the
+// title once the big header scrolls away, like other music apps.
+const topbar = $('#topbar');
+const topbarTitle = $('#topbar-title');
+main.addEventListener('scroll', () => {
+  const hero = view.querySelector('.hero, .lib-head, .settings h1');
+  const past = hero ? main.scrollTop > hero.offsetTop + hero.offsetHeight - topbar.offsetHeight - 8 : main.scrollTop > 40;
+  if (topbar.classList.contains('solid') !== past) topbar.classList.toggle('solid', past);
+}, { passive: true });
+
+// ================================================================== back (Android back button / gesture)
+// The app keeps its own trail of screens: the WebView's history also holds the start-up page and
+// play links, so "back" through it could replay a song or leave the app.
+const trail = [location.hash || '#/home'];
+let goingBack = false;
+window.addEventListener('hashchange', () => {
+  const here = location.hash || '#/home';
+  if (goingBack) { goingBack = false; return; }
+  if (here.startsWith('#/play/') || trail[trail.length - 1] === here) return;
+  trail.push(here);
+  if (trail.length > 60) trail.shift();
+});
+
+/** Undo the last step: a menu, dialog, sheet or the player first, then the previous screen.
+ * Returns false on Home with nothing open, so the app can step aside (music keeps playing). */
+function goBack() {
+  if (!$('#menu').hidden) { closeMenu(); return true; }
+  const dialog = $('#dialog');
+  if (dialog.open) { dialog.close('cancel'); return true; }
+  if ($('#profiles:not([hidden])')) return false;
+  if (np.classList.contains('show-panel')) { np.classList.remove('show-panel'); $$('.np-sheet-btns button').forEach((b) => b.classList.remove('on')); return true; }
+  if (!np.hidden) { closeNP(); return true; }
+  const here = location.hash || '#/home';
+  while (trail.length > 1) {
+    trail.pop();
+    const prev = trail[trail.length - 1];
+    if (prev !== here) { navBack = true; goingBack = true; location.replace(prev); return true; }
+  }
+  if (!document.body.classList.contains('route-home')) { trail[0] = '#/home'; navBack = true; goingBack = true; location.replace('#/home'); return true; }
+  return false;
+}
 
 // Library-backed pages refresh themselves when the library changes (here or on another device).
 store.on(async (what) => {
@@ -323,7 +381,7 @@ const ACTIONS = {
   shuffle: () => player.toggleShuffle(),
   repeat: () => player.cycleRepeat(),
   mute: () => player.toggleMute(),
-  'like-current': () => { if (player.current) toast(store.toggleLike(player.current) ? 'Added to Liked songs' : 'Removed from Liked songs'); },
+  'like-current': () => { if (player.current) { haptic('tick'); toast(store.toggleLike(player.current) ? 'Added to Liked songs' : 'Removed from Liked songs'); } },
   'open-np': () => openNP(),
   'close-np': () => closeNP(),
   'np-queue': () => toggleNP('queue'),
@@ -734,17 +792,29 @@ player.addEventListener('error', (e) => toast(e.detail, 4500));
 
 // ================================================================== now playing
 function openNP(tab) {
+  np.classList.remove('closing');
+  np.style.transform = '';
   np.hidden = false;
   document.body.classList.add('np-open');
   if (tab) showTab(tab);
   else if ($('#np-lyrics').hidden) renderQueue(); else loadLyrics();
 }
 
-function closeNP() {
-  if (np.hidden) return;
-  np.hidden = true;
+/** Close the full-screen player, sliding it down (from where the finger left it, after a swipe). */
+function closeNP({ from = 0 } = {}) {
+  if (np.hidden || np.classList.contains('closing')) return;
   np.classList.remove('show-panel');
   document.body.classList.remove('np-open');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { np.hidden = true; np.style.transform = ''; return; }
+  np.classList.add('closing');
+  np.style.transform = `translateY(${from}px)`;
+  requestAnimationFrame(() => requestAnimationFrame(() => { np.style.transform = 'translateY(100%)'; }));
+  setTimeout(() => {
+    if (!np.classList.contains('closing')) return; // reopened meanwhile
+    np.hidden = true;
+    np.classList.remove('closing');
+    np.style.transform = '';
+  }, 280);
 }
 
 function toggleNP(tab) {
@@ -832,6 +902,7 @@ lyricsBox.addEventListener('click', (e) => {
 
 // ================================================================== boot
 initNative({
+  back: () => goBack(),
   toggle: () => player.toggle(),
   play: () => player.play(),
   pause: () => player.pause(),
@@ -857,6 +928,7 @@ bindVolume();
 bindTrack(player.current);
 bindSleep();
 initUpdates();
+initGestures({ np, closeNP });
 Promise.all([offline.init(), ensureProfile()]).finally(() => {
   renderProfileChip();
   renderSidebar();

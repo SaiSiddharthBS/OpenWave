@@ -651,7 +651,7 @@ body.offline .offline-pill { display: flex !important; }
 .row.drop-below { box-shadow: inset 0 -2px 0 var(--accent); }
 
 /* ------------------------------------------------------------ native macOS app */
-.native-app .nav-arrows { display: flex; }
+.native-mac-app .nav-arrows { display: flex; } /* phones use the back button/gesture instead */
 .native-app body { -webkit-user-select: none; user-select: none; }
 .native-app input, .native-app textarea, .native-app .lyrics, .native-app .about { -webkit-user-select: text; user-select: text; }
 /* Mac app: leave room for the traffic lights and the window-drag strip along the top. */
@@ -669,3 +669,89 @@ body.offline .offline-pill { display: flex !important; }
 .brand { gap: 11px; }
 .wordmark { font-weight: 850; letter-spacing: -.035em; }
 .wordmark b { font-weight: inherit; background: linear-gradient(90deg, #2fc8ff, #4f6bff 48%, #c45cff); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+/* ------------------------------------------------------------ motion & touch */
+/* Pages slide in: forward from the right, back from the left, tabs fade up. */
+.view.enter-fwd { animation: view-fwd .32s var(--ease); }
+.view.enter-back { animation: view-back .32s var(--ease); }
+.view.enter-tab { animation: view-tab .26s var(--ease); }
+@keyframes view-fwd { from { opacity: 0; transform: translateX(36px); } }
+@keyframes view-back { from { opacity: 0; transform: translateX(-36px); } }
+@keyframes view-tab { from { opacity: 0; transform: translateY(10px); } }
+
+/* Artwork fades in as it arrives instead of popping in. */
+.view img, .pb-art, .np-art { transition: opacity .35s ease; }
+.view img:not(.ld) { opacity: 0; }
+
+/* The full-screen player follows a swipe down and slides away. */
+.np { transition: transform .3s var(--ease); }
+.np.closing { transition: transform .26s cubic-bezier(.4, 0, .8, .4); }
+.np-head, .np-stage { touch-action: none; }
+.pb-left { touch-action: pan-y; }
+
+/* Album, playlist and artist pages: the top bar is clear over the header, then turns solid. */
+.topbar-title { display: none; }
+.kind-detail .topbar { background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; transition: background-color .25s; }
+.kind-detail .topbar.solid { background: rgba(var(--tint), .94); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3); }
+
+/* Home: quick shortcuts to your own music, like other music apps. */
+.shortcuts { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); gap: 8px; margin: 4px 0 6px; }
+.shortcut { display: flex; align-items: center; gap: 12px; height: 56px; padding-right: 10px; border-radius: 6px; overflow: hidden; background: rgba(255,255,255,.08); font-weight: 700; font-size: 13.5px; transition: background .15s; }
+.shortcut:hover { background: rgba(255,255,255,.14); }
+.shortcut .art { width: 56px; height: 56px; flex: none; object-fit: cover; display: grid; place-items: center; background: var(--surface-2); }
+.shortcut .art svg { width: 26px; height: 26px; }
+.shortcut span { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.25; }
+
+.import input[type=file]::file-selector-button { font: inherit; font-weight: 650; color: var(--bg); background: var(--text); border: 0; border-radius: 999px; padding: 8px 16px; margin-right: 12px; cursor: pointer; }
+.error-box details { margin: 10px auto 16px; max-width: 520px; font-size: 12px; color: var(--faint); text-align: left; }
+
+/* Touch screens: press feedback instead of hover effects. */
+@media (hover: none) {
+  .row:hover, .card:hover, .top-card:hover, .side-item:hover { background: none; }
+  .row, .card, .top-card, .genre, .shortcut, .profile-tile, .chip, .tabbar a, .btn { transition: transform .14s var(--ease), background-color .14s; }
+  .row:active, .row.pressed { background: var(--hover); }
+  .row:active, .card:active, .top-card:active, .genre:active, .shortcut:active, .profile-tile:active { transform: scale(.975); }
+  .chip:active, .tabbar a:active, .btn:active { transform: scale(.94); }
+}
+
+@media (max-width: 860px) {
+  /* Quick picks: a clean list on phones (sideways columns cut titles off at the screen edge). */
+  .quick { display: flex; flex-direction: column; overflow: visible; margin: 0; padding: 0; gap: 0; scroll-snap-type: none; }
+  .quick .row:nth-child(n+9) { display: none; }
+  .shelf { scroll-snap-type: x mandatory; }
+  .shortcuts { grid-template-columns: 1fr 1fr; }
+  .shortcut { height: 52px; font-size: 12.5px; gap: 10px; }
+  .shortcut .art { width: 52px; height: 52px; }
+
+  /* Library: a list, like other music apps. */
+  .route-library .grid { grid-template-columns: 1fr; gap: 2px; }
+  .route-library .grid .card { display: grid; grid-template-columns: 60px minmax(0, 1fr); column-gap: 14px; align-items: center; margin: 0 -8px; padding: 7px 8px; border-radius: 10px; }
+  .route-library .grid .card .art { grid-row: span 2; width: 60px; height: 60px; border-radius: 6px; box-shadow: none; }
+  .route-library .grid .card.artist { text-align: left; }
+  .route-library .grid .card.artist .art { border-radius: 50%; }
+  .route-library .grid .card .art svg { width: 45%; height: 45%; }
+  .route-library .grid .card .title { margin: 0; align-self: end; -webkit-line-clamp: 1; font-size: 15px; }
+  .route-library .grid .card .sub { align-self: start; -webkit-line-clamp: 1; }
+  .lib-head h1 { font-size: 26px; }
+  .lib-actions .btn { height: 36px; padding: 0 14px; font-size: 13px; }
+
+  /* Top bar on detail pages: the title appears once the header scrolls away. */
+  .topbar { position: sticky; }
+  .topbar-title { display: block; position: absolute; left: 20px; right: 110px; font-weight: 750; font-size: 17px; opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; pointer-events: none; }
+  .topbar.solid .topbar-title { opacity: 1; transform: none; }
+  .kind-detail .topbar.solid .brand { opacity: 0; pointer-events: none; }
+
+  /* Mini player: readable text; the full-screen player slides up from the bottom. */
+  .playerbar .pb-artist { color: rgba(255,255,255,.75); }
+  .playerbar .pb-title { font-size: 14px; }
+  .np { animation: np-up .4s var(--ease); }
+  @keyframes np-up { from { transform: translateY(100%); } }
+  .tabbar a svg { transition: transform .2s var(--ease); }
+  .tabbar a.on svg { transform: scale(1.1); }
+}
+
+/* Phones and tablets scroll by touch; no scrollbar lines along the edge. */
+@media (pointer: coarse) {
+  * { scrollbar-width: none; }
+  ::-webkit-scrollbar { display: none; }
+}

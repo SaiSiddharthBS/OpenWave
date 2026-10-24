@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Base64
 import android.util.Log
+import android.view.HapticFeedbackConstants
 import android.view.ViewGroup
 import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
@@ -94,7 +95,11 @@ class MainActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (web.canGoBack()) web.goBack() else moveTaskToBack(true) // keep playing
+                // The page decides: close a menu, sheet or the player, or go to the previous screen.
+                // On Home (or before the page has loaded) OpenWave steps aside and keeps playing.
+                web.evaluateJavascript("window.openwaveNative ? window.openwaveNative.back() : false") { handled ->
+                    if (handled != "true") moveTaskToBack(true)
+                }
             }
         })
 
@@ -299,5 +304,16 @@ class MainActivity : ComponentActivity() {
 
         @JavascriptInterface
         fun appVersion(): String = BuildConfig.VERSION_NAME
+
+        @JavascriptInterface
+        fun haptic(kind: String) {
+            if (!trusted()) return
+            val feedback = when (kind) {
+                "long" -> HapticFeedbackConstants.LONG_PRESS
+                "tick" -> HapticFeedbackConstants.CLOCK_TICK
+                else -> HapticFeedbackConstants.VIRTUAL_KEY
+            }
+            web.post { web.performHapticFeedback(feedback) }
+        }
     }
 }

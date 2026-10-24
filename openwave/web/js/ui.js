@@ -107,7 +107,12 @@ export function skeleton(kind = 'home') {
 }
 
 export function errorBox(err, retry = true) {
-  return `<div class="error-box"><h3>Something went wrong</h3><p>${esc(err?.message || err)}</p>
+  const message = String(err?.message || err || '');
+  // Internal errors (YouTube changing its pages, etc.) get a plain explanation; details stay one tap away.
+  const technical = /YouTube request failed|Unable to find|Traceback|KeyError|TypeError|HTTP \d{3}/i.test(message);
+  return `<div class="error-box"><h3>${technical ? 'Couldn’t load this' : 'Something went wrong'}</h3>
+    <p>${technical ? 'YouTube didn’t answer the way OpenWave expected. Try again in a moment.' : esc(message)}</p>
+    ${technical ? `<details><summary>Details</summary>${esc(message)}</details>` : ''}
     ${retry ? '<button class="btn" data-act="reload-view">Try again</button>' : ''}</div>`;
 }
 

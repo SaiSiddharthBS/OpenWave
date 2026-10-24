@@ -10,6 +10,11 @@ const android = window.OpenWaveAndroid;
 export const isNative = !!(mac || android);
 export const isAndroid = !!android;
 
+/** A short buzz of the phone's vibration motor for likes, long-presses and swipes (Android app). */
+export function haptic(kind = 'light') {
+  try { android?.haptic?.(kind); } catch { /* an older app without haptics */ }
+}
+
 /** Hand a file to the Android share sheet (WebView can't download blobs). Returns false elsewhere. */
 export async function shareFile(name, blob) {
   if (!android) return false;
@@ -61,6 +66,7 @@ export function initNative(commands) {
       if (fn) fn(arg);
       nowPlaying();
     },
+    back: () => !!commands.back?.(), // Android back button: true when the app handled it
     state,
   };
   send({ type: 'ready', settings: store.settings });

@@ -69,6 +69,19 @@ echo "✅ profile created from the app"
 wait_text "Tester" 30 || true
 sleep 5; shot 2-home
 
+# Back button: Library → back → Home (app stays open) → back → the app steps aside.
+resumed() { adb shell dumpsys activity activities | tr -d '\r' | grep -E "mResumedActivity|topResumedActivity" | head -1; }
+tap_text "Library" || fail "Library tab not found"
+wait_text "Your Library" 20 || fail "Library didn't open"
+adb shell input keyevent KEYCODE_BACK; sleep 3
+resumed | grep -q "$PKG" || fail "back button left the app instead of going to the previous screen"
+[ "$(screen_text | grep -c 'Your Library')" -eq 0 ] || fail "back button didn't leave the Library screen"
+echo "✅ back button goes to the previous screen"
+adb shell input keyevent KEYCODE_BACK; sleep 3
+resumed | grep -q "$PKG" && fail "back on Home should step out of the app"
+adb shell am start -n "$PKG/.MainActivity" >/dev/null; sleep 4
+echo "✅ back on Home steps out of the app (and it reopens where it was)"
+
 adb shell am start -a android.intent.action.VIEW -d "openwave://play/9qnqYL0eNNI" "$PKG"
 for i in $(seq 1 60); do [ "$(state)" = "PLAYING" ] && break; sleep 2; done
 [ "$(state)" = "PLAYING" ] || fail "song did not start playing"

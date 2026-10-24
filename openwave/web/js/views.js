@@ -16,6 +16,20 @@ function greeting() {
 }
 
 // ------------------------------------------------------------------ home
+/** Quick tiles to your own music at the top of Home: liked songs, downloads, playlists, albums. */
+function shortcuts() {
+  const tiles = [];
+  if (store.liked.length) tiles.push(['#/liked', `<div class="art liked-tile">${icon('heart-fill')}</div>`, 'Liked songs']);
+  if (offline.count) tiles.push(['#/downloads', `<div class="art download-tile">${icon('download')}</div>`, 'Downloads']);
+  store.playlists.slice(0, 6).forEach((p) => tiles.push([`#/my/${encodeURIComponent(p.id)}`,
+    p.tracks[0]?.thumbnail ? `<img class="art" loading="lazy" src="${img(p.tracks[0].thumbnail, 120)}" alt="">` : `<div class="art">${icon('library')}</div>`, p.name]));
+  for (const kind of ['playlist', 'album']) {
+    store.savedList(kind).slice(0, 4).forEach((c) => tiles.push([`#/${kind}/${encodeURIComponent(c.id)}`, `<img class="art" loading="lazy" src="${img(c.thumbnail, 120)}" alt="">`, c.title]));
+  }
+  if (tiles.length < 2) return '';
+  return `<div class="shortcuts">${tiles.slice(0, 8).map(([href, art, name]) => `<a class="shortcut" href="${href}">${art}<span>${esc(name)}</span></a>`).join('')}</div>`;
+}
+
 export async function home() {
   if (!navigator.onLine) {
     const saved = await offline.list();
@@ -35,6 +49,7 @@ export async function home() {
     try { personal = await store.api('/api/me/mixes'); } catch { /* recommendations still load */ }
   }
   let html = `<h1 class="greeting">${greeting()}${store.profile ? `, ${esc(store.profile.name)}` : ''}</h1>`;
+  html += shortcuts();
   if (personal?.mixes.length) html += section(`Made for ${store.profile.name}`, personal.mixes.map(mixCard).join(''));
   if (recent.length) html += section('Jump back in', trackCards(recent, { mode: 'radio', context: { label: 'Recently played' } }));
   if (personal?.topArtists.length >= 3) {

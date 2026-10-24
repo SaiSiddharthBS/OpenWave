@@ -8,8 +8,15 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 ### Added
 - **Import from more apps, with no song limit.** Paste a playlist or album link from **Spotify, YouTube Music, Apple Music, Deezer or JioSaavn**. Or import an export file: **Exportify** or Spotify's own data download (every song, every playlist), **TuneMyMusic** (Amazon Music, Tidal, SoundCloud and more), **Soundiiz**, the **Apple Music** app's Export Playlist, and **Google Takeout** for YouTube Music. A file with several playlists becomes several playlists. The import screen explains where to get each file.
 - YouTube and YouTube Music playlists import every song (before: the first 300).
+- **A smoother, more native phone app.** Pages slide in and out. Swipe the player down to close it, and swipe the artwork or the mini player to change songs. Long-press a song for its menu. Android gives a small vibration for these, images fade in, and everything you tap reacts.
+- **Home shortcuts** to your liked songs, downloads and playlists.
+- On phones, **Library is a list**, and on album, playlist and artist pages the top bar takes the page's colour and shows its title as you scroll.
 
 ### Fixed
+- **Android back button:** it now closes menus and the player, then goes to the previous screen, and only steps out of the app on Home. Before, it left the app.
+- The back and forward arrows no longer show in the Android app.
+- Home's Quick picks no longer run off the edge of phone screens (long titles like "Gehra Hua" looked cropped).
+- Error pages explain problems in plain words.
 - After an update, the app could keep using some old files for hours, because browsers cached them without re-checking. App files are now always re-checked (cheap when unchanged).
 - **Songs no longer stop partway and skip to the next one.** In the Mac app (and Safari), every song longer than about 4 minutes was cut off around the 4-minute mark: the engine answered the player with only the first piece of the song, and WebKit took that as the end. The engine now always sends the whole song, fetching it from YouTube piece by piece behind the scenes, and picks up from the exact spot if YouTube drops the connection (for example during a long pause).
 - If a song ever does stop early, the player now continues it from that point instead of skipping it.

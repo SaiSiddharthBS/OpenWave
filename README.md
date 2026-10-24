@@ -53,7 +53,7 @@ Each desktop app is self-contained: there's nothing else to install. The files a
 - ❤️ **Liked songs, playlists you can drag to reorder, saved albums and followed artists.**
 - ✨ **Personal mixes on Home** ("Made for you", "Because you liked…"), built from what you actually play.
 - 📊 **Insights:** minutes listened, top artists, top songs and when you listen. You get a **shareable card** for social media.
-- 📥 **Import** from Spotify (paste a link or use an Exportify CSV), any YouTube playlist, or a plain song list.
+- 📥 **Import** your playlists from Spotify, YouTube Music, Apple Music, Deezer, JioSaavn, Amazon Music and more, with no song limit.
 
 **Everywhere**
 - 🍎 **Native Mac app** with media keys, Control Center, a menu-bar mini player, notifications, a Dock menu and keyboard shortcuts.
@@ -156,11 +156,19 @@ To listen away from home and use offline mode on a phone, use HTTPS. Tailscale i
 
 ## 🔁 Bring your playlists
 
-Go to **Library → Import** (or ⌘⇧I on Mac) and use any of these:
-- **A Spotify playlist or album link.** Public playlists work; Spotify only shares the first 100 songs of a link.
-- **An [Exportify](https://exportify.app) CSV** with all your Spotify playlists, at any size.
-- **A YouTube or YouTube Music playlist link.**
-- **A pasted list,** one `Artist - Title` per line.
+Go to **Library → Import** (or ⌘⇧I on Mac). There's no song limit.
+
+| From | Paste a link | Or import a file (every song, every playlist) |
+|---|---|---|
+| **Spotify** | ✅ first 100 songs (all Spotify shares publicly) | [Exportify](https://exportify.app) CSV, or Spotify → Account → Privacy → *Download your data* |
+| **YouTube / YouTube Music** | ✅ every song | Google Takeout CSV |
+| **Apple Music** | ✅ playlists and albums | Music app → File → Library → *Export Playlist* (text or XML) |
+| **Deezer** | ✅ every song | — |
+| **JioSaavn** | ✅ | — |
+| **Amazon Music, Tidal, SoundCloud and others** | — (Amazon doesn't share playlists publicly) | [TuneMyMusic](https://www.tunemymusic.com) (free) → *Export to file*, or a Soundiiz CSV |
+| **Anything else** | — | A pasted list, one `Artist - Title` per line |
+
+A file with several playlists in it becomes several playlists.
 
 OpenWave matches every song on YouTube Music, comparing title, artist and length, and builds the playlist for you. In testing, it matched 50 of 50 songs from Spotify's "Today's Top Hits" in about 12 seconds.
 
