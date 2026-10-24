@@ -10,7 +10,9 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Base64
+import android.util.Log
 import android.view.ViewGroup
+import android.webkit.ConsoleMessage
 import android.webkit.JavascriptInterface
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
@@ -29,11 +31,17 @@ import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import java.io.File
+import java.lang.ref.WeakReference
 import java.net.HttpURLConnection
 import java.net.URL
 import java.util.concurrent.Executors
 
 class MainActivity : ComponentActivity() {
+    companion object {
+        /** The live screen (Android can recreate the activity, e.g. when the WebView updates). */
+        private var current = WeakReference<MainActivity>(null)
+    }
+
     private lateinit var web: WebView
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingLink: String? = null
@@ -82,6 +90,7 @@ class MainActivity : ComponentActivity() {
         }
         setContentView(root)
         Bridge.attach(web)
+        current = WeakReference(this)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -126,13 +135,17 @@ class MainActivity : ComponentActivity() {
             return
         }
         splash(if (Engine.state == Engine.State.RUNNING) "Loading…" else "Starting OpenWave…")
-        Engine.start(this) { ok ->
-            if (ok) load(Engine.localUrl)
-            else splash("OpenWave couldn’t start: ${Engine.error ?: "unknown error"}", retry = true)
+        Engine.start(applicationContext) { ok ->
+            // Android may have recreated the screen while the engine started: talk to the live one.
+            val screen = current.get() ?: return@start
+            if (screen.serverUrl.isNotEmpty()) return@start
+            if (ok) screen.load(Engine.localUrl)
+            else screen.splash("OpenWave couldn’t start: ${Engine.error ?: "unknown error"}", retry = true)
         }
     }
 
     private fun load(base: String) {
+        Log.i(Engine.TAG, "loading $base")
         Bridge.pageWillLoad()
         val link = pendingLink
         pendingLink = null
@@ -213,7 +226,12 @@ class MainActivity : ComponentActivity() {
             return true
         }
 
+        override fun onPageFinished(view: WebView, url: String?) {
+            Log.i(Engine.TAG, "page loaded: ${url?.take(80)}")
+        }
+
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+            Log.w(Engine.TAG, "load error ${error.errorCode} ${error.description} for ${request.url}")
             if (request.isForMainFrame && request.url.scheme == "http") {
                 splash("Lost connection to OpenWave.", retry = true, offerLocal = serverUrl.isNotEmpty())
             }
@@ -221,6 +239,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private inner class Chrome : WebChromeClient() {
+        override fun onConsoleMessage(message: ConsoleMessage): Boolean {
+            if (message.messageLevel() == ConsoleMessage.MessageLevel.ERROR || message.messageLevel() == ConsoleMessage.MessageLevel.WARNING) {
+                Log.w(Engine.TAG, "page: ${message.message()} (${message.sourceId()}:${message.lineNumber()})")
+            }
+            return true
+        }
+
         override fun onShowFileChooser(view: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
             fileCallback?.onReceiveValue(null)
             fileCallback = callback

@@ -8,11 +8,16 @@ import urllib.request
 _server = None
 
 
+def _log(message: str) -> None:
+    print(f"OpenWave engine: {message}", flush=True)  # Chaquopy sends stdout to logcat (python.stdout)
+
+
 def start(data_dir: str, port: int = 47878, host: str = "127.0.0.1") -> None:
     """Run the HTTP server on a background thread; returns once it answers."""
     global _server
     if _server is not None:
         return
+    began = time.time()
     os.environ["OPENWAVE_DATA"] = data_dir
     import certifi
 
@@ -27,18 +32,24 @@ def start(data_dir: str, port: int = 47878, host: str = "127.0.0.1") -> None:
 
     from openwave.app import app
 
+    _log(f"imported in {time.time() - began:.1f}s")
     config = uvicorn.Config(app, host=host, port=port, log_level="warning", loop="asyncio", http="h11", ws="none")
     _server = uvicorn.Server(config)
     threading.Thread(target=_server.run, name="openwave-engine", daemon=True).start()
-    updater.start_background()  # keep YouTube support current without an app update
 
+    # Never let a local health probe go through a proxy.
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     deadline = time.time() + 120
+    last_error = None
     while time.time() < deadline:
         try:
-            with urllib.request.urlopen(f"http://127.0.0.1:{port}/api/health", timeout=1) as r:
+            with opener.open(f"http://127.0.0.1:{port}/api/health", timeout=2) as r:
                 if r.status == 200:
-                    return
-        except OSError:
-            time.sleep(0.2)
-    raise RuntimeError("OpenWave engine did not start")
-
+                    _log(f"listening on {host}:{port} after {time.time() - began:.1f}s")
+                    break
+        except Exception as e:  # noqa: BLE001 - keep polling until the deadline
+            last_error = e
+            time.sleep(0.25)
+    else:
+        raise RuntimeError(f"OpenWave engine did not start: {last_error}")
+    updater.start_background()  # keep YouTube support current without an app update
