@@ -36,18 +36,20 @@ tap_class() {
   local nums=($(echo "$b" | grep -oE "[0-9]+"))
   adb shell input tap $(( (nums[0] + nums[2]) / 2 )) $(( (nums[1] + nums[3]) / 2 ))
 }
-# tap the first on-screen element whose content description matches $1 (e.g. a notification button)
+# tap the first on-screen element whose content description is $1 (or starts with "$1 ") (e.g. a notification button)
 tap_desc() {
   local b
-  b=$(screen_text | grep -oE "content-desc=\"$1\"[^>]*bounds=\"\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]\"" | head -1 | grep -oE "\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]")
+  b=$(screen_text | grep -oE "content-desc=\"($1|$1 [^\"]*)\"[^>]*bounds=\"\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]\"" | head -1 | grep -oE "\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]")
   [ -n "$b" ] || return 1
   local nums=($(echo "$b" | grep -oE "[0-9]+"))
   adb shell input tap $(( (nums[0] + nums[2]) / 2 )) $(( (nums[1] + nums[3]) / 2 ))
 }
+retry() { for i in 1 2 3 4 5; do "$@" && return 0; sleep 2; done; return 1; }
 wait_state() { for i in $(seq 1 "${2:-15}"); do [ "$(state)" = "$1" ] && return 0; sleep 1; done; return 1; }
 wait_text() { for i in $(seq 1 "${2:-60}"); do screen_text | grep -q "$1" && return 0; sleep 2; done; return 1; }
 fail() {
   echo "❌ $*"; shot failure
+  echo "----- on screen"; screen_text | grep -oE '(text|content-desc)="[^"]+"' | sort -u | head -60 || true
   echo "----- media session"; session | grep -A30 "package=$PKG" || true
   echo "----- app log"; adb logcat -d -s OpenWave:V python.stdout:V python.stderr:V AndroidRuntime:E chromium:W | tail -120
   exit 1
@@ -91,10 +93,10 @@ if audible; then REAL_AUDIO=1; echo "✅ Android hears the song playing"; else
 fi
 
 adb shell cmd statusbar expand-notifications; sleep 3; shot 4-notification
-tap_desc "Pause" || fail "no Pause button on the media notification"
+retry tap_desc "Pause" || fail "no Pause button on the media notification"
 wait_state PAUSED || fail "notification Pause button did not pause"
 echo "✅ notification Pause button works"
-sleep 2; tap_desc "Play" || fail "no Play button on the media notification"
+sleep 2; retry tap_desc "Play" || fail "no Play button on the media notification"
 wait_state PLAYING || fail "notification Play button did not resume"
 echo "✅ notification Play button works"
 adb shell cmd statusbar collapse; sleep 1
