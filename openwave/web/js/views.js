@@ -3,6 +3,7 @@
 import { get, img, enc } from './api.js';
 import { store } from './store.js';
 import { offline, fmtBytes } from './offline.js';
+import { checkForUpdate, updateHint } from './update.js';
 import {
   esc, icon, fmtTotal, trackList, trackCards, cards, section, registerList, trackRow, artistLinks, empty, avatar,
 } from './ui.js';
@@ -326,6 +327,13 @@ function androidServerSetting() {
       <div class="btn-row">${current ? '<button class="btn" data-act="android-use-phone">Use this phone</button>' : ''}<button class="btn" data-act="android-set-server">${current ? 'Change' : 'Connect to computer'}</button></div></div>`;
 }
 
+function updateLine(u) {
+  if (!u?.latest) return '';
+  if (u.available) return `<div class="setting"><div><b>OpenWave ${esc(u.latest)} is available</b><p>${esc(updateHint(u))}</p></div><button class="btn primary" data-act="app-update">Update</button></div>`;
+  if (u.newer) return `<p>OpenWave ${esc(u.latest)} is out. <a href="${esc(u.page)}" target="_blank" rel="noopener">See what’s new</a> (Docker: <code>docker compose pull &amp;&amp; docker compose up -d</code>).</p>`;
+  return '<p>You have the latest version.</p>';
+}
+
 const PROFILE_COLORS = ['#7b7bff', '#2fc8ff', '#c45cff', '#ff6fae', '#ffb648', '#3ddc97', '#ff6b6b', '#8f7cff'];
 
 export async function settings() {
@@ -333,6 +341,7 @@ export async function settings() {
   const p = store.profile;
   let health = null;
   try { health = await (await fetch('/api/health')).json(); } catch { /* offline */ }
+  const update = await checkForUpdate(3000);
   const sw = (key) => `<button class="switch ${s[key] ? 'on' : ''}" data-setting-toggle="${key}" role="switch" aria-checked="${!!s[key]}" aria-label="${key}"></button>`;
   const select = (key, options, type = '') => `<select class="select" data-setting="${key}" ${type ? `data-type="${type}"` : ''}>
     ${options.map(([v, l]) => `<option value="${v}" ${String(s[key]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
@@ -365,6 +374,7 @@ export async function settings() {
       <h2>About</h2>
       <div class="prose">
         <p><b>OpenWave ${esc(health?.version || '')}</b> — free and open-source software under the GNU GPL v3. No ads, no subscriptions, no tracking, no premium tier. Ever.</p>
+        ${updateLine(update)}
         <p>Catalog and streams come from YouTube's public endpoints via <a href="https://github.com/sigma67/ytmusicapi" target="_blank" rel="noopener">ytmusicapi</a> and <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener">yt-dlp</a>. OpenWave is not affiliated with or endorsed by YouTube or Google.</p>
         <p>Server: ${health ? `online • yt-dlp ${esc(health.ytDlp)} • JS runtime: ${esc(health.jsRuntimes.join(', ') || 'none found (install Deno or Node)')}${Object.keys(health.extractorUpdates || {}).length ? ' • update downloaded, restart OpenWave to apply' : ''}` : 'unreachable'}</p>
         <p>Keyboard: <b>Space</b> play/pause • <b>←/→</b> seek • <b>Shift+←/→</b> previous/next • <b>L</b> like • <b>M</b> mute • <b>S</b> shuffle • <b>R</b> repeat • <b>/</b> search</p>

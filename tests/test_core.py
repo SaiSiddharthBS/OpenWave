@@ -175,3 +175,28 @@ def test_bundled_js_runtime_found_on_every_os(tmp_path, monkeypatch):
         monkeypatch.setattr(youtube, "bin_dir", lambda d=d: d)
         monkeypatch.setattr(youtube.shutil, "which", lambda name: None)
         assert youtube._js_runtimes() == {"deno": {"path": str(d / filename)}}
+
+
+def test_app_update_offers_the_right_download(monkeypatch):
+    import asyncio
+
+    from openwave import releases
+
+    assert releases.is_newer("0.3.1", "0.3.0") and releases.is_newer("v1.0", "0.9.9")
+    assert not releases.is_newer("0.3.0", "0.3.0") and not releases.is_newer("0.2.9", "0.3.0")
+    files = ["OpenWave-Android.apk", "OpenWave-Windows-Setup.exe", "OpenWave-Linux-x86_64.AppImage"]
+    release = {"version": "99.0.0", "page": "https://example/rel",
+               "assets": {f: f"https://example/dl/{f}" for f in files}}
+    monkeypatch.setattr(releases, "_cache", {"at": 1e18, "release": release})
+
+    phone = asyncio.run(releases.check(None, "android"))
+    assert phone["available"] and phone["download"].endswith("OpenWave-Android.apk") and phone["latest"] == "99.0.0"
+
+    monkeypatch.setattr(releases, "FROZEN", False)  # Docker / source install: never offered a download
+    assert not asyncio.run(releases.check(None))["available"]
+
+    monkeypatch.setattr(releases, "FROZEN", True)
+    monkeypatch.setattr(releases.sys, "platform", "win32")
+    assert asyncio.run(releases.check(None))["download"].endswith("OpenWave-Windows-Setup.exe")
+    monkeypatch.setattr(releases.sys, "platform", "darwin")  # no Mac files in this release
+    assert not asyncio.run(releases.check(None))["available"]

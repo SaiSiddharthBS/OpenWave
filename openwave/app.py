@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 
-from . import __version__, music, updater, youtube
+from . import __version__, music, releases, updater, youtube
 from .api_library import error_response, router as library_router
 from .config import FROZEN, data_dir
 from .library import LibraryError
@@ -83,6 +83,12 @@ async def health():
         "dataDir": str(data_dir()),
         "extractorUpdates": updater._state().get("pending", {}),
     }
+
+
+@app.get("/api/app-update")
+async def app_update(client_hint: str | None = Query(None, alias="client")):
+    """Is a newer OpenWave out, and which file should this device download?"""
+    return await releases.check(client, client_hint)
 
 
 @app.get("/api/search")

@@ -64,6 +64,11 @@ because pydantic 2's Rust core has no Android build. Keep server code compatible
 2. Keep PRs focused; add or update tests in `tests/` for server changes.
 3. `pytest` must pass. For UI changes, include a screenshot (desktop + phone width).
 
+## Releases
+
+Maintainers release with one command (`./scripts/release.sh 0.3.1`). See [MAINTAINING.md](MAINTAINING.md).
+Contributors: add your change under `## [Unreleased]` in [CHANGELOG.md](CHANGELOG.md).
+
 ## Good first issues
 
 - Translations / i18n of UI strings

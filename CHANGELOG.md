@@ -1,6 +1,9 @@
 # Changelog
 
 All notable changes to OpenWave. Versions follow [Semantic Versioning](https://semver.org).
+Write new changes under **Unreleased**; `scripts/release.sh` turns that into the next version's section.
+
+## [Unreleased]
 
 ## [0.3.0] — 2026-10-24
 
@@ -14,6 +17,7 @@ OpenWave comes to Android, with no computer needed.
   - Share a YouTube or YouTube Music link to OpenWave to play it, and use `openwave://` links.
   - **Library location:** keep the library on the phone, or connect to OpenWave on your computer to share one library everywhere.
   - Library backups and insight cards open Android's share sheet.
+- **One-tap updates**: the apps tell you when a new version is out and download the right file for your device (Android, Windows, Linux and Mac). Also in Settings → About.
 - **Checksums** (`.sha256`) next to every installer in each release.
 
 ### Changed

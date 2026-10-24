@@ -3,6 +3,11 @@ import AppKit
 /// Looks for a newer OpenWave release on GitHub.
 enum Updates {
     private static let api = URL(string: "https://api.github.com/repos/SaiSiddharthBS/OpenWave/releases/latest")!
+    #if arch(arm64)
+    private static let dmgName = "OpenWave-macOS-AppleSilicon.dmg"
+    #else
+    private static let dmgName = "OpenWave-macOS-Intel.dmg"
+    #endif
 
     static func checkInBackground() {
         let last = UserDefaults.standard.double(forKey: "lastUpdateCheck")
@@ -18,15 +23,20 @@ enum Updates {
             let json = data.flatMap { try? JSONSerialization.jsonObject(with: $0) } as? [String: Any]
             let tag = (json?["tag_name"] as? String)?.trimmingCharacters(in: CharacterSet(charactersIn: "vV"))
             let page = (json?["html_url"] as? String).flatMap(URL.init(string:))
+            // The DMG for this Mac downloads straight away; the release page is the fallback.
+            let dmg = (json?["assets"] as? [[String: Any]])?
+                .first { $0["name"] as? String == dmgName }
+                .flatMap { $0["browser_download_url"] as? String }
+                .flatMap(URL.init(string:))
             DispatchQueue.main.async {
                 let current = Bundle.main.shortVersion
                 if let tag, let page, isNewer(tag, than: current) {
                     let alert = NSAlert()
                     alert.messageText = "OpenWave \(tag) is available"
-                    alert.informativeText = "You have \(current). The new version is free, like always."
+                    alert.informativeText = "You have \(current). Open the download and drag OpenWave into Applications. Your library stays as it is."
                     alert.addButton(withTitle: "Download")
                     alert.addButton(withTitle: "Later")
-                    if alert.runModal() == .alertFirstButtonReturn { NSWorkspace.shared.open(page) }
+                    if alert.runModal() == .alertFirstButtonReturn { NSWorkspace.shared.open(dmg ?? page) }
                 } else if userInitiated {
                     let alert = NSAlert()
                     let ok = (response as? HTTPURLResponse)?.statusCode == 200

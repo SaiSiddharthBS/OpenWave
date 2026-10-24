@@ -9,6 +9,7 @@ import { insights, shareInsights } from './insights.js';
 import { openImport } from './importer.js';
 import { ensureProfile, switchProfile } from './profiles.js';
 import { initNative, shareFile } from './native.js';
+import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
   confirmDialog, sampleTint, artistLinks, errorBox, skeleton, empty, avatar,
@@ -356,6 +357,11 @@ const ACTIONS = {
     }
   },
   'clear-history': () => store.clearHistory(),
+  'app-update': async () => {
+    const info = await checkForUpdate();
+    if (info?.available) startUpdate(info);
+    else toast(info ? 'You have the latest version' : 'Couldn’t check for updates. Are you online?');
+  },
   'android-set-server': async () => {
     const url = await askText('OpenWave on your computer', { value: window.OpenWaveAndroid.getServer() || 'http://', placeholder: 'http://192.168.1.20:47878', ok: 'Connect' });
     if (!url) return;
@@ -850,6 +856,7 @@ bindState();
 bindVolume();
 bindTrack(player.current);
 bindSleep();
+initUpdates();
 Promise.all([offline.init(), ensureProfile()]).finally(() => {
   renderProfileChip();
   renderSidebar();

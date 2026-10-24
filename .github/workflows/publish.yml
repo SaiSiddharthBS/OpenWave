@@ -1,0 +1,62 @@
+# One tag, one complete release. Pushing v0.3.1 (scripts/release.sh does it) builds every app,
+# then publishes a single GitHub Release with all installers, checksums and notes at once, so the
+# website's download buttons never point at a half-finished release. (Docker: release.yml.)
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  mac:
+    uses: ./.github/workflows/macos.yml
+  desktop:
+    uses: ./.github/workflows/desktop.yml
+  android:
+    uses: ./.github/workflows/android.yml
+    secrets: inherit
+
+  publish:
+    needs: [mac, desktop, android]
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+      SIGNED_APK: ${{ secrets.OPENWAVE_KEYSTORE_B64 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tag matches the app version
+        run: |
+          app=$(python3 -c "import re; print(re.search(r'__version__ = \"(.+)\"', open('openwave/__init__.py').read())[1])")
+          [ "v$app" = "$TAG" ] || { echo "::error::tag $TAG but openwave/__init__.py says $app"; exit 1; }
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: OpenWave-*
+          path: dist
+          merge-multiple: true
+      - name: Checksums and notes
+        run: |
+          cd dist
+          if [ "$SIGNED_APK" != "true" ]; then rm -f OpenWave-Android.apk OpenWave-Android.apk.sha256; fi
+          ls -la
+          files=(); for f in *; do [[ $f == *.sha256 ]] || files+=("$f"); done
+          sha256sum "${files[@]}" > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          python3 ../scripts/release_notes.py "$TAG" SHA256SUMS.txt > ../notes.md
+      - name: Publish
+        run: |
+          title="OpenWave ${TAG#v}"
+          if [ "$SIGNED_APK" = "true" ]; then
+            gh release create "$TAG" dist/* --title "$title" --notes-file notes.md --verify-tag
+            echo "Published https://github.com/${{ github.repository }}/releases/tag/$TAG" >> "$GITHUB_STEP_SUMMARY"
+          else
+            gh release create "$TAG" dist/* --title "$title" --notes-file notes.md --verify-tag --draft
+            {
+              echo "### Release saved as a draft"
+              echo "The Android APK can't be signed here yet. Either run \`scripts/setup_android_signing.py\` once"
+              echo "(future releases then publish by themselves), or upload a signed \`OpenWave-Android.apk\` to the draft and publish it."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
