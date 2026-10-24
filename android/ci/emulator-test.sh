@@ -20,6 +20,14 @@ tap_text() {
   local nums=($(echo "$b" | grep -oE "[0-9]+"))
   adb shell input tap $(( (nums[0] + nums[2]) / 2 )) $(( (nums[1] + nums[3]) / 2 ))
 }
+# centre of the first on-screen element of an Android widget class (e.g. android.widget.EditText)
+tap_class() {
+  local b
+  b=$(screen_text | grep -oE "class=\"$1\"[^>]*bounds=\"\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]\"" | head -1 | grep -oE "\[[0-9]+,[0-9]+\]\[[0-9]+,[0-9]+\]")
+  [ -n "$b" ] || return 1
+  local nums=($(echo "$b" | grep -oE "[0-9]+"))
+  adb shell input tap $(( (nums[0] + nums[2]) / 2 )) $(( (nums[1] + nums[3]) / 2 ))
+}
 wait_text() { for i in $(seq 1 "${2:-60}"); do screen_text | grep -q "$1" && return 0; sleep 2; done; return 1; }
 fail() {
   echo "❌ $*"; shot failure
@@ -40,7 +48,7 @@ wait_text "Welcome to OpenWave" 60 || fail "the app never showed OpenWave (stuck
 shot 1-welcome
 echo "✅ app shows the welcome screen"
 
-tap_text "Your name" || fail "name field not found"
+tap_class "android.widget.EditText" || tap_text "Your name" || fail "name field not found"
 sleep 1; adb shell input text Tester; sleep 1
 tap_text "Start listening" || adb shell input keyevent 66
 for i in $(seq 1 30); do curl -sf localhost:47878/api/profiles | grep -q Tester && break; sleep 2; done
