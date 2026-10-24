@@ -225,6 +225,9 @@ Yes. Run it on one computer or server and give everyone their own profile.
 
 ## 🗺️ Roadmap
 
+See what changed in each version in [CHANGELOG.md](CHANGELOG.md).
+
+
 - [ ] Standalone Android app (no computer needed), distributed as an APK, via Obtainium and on F-Droid
 - [ ] Notarised Mac builds and signed Windows builds (no first-launch prompts)
 - [ ] Equalizer and loudness normalisation
