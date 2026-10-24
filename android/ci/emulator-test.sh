@@ -18,7 +18,8 @@ session() { adb shell dumpsys media_session | tr -d '\r'; }
 state() { session | grep -A30 "package=$PKG" | grep -oE "state=PlaybackState \{state=[A-Z_]+" | head -1 | sed 's/.*state=//'; }
 # is Android playing sound from the app right now? (AudioTrack in state "started" for its uid)
 APP_UID=""
-audible() { adb shell dumpsys audio | tr -d '\r' | grep -E "u/pid:$APP_UID/" | grep -q "state:started"; }
+# (grep -c reads all of its input: an early-exiting grep -q would break the pipe and, with pipefail, fail the check)
+audible() { [ "$(adb shell dumpsys audio | tr -d '\r' | grep -E "u/pid:$APP_UID/" | grep -c "state:started")" -gt 0 ]; }
 screen_text() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1 && adb shell cat /sdcard/ui.xml | tr -d '\r'; }
 # centre of the first on-screen element whose text or hint matches $1
 tap_text() {
@@ -37,7 +38,7 @@ tap_class() {
   adb shell input tap $(( (nums[0] + nums[2]) / 2 )) $(( (nums[1] + nums[3]) / 2 ))
 }
 wait_state() { for i in $(seq 1 "${2:-15}"); do [ "$(state)" = "$1" ] && return 0; sleep 1; done; return 1; }
-wait_text() { for i in $(seq 1 "${2:-60}"); do screen_text | grep -q "$1" && return 0; sleep 2; done; return 1; }
+wait_text() { for i in $(seq 1 "${2:-60}"); do [ "$(screen_text | grep -c "$1")" -gt 0 ] && return 0; sleep 2; done; return 1; }
 fail() {
   echo "❌ $*"; shot failure
   echo "----- on screen"; screen_text | grep -oE '(text|content-desc)="[^"]+"' | sort -u | head -60 || true
@@ -83,8 +84,9 @@ if audible; then REAL_AUDIO=1; echo "✅ Android hears the song playing"; else
   echo "⚠️  (YouTube usually blocks datacenter IPs like this CI runner) — skipping the checks that need real sound"
 fi
 
-adb shell dumpsys notification --noredact | tr -d '\r' | grep -A80 "pkg=$PKG" | grep -qE "android.mediaSession|MediaStyle" \
-  || fail "no media notification for the playing song"
+NOTIF=$(adb shell dumpsys notification --noredact | tr -d '\r' | grep -A80 "pkg=$PKG" || true)
+[ "$(echo "$NOTIF" | grep -cE "android.mediaSession|MediaStyle")" -gt 0 ] \
+  || { echo "$NOTIF" | grep -E "NotificationRecord|pkg=" | head -5; fail "no media notification for the playing song"; }
 adb shell cmd statusbar expand-notifications; sleep 3; shot 4-notification; adb shell cmd statusbar collapse; sleep 1
 echo "✅ media notification and lock-screen controls are showing"
 
