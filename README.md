@@ -25,12 +25,13 @@ Everything is free. Pick your device:
 
 | Device | Download | First launch |
 |---|---|---|
+| 🍎 **Mac** (easiest) | In Terminal: `curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh \| bash` | Picks the right version for your Mac and opens with no security warning. |
 | 🍎 **Mac** (Apple Silicon) | [OpenWave-macOS-AppleSilicon.dmg](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-AppleSilicon.dmg) | Drag it to Applications and open it. If macOS can't verify it, go to **System Settings → Privacy & Security → Open Anyway** (once). |
 | 🍎 **Mac** (Intel) | [OpenWave-macOS-Intel.dmg](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-Intel.dmg) | Same as above |
 | 🪟 **Windows 10/11** | [OpenWave-Windows-Setup.exe](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Windows-Setup.exe) | If you see "Windows protected your PC", click **More info → Run anyway**. No admin needed. |
 | 🐧 **Linux** | [OpenWave-Linux-x86_64.AppImage](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Linux-x86_64.AppImage) | Make it executable (`chmod +x`), then double-click. |
 | 🤖 **Android** (64-bit, Android 7+) | [OpenWave-Android.apk](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk) | Open the file and allow your browser to "install unknown apps" when asked. [More](#-on-your-phone) |
-| 📱 **iPhone** | Use OpenWave on your computer: **Settings → Phone → scan the QR code** | Then **Add to Home Screen** in Safari |
+| 📱 **iPhone** | Plays from OpenWave on your Mac or PC: **Settings → Phone → scan the QR code** | Then **Add to Home Screen** in Safari. [Details](#iphone) |
 | 🏠 **Home server** | `docker run -d -p 8787:8787 -v openwave:/data ghcr.io/saisiddharthbs/openwave` | Open `http://<server>:8787` on any device |
 
 Each app is self-contained: there's nothing else to install. The files are attached to every [GitHub release](https://github.com/SaiSiddharthBS/OpenWave/releases) with SHA-256 checksums.
@@ -112,7 +113,11 @@ The Mac app runs everything itself, so there's nothing to install or configure:
 - **Stays working when YouTube changes.** The app updates its YouTube support automatically in the background.
 - `openwave://` links, for example `openwave://play/<videoId>`.
 
-> **First launch:** until OpenWave is notarised by Apple, macOS asks you to confirm it once. Open it, then go to **System Settings → Privacy & Security** and click **Open Anyway**. Builds signed with an Apple Developer ID open with no prompt (see `macos/build.sh`).
+> **"Apple could not verify OpenWave is free of malware"?** OpenWave isn't signed with a paid Apple Developer ID, and macOS warns about every such app that comes from a browser. Either:
+> - install with one command in Terminal, which never shows the warning: `curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash`, or
+> - after the warning, open **System Settings → Privacy & Security**, scroll down and click **Open Anyway** (once).
+>
+> Updates install themselves from inside the app, with no warning. Builds signed with an Apple Developer ID open with no prompt at all (see `macos/build.sh`).
 
 **Build it yourself** (requires Xcode and Python 3.11+ or [uv](https://docs.astral.sh/uv/)):
 
@@ -161,14 +166,20 @@ openwave                    # --port 8787  --host 0.0.0.0  --no-browser
 
 **One library everywhere:** in **Settings → Library**, tap **Connect to computer** and enter the address shown in OpenWave on your computer (Settings → Phone). The phone then uses the same profiles and playlists as your computer.
 
-### iPhone (and any other phone)
-1. Start OpenWave on your computer. Use the Mac app's **Settings → Phone** QR code, or the `Your phone: http://192.168.x.x:8787` address the server prints.
-2. Open it on your phone while you're on the same Wi-Fi, and pick your profile. Your library is already there.
-3. Install it:
-   - **iPhone:** in Safari, use **Share → Add to Home Screen**.
-   - **Android:** in Chrome, use **⋮ → Install app**.
+### iPhone
 
-To listen away from home and use offline mode on a phone, use HTTPS. Tailscale is the easiest way (`tailscale serve 8787`); a Cloudflare Tunnel or a VPS with [Caddy](https://caddyserver.com) also work.
+Apple doesn't allow apps like OpenWave in the App Store, so the iPhone plays from OpenWave on your Mac (or PC or home server), with the same profiles, playlists and likes, as an app on your Home Screen.
+
+**Best: anywhere, with downloads** (free, about 3 minutes, once):
+1. Install [Tailscale](https://tailscale.com/download) on your Mac and on your iPhone (App Store), and sign in to both with the same account.
+2. On the Mac: OpenWave → **Settings → Phone → Anywhere → Turn On**. A QR code appears.
+3. On the iPhone: scan it with the camera, then in Safari tap **Share → Add to Home Screen**.
+
+It now works at home, at work and on mobile data, over a private, encrypted address only your own devices can open. Because it's HTTPS, downloads for offline listening work too, and the music keeps playing on the lock screen with its controls. Keep the Mac on and awake while you listen.
+
+**At home only** (no setup): Settings → Phone → **At home** → switch it on, scan the QR code on the same Wi-Fi, and add it to the Home Screen. Offline downloads need the "Anywhere" option.
+
+On a home server or PC without the Mac app, `tailscale serve 8787` does the same as "Anywhere"; a Cloudflare Tunnel or a VPS with [Caddy](https://caddyserver.com) also work.
 
 ## 🔁 Bring your playlists
 

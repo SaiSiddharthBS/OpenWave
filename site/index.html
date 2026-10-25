@@ -58,6 +58,8 @@
     .tabs button.on { background: var(--text); color: var(--bg); }
     .phones { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; align-items: center; }
     .phones img { width: 100%; max-width: 300px; border-radius: 22px; border: 1px solid var(--line); justify-self: center; }
+    code.cmd { display: block; margin: 8px 0; padding: 10px 12px; background: rgba(255,255,255,.07); border: 1px solid var(--line); border-radius: 10px; color: var(--text); font-size: 13.5px; overflow-x: auto; white-space: nowrap; }
+    .copy { font: inherit; font-size: 13px; font-weight: 650; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; cursor: pointer; margin-bottom: 6px; }
     footer { padding: 70px 0 40px; color: var(--muted); font-size: 14px; text-align: center; }
     @media (max-width: 720px) { nav .links { display: none; } .phones { grid-template-columns: 1fr; } }
   </style>
@@ -111,9 +113,10 @@
       <li><b>Open OpenWave.</b> Everything runs on your phone. For automatic updates, add this project to <a href="https://github.com/ImranR98/Obtainium">Obtainium</a>.</li>
     </ol></div>
     <div class="card platform" data-p="mac"><ol class="steps">
+      <li><b>Easiest:</b> open <b>Terminal</b> and paste <code class="cmd">curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash</code> <button class="copy" data-copy="curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash">Copy</button> It picks the right version for your Mac and opens it with no security warning. Or, by hand:</li>
       <li><b>Download</b> <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-AppleSilicon.dmg">for Apple Silicon (M1–M4)</a> or <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-Intel.dmg">for Intel Macs</a>. Not sure which? Apple menu → About This Mac → "Chip".</li>
       <li><b>Open the file and drag OpenWave into Applications.</b></li>
-      <li><b>Open OpenWave.</b> If macOS says it can't verify the app, open System Settings → Privacy &amp; Security, scroll down and click <b>Open Anyway</b>. You only do this once.</li>
+      <li><b>Open OpenWave.</b> If macOS says it can't verify the app, open System Settings → Privacy &amp; Security, scroll down and click <b>Open Anyway</b>. You only do this once: updates install from inside the app.</li>
     </ol></div>
     <div class="card platform" data-p="win"><ol class="steps">
       <li><b>Download</b> <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Windows-Setup.exe">OpenWave-Windows-Setup.exe</a> (Windows 10 or 11).</li>
@@ -136,12 +139,13 @@
     <div class="phones">
       <div>
         <h2>On your phone</h2>
-        <p class="lead"><b>Android:</b> install the <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk">Android app</a>. It runs everything on the phone. <b>iPhone:</b> play from the OpenWave on your computer, with the same profiles, playlists and likes:</p>
+        <p class="lead"><b>Android:</b> install the <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk">Android app</a>. It runs everything on the phone. <b>iPhone:</b> play from OpenWave on your Mac, anywhere, with the same profiles, playlists and likes:</p>
         <ol class="steps">
-          <li><b>On your computer,</b> open OpenWave → Settings → <b>Phone</b> and switch it on.</li>
-          <li><b>Scan the QR code</b> with your phone's camera.</li>
-          <li><b>Add it to your home screen:</b> on iPhone, Safari → Share → Add to Home Screen. On Android, Chrome → ⋮ → Install app.</li>
+          <li><b>Install <a href="https://tailscale.com/download">Tailscale</a></b> (free) on your Mac and iPhone, signed in to the same account.</li>
+          <li><b>On the Mac,</b> open OpenWave → Settings → <b>Phone</b> → Anywhere → <b>Turn On</b>, and scan the QR code with your iPhone.</li>
+          <li><b>Add it to your Home Screen:</b> Safari → Share → Add to Home Screen. It works on mobile data too, and downloads play offline.</li>
         </ol>
+        <p class="small">Only at home? Settings → Phone → At home, then scan the code on the same Wi-Fi.</p>
       </div>
       <img src="screenshots/mobile-home.png" alt="OpenWave on a phone">
     </div>
@@ -158,7 +162,7 @@
   const ua = navigator.userAgent;
   const P = {
     android: { label: 'Download for Android', file: 'OpenWave-Android.apk', note: 'Android 7+ · 64-bit · no computer needed' },
-    mac: { label: 'Download for Mac', file: 'OpenWave-macOS-AppleSilicon.dmg', note: 'macOS 13 or later · Intel Mac? Use the Intel download below' },
+    mac: { label: 'Get OpenWave for Mac', href: '#install', note: 'macOS 13 or later · one command picks Apple Silicon or Intel for you' },
     win: { label: 'Download for Windows', file: 'OpenWave-Windows-Setup.exe', note: 'Windows 10 & 11 · no admin needed' },
     linux: { label: 'Download for Linux', file: 'OpenWave-Linux-x86_64.AppImage', note: 'AppImage · x86-64' },
   };
@@ -166,7 +170,7 @@
   const primary = document.getElementById('primary');
   if (os) {
     primary.textContent = P[os].label;
-    primary.href = REL + P[os].file;
+    primary.href = P[os].href || REL + P[os].file;
     document.getElementById('primary-note').textContent = `Free · ${P[os].note}`;
   } else {
     primary.textContent = 'Get OpenWave on your phone';
@@ -181,6 +185,10 @@
   };
   tabs.onclick = (e) => { const b = e.target.closest('button'); if (b) show(b.dataset.p); };
   show(os && P[os] ? os : 'mac');
+  document.querySelectorAll('[data-copy]').forEach((b) => b.addEventListener('click', async () => {
+    try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = 'Copied ✓'; } catch { b.textContent = 'Select and copy it'; }
+    setTimeout(() => { b.textContent = 'Copy'; }, 2000);
+  }));
 </script>
 </body>
 </html>

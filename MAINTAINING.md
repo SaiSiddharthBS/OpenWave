@@ -56,12 +56,15 @@ history is saved once a day by `.github/workflows/stats.yml` to the `stats` bran
 from the Actions tab any time). Nothing is collected from the apps.
 
 **Optional, visitors to the GitHub page:** GitHub only shows traffic to people who can change the
-repository, so the workflow needs a token for it. Once:
+repository, so the workflow needs a read-only token for it, and only you can create one. Run:
 
-1. GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate new token.
-2. Repository access: only `OpenWave`. Permissions: **Administration: Read-only** (that's where
-   GitHub puts traffic). Pick the longest expiry.
-3. Repository → Settings → Secrets and variables → Actions → New secret named `STATS_TOKEN`.
+```bash
+uv run --with pynacl,certifi scripts/setup_stats_token.py
+```
+
+It opens GitHub's token page already filled in (choose "Only select repositories" → OpenWave, then
+"Generate token"), checks the token you paste and saves it as the `STATS_TOKEN` secret. The token
+expires after a year; run the script again then.
 
 From the next daily run, the page also shows visitors per day, and keeps them for longer than the
 two weeks GitHub remembers.

@@ -9,39 +9,105 @@ struct SettingsView: View {
             PhoneAccessView().tabItem { Label("Phone", systemImage: "iphone") }
             GeneralView().tabItem { Label("General", systemImage: "gearshape") }
         }
-        .frame(width: 500, height: 420)
+        .frame(width: 560, height: 560)
     }
 }
 
 private struct PhoneAccessView: View {
     @ObservedObject private var server = ServerManager.shared
+    @State private var tailscale: Tailscale.State?
+    @State private var busy = false
+    @State private var problem: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("Listen on your phone").font(.title2.bold())
-            Text("Your Mac can serve OpenWave to phones, tablets and other computers on the same Wi-Fi. Same profiles, same library, nothing to install.")
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Toggle("Allow devices on my Wi-Fi to use OpenWave", isOn: Binding(get: { server.lanEnabled }, set: { server.setLAN($0) }))
-            if server.lanEnabled, let url = server.lanURL {
-                HStack(alignment: .top, spacing: 18) {
-                    if let qr = QRCode.image(for: url.absoluteString) {
-                        Image(nsImage: qr).interpolation(.none).resizable().frame(width: 150, height: 150)
-                            .padding(8).background(.white).clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("Scan with your phone's camera, or open:").foregroundStyle(.secondary)
-                        Text(url.absoluteString).font(.title3.monospaced()).textSelection(.enabled)
-                        Text("Then use “Add to Home Screen” to install it like an app. Keep your Mac awake while you listen.")
-                            .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
-                    }
+        ScrollView {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Listen on your iPhone").font(.title2.bold())
+                Text("Your iPhone plays from OpenWave on this Mac, with the same profiles, playlists and likes. Add it to your Home Screen and it works like an app.")
+                    .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Anywhere: at home, at work, on mobile data", systemImage: "globe").font(.headline)
+                        anywhere
+                    }.padding(8).frame(maxWidth: .infinity, alignment: .leading)
                 }
-            } else if server.lanEnabled {
-                Text("Connect this Mac to Wi-Fi or Ethernet to get an address.").foregroundStyle(.secondary)
+
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("At home, on the same Wi-Fi", systemImage: "wifi").font(.headline)
+                        Toggle("Allow devices on my Wi-Fi to use OpenWave", isOn: Binding(get: { server.lanEnabled }, set: { server.setLAN($0) }))
+                        if server.lanEnabled, let url = server.lanURL {
+                            scan(url, then: "Then in Safari: Share → Add to Home Screen. Downloads for offline listening need the Anywhere option above.")
+                        } else if server.lanEnabled {
+                            Text("Connect this Mac to Wi-Fi or Ethernet to get an address.").foregroundStyle(.secondary)
+                        }
+                    }.padding(8).frame(maxWidth: .infinity, alignment: .leading)
+                }
+                Text("Keep this Mac on and awake while you listen from your phone.").font(.callout).foregroundStyle(.secondary)
             }
-            Spacer()
+            .padding(22)
         }
-        .padding(22)
+        .task { await refresh() }
+    }
+
+    @ViewBuilder private var anywhere: some View {
+        switch tailscale {
+        case nil:
+            ProgressView().controlSize(.small)
+        case .missing:
+            Text("Uses Tailscale, which is free: your iPhone gets a private, secure address for this Mac that only your own devices can open.")
+                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            HStack {
+                Button("Get Tailscale") { NSWorkspace.shared.open(Tailscale.downloadURL) }
+                Button("I’ve Installed It") { Task { await refresh() } }
+            }
+        case .signedOut:
+            Text("Open Tailscale on this Mac and sign in, then come back here.").foregroundStyle(.secondary)
+            HStack {
+                Button("Open Tailscale") { NSWorkspace.shared.open(URL(fileURLWithPath: "/Applications/Tailscale.app")) }
+                Button("Check Again") { Task { await refresh() } }
+            }
+        case .ready:
+            Text("Give your iPhone a private, secure address for OpenWave on this Mac. Only devices signed in to your Tailscale account can open it, and downloads work offline.")
+                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Button(busy ? "Turning On…" : "Turn On") { toggle(on: true) }.disabled(busy).keyboardShortcut(.defaultAction)
+        case .sharing(let url):
+            scan(url, then: "On your iPhone: install Tailscale from the App Store and sign in with the same account, scan this code, then in Safari tap Share → Add to Home Screen.")
+            Button(busy ? "Turning Off…" : "Turn Off") { toggle(on: false) }.disabled(busy)
+        }
+        if let problem { Text(problem).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
+    }
+
+    private func scan(_ url: URL, then: String) -> some View {
+        HStack(alignment: .top, spacing: 16) {
+            if let qr = QRCode.image(for: url.absoluteString) {
+                Image(nsImage: qr).interpolation(.none).resizable().frame(width: 130, height: 130)
+                    .padding(7).background(.white).clipShape(RoundedRectangle(cornerRadius: 10))
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Scan with your iPhone’s camera, or open:").foregroundStyle(.secondary)
+                Text(url.absoluteString).font(.body.monospaced()).textSelection(.enabled)
+                Text(then).font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private func refresh() async {
+        let port = server.port
+        tailscale = await Task.detached { Tailscale.state(enginePort: port) }.value
+    }
+
+    private func toggle(on: Bool) {
+        busy = true
+        problem = nil
+        let port = server.port
+        Task {
+            let error: String? = await Task.detached { on ? Tailscale.share(enginePort: port) : { Tailscale.stop(); return nil }() }.value
+            problem = error
+            await refresh()
+            busy = false
+        }
     }
 }
 

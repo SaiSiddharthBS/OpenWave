@@ -5,6 +5,15 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Added
+- **iPhone, anywhere:** the Mac app's Settings → Phone has a new "Anywhere" option. With Tailscale (free) on the Mac and the iPhone, one click gives the iPhone a private HTTPS address for OpenWave on the Mac: it works on mobile data, downloads play offline, and only your own devices can open it.
+- **Install on a Mac with one command**, with no "can't verify the developer" warning: `curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash`. It picks the Apple Silicon or Intel version by itself.
+- **Stats page** on the website: downloads per app, version and day, stars and visitors. Public numbers from GitHub only; nothing is collected from the apps.
+
+### Changed
+- **Mac updates install themselves.** The app downloads the new version, checks its checksum, swaps itself and restarts, with no browser and no security warning.
+- The website's Mac button no longer offers the Apple Silicon download to Intel Macs.
+
 ## [0.3.1] — 2026-10-25
 
 ### Added
