@@ -33,7 +33,11 @@ Everything is free. Pick your device:
 | 📱 **iPhone** | Use OpenWave on your computer: **Settings → Phone → scan the QR code** | Then **Add to Home Screen** in Safari |
 | 🏠 **Home server** | `docker run -d -p 8787:8787 -v openwave:/data ghcr.io/saisiddharthbs/openwave` | Open `http://<server>:8787` on any device |
 
-Each desktop app is self-contained: there's nothing else to install. The files are attached to every [GitHub release](https://github.com/SaiSiddharthBS/OpenWave/releases); until the first release is out, you can [run the server](#-run-the-server) or [build the Mac app](#-the-mac-app) from source.
+Each app is self-contained: there's nothing else to install. The files are attached to every [GitHub release](https://github.com/SaiSiddharthBS/OpenWave/releases) with SHA-256 checksums.
+
+**Staying up to date:** every app tells you when a new version is out (a small card in the app, or a prompt on the Mac) and downloads the right file for your device in one tap. YouTube support updates itself in the background between releases.
+
+> **New in 0.3.1:** play on another device, listen together in sync, an Android home-screen widget, sharing, On Repeat and Rediscover mixes, imports with no song limit from more apps, a smoother phone app with gestures and a working back button, a faster start, and a fix for songs that stopped partway. See the [changelog](CHANGELOG.md).
 
 ## ✨ Features
 
@@ -44,6 +48,7 @@ Each desktop app is self-contained: there's nothing else to install. The files a
 - 📻 **Never-ending autoplay.** When the queue ends, similar music keeps playing, and songs you heard recently are skipped.
 - 🎤 **Synced lyrics** scroll with the song. Tap any line to jump to it.
 - 🌙 **Sleep timer** (5–90 minutes, or end of song) that fades the music out gently.
+- ⚡ **Fast.** Home appears instantly when the app opens, songs get ready while your finger is still on them, and music videos switch to their song version in well under a second.
 - ⬇️ **Offline downloads.** Save songs, albums or playlists and listen with no internet.
 - 🎚️ **Audio quality:** OpenWave picks the best format your device plays (Opus or AAC, up to about 160 kbps), with a Data saver option.
 
@@ -51,9 +56,10 @@ Each desktop app is self-contained: there's nothing else to install. The files a
 - 👤 **Profiles** for everyone in the house, each with its own likes, playlists and history. You can add an optional PIN.
 - 🔄 **Sync** across every device that uses your OpenWave: your Mac, your phone and the family PC.
 - ❤️ **Liked songs, playlists you can drag to reorder, saved albums and followed artists.**
-- ✨ **Personal mixes on Home** ("Made for you", "Because you liked…"), built from what you actually play.
+- ✨ **Personal mixes on Home** ("Made for you", "Because you liked…"), built from what you actually play, plus **On Repeat** (your most-played songs this month) and **Rediscover** (old favourites you haven't played in a while).
 - 📊 **Insights:** minutes listened, top artists, top songs and when you listen. You get a **shareable card** for social media.
 - 📥 **Import** your playlists from Spotify, YouTube Music, Apple Music, Deezer, JioSaavn, Amazon Music and more, with no song limit.
+- 🔗 **Share** any song, album, playlist or artist as a link anyone can open, or share your own playlist as a song list friends can import.
 
 **Together**
 - 🔊 **Play on another device.** Tap the devices button in the player to send the music from your phone to your Mac (or the other way round). Your phone becomes the remote: skip, pause, change the volume and pick songs, and the music plays there. One tap brings it back.
@@ -63,7 +69,7 @@ Each desktop app is self-contained: there's nothing else to install. The files a
 **Everywhere**
 - 🍎 **Native Mac app** with media keys, Control Center, a menu-bar mini player, notifications, a Dock menu and keyboard shortcuts.
 - 🪟 **Windows and Linux apps** that install in one click and open in their own window.
-- 🤖 **Android app** that runs everything on the phone. No computer needed.
+- 🤖 **Android app** that runs everything on the phone, no computer needed. It has a home-screen widget, lock-screen and Bluetooth controls, swipe gestures and the back button you'd expect.
 - 📱 **Installable web app** for iPhone and ChromeOS.
 - 🔒 **Private by design.** Your library stays on your own computer or server, there are no analytics, and your devices never contact Google directly.
 
@@ -101,6 +107,8 @@ The Mac app runs everything itself, so there's nothing to install or configure:
 - **Native menus and shortcuts:** ⌘→ / ⌘← next/previous, ⌘L like, ⌘F search, ⌘1–5 to jump between sections, ⌘⇧I import.
 - **Song notifications** when OpenWave is in the background, and a Dock menu with playback controls.
 - **Listen on your phone:** in Settings → Phone, switch it on and scan the QR code.
+- **Play on your phone, or let your phone play here:** the devices button moves the music between your Mac and your phones, and starts listening sessions.
+- **Updates in one click:** the app tells you when a new version is out and downloads the right one for your Mac (Apple Silicon or Intel).
 - **Stays working when YouTube changes.** The app updates its YouTube support automatically in the background.
 - `openwave://` links, for example `openwave://play/<videoId>`.
 
@@ -145,8 +153,11 @@ openwave                    # --port 8787  --host 0.0.0.0  --no-browser
 1. Download **[OpenWave-Android.apk](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk)** on your phone and open it.
 2. Android asks you to allow your browser to install apps. Allow it, then tap **Install**.
 3. Open OpenWave and create your profile. Everything runs on the phone, so it works anywhere.
+4. Optional: add the **home-screen widget** from **Settings → Add widget**.
 
-**Automatic updates:** install [Obtainium](https://github.com/ImranR98/Obtainium) and add `https://github.com/SaiSiddharthBS/OpenWave`. It installs new versions as soon as they're released.
+**Updates:** the app shows a card when a new version is out. Tap it to download, then install it over the old one; your library stays.
+
+**Fully automatic updates:** install [Obtainium](https://github.com/ImranR98/Obtainium) and add `https://github.com/SaiSiddharthBS/OpenWave`. It installs new versions as soon as they're released.
 
 **One library everywhere:** in **Settings → Library**, tap **Connect to computer** and enter the address shown in OpenWave on your computer (Settings → Phone). The phone then uses the same profiles and playlists as your computer.
 
@@ -196,6 +207,7 @@ OpenWave matches every song on YouTube Music, comparing title, artist and length
 - **The Mac app:** a native Swift app (AppKit + SwiftUI) that runs a self-contained copy of the server and shows the same interface, so every feature reaches every platform at once.
 - **Android app:** the same Python engine runs on the phone through [Chaquopy](https://chaquo.com/chaquopy/), inside a native Kotlin app with Android's media notification, lock-screen and Bluetooth controls.
 - **Windows and Linux apps:** the same self-contained engine, plus a small launcher that opens OpenWave in an app window using Microsoft Edge or Chrome/Chromium.
+- **Your devices together:** engines on the same Wi-Fi find each other with a UDP broadcast and talk over a separate, small listener that only knows the "devices" routes. A device has to be allowed once before it can control another. Only "what's playing" is shared; each device streams the audio itself, and listeners stay in step by playing a touch faster or slower.
 - **Songs, not videos:** when YouTube offers a music video, the server looks up its audio-track ("song") version, and radios are started from songs. You hear the record, not a film scene.
 
 <details>
@@ -212,6 +224,9 @@ OpenWave matches every song on YouTube Music, comparing title, artist and length
 | `GET /api/me/library` · `POST /api/me/ops` · `GET /api/me/version` | library sync |
 | `GET /api/me/stats` · `/api/me/mixes` · `/api/me/radio/{videoId}` | insights, mixes, personal radio |
 | `POST /api/import/parse` · `/api/import/match` | playlist import |
+| `GET /api/me/smart` | On Repeat and Rediscover |
+| `/api/link/*` | other devices on the Wi-Fi: devices, remote control, listening sessions |
+| `GET /api/app-update` | whether a newer OpenWave is out, and the right file for this device |
 
 </details>
 
@@ -223,6 +238,8 @@ OpenWave matches every song on YouTube Music, comparing title, artist and length
 | `OPENWAVE_DATA` | Where profiles and libraries are stored (default: your OS's app-data folder; `/data` in Docker) |
 | `OPENWAVE_LOCATION` | Region for recommendations, e.g. `US`, `IN`, `GB` |
 | `OPENWAVE_LANGUAGE` | Metadata language, e.g. `en`, `hi`, `es` |
+| `OPENWAVE_LINK` | `1` makes this device visible to your other devices on the Wi-Fi from the start (the Mac and Android apps do this; it can also be switched in Settings → Devices) |
+| `OPENWAVE_DEVICE_NAME` | The name other devices see (default: the computer's name) |
 
 </details>
 
@@ -258,6 +275,9 @@ See what changed in each version in [CHANGELOG.md](CHANGELOG.md).
 
 
 - [x] Standalone Android app (no computer needed)
+- [x] In-app updates on every platform
+- [x] Play on another device and listen together (same Wi-Fi)
+- [ ] Listen together over the internet
 - [ ] OpenWave on F-Droid / IzzyOnDroid
 - [ ] iPhone app (sideloading via AltStore)
 - [ ] Notarised Mac builds and signed Windows builds (no first-launch prompts)
