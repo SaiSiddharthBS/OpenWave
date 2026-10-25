@@ -1,0 +1,38 @@
+# Once a day, saves OpenWave's public numbers (downloads per file, stars, forks, and GitHub traffic
+# if a STATS_TOKEN secret allows it) to history.json on the "stats" branch. The Stats page on the
+# website reads it. The branch holds a single commit that is replaced each day.
+name: Stats
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: stats
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Previous numbers
+        run: |
+          git fetch -q origin stats 2>/dev/null && git show origin/stats:history.json > history.json || echo '{}' > history.json
+      - name: Today's numbers
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STATS_TOKEN: ${{ secrets.STATS_TOKEN }}
+        run: python scripts/collect_stats.py history.json
+      - name: Save
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p /tmp/stats && cp history.json /tmp/stats/ && cd /tmp/stats
+          git init -q -b stats
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add history.json && git commit -qm "Stats for $(date -u +%F)"
+          git push -qf "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git" stats

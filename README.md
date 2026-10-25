@@ -13,7 +13,7 @@
 
 **[⬇️ Download OpenWave](https://saisiddharthbs.github.io/OpenWave/)**
 
-[Get it](#-get-openwave) · [Features](#-features) · [Mac app](#-the-mac-app) · [Phone](#-on-your-phone) · [Switch from Spotify](#-bring-your-playlists) · [How it works](#-how-it-works) · [FAQ](#-faq) · [Contribute](#-contributing)
+[Get it](#-get-openwave) · [Features](#-features) · [Mac app](#-the-mac-app) · [Phone](#-on-your-phone) · [Switch from Spotify](#-bring-your-playlists) · [How it works](#-how-it-works) · [FAQ](#-faq) · [Contribute](#-contributing) · [Stats](https://saisiddharthbs.github.io/OpenWave/stats.html)
 
 <img src="docs/screenshots/home.png" alt="OpenWave home with personal mixes" width="100%">
 
@@ -265,6 +265,9 @@ Android has its own app that runs everything on the phone. On iPhone, use OpenWa
 
 **Can my family use it?**
 Yes. Run it on one computer or server and give everyone their own profile.
+
+**Does OpenWave collect any data about me?**
+No. The apps never report anything. The [Stats page](https://saisiddharthbs.github.io/OpenWave/stats.html) only shows public numbers from GitHub: how often each file was downloaded, and stars.
 
 **Can someone else on my Wi-Fi take over my music?**
 No. Other devices can see your device's name in their Devices list, but a device has to be allowed once, by tapping **Allow** on your screen, before it can play anything or join your session. Remove a device any time in **Settings → Devices**, or turn off **Show this device on Wi-Fi** to hide it completely. Only "what's playing" travels between devices (no audio, no library), over ports 47880–47889 on your local network. The Mac and Android apps start visible; the Windows and Linux apps, Docker and the server start hidden.

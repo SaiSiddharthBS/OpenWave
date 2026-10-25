@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OpenWave in numbers</title>
+  <meta name="description" content="How many times OpenWave has been downloaded, per app and per version, and how the project is growing. Public numbers from GitHub; nobody is tracked.">
+  <meta name="theme-color" content="#0a0b14">
+  <link rel="icon" href="favicon-64.png">
+  <style>
+    :root {
+      --bg: #0a0b14; --surface: rgba(255,255,255,.04); --text: #f3f3f6; --muted: #a4a4b2; --faint: #6e6e7c;
+      --line: rgba(255,255,255,.1); --grid: rgba(255,255,255,.07); --series: #7b7bff; --series-hover: #9a9aff;
+      --grad: linear-gradient(135deg, #2fc8ff, #4f6bff 45%, #c45cff);
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px 60px; }
+    .glow { position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background: radial-gradient(60% 45% at 15% 0%, rgba(47,200,255,.14), transparent 70%), radial-gradient(50% 45% at 90% 30%, rgba(196,92,255,.12), transparent 70%); }
+    nav { display: flex; align-items: center; justify-content: space-between; padding: 22px 0; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 850; font-size: 20px; letter-spacing: -.03em; text-decoration: none; }
+    .brand img { height: 30px; }
+    .brand b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    nav .links a { color: var(--muted); text-decoration: none; margin-left: 18px; font-weight: 600; font-size: 15px; }
+    nav .links a:hover { color: var(--text); }
+    h1 { font-size: clamp(32px, 5vw, 48px); letter-spacing: -.04em; margin: 18px 0 6px; line-height: 1.1; }
+    .lead { color: var(--muted); margin: 0 0 6px; max-width: 720px; }
+    .updated { color: var(--faint); font-size: 13px; margin: 0 0 28px; }
+    .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 14px; }
+    .tile { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px 18px 16px; }
+    .tile .label { color: var(--muted); font-size: 13.5px; font-weight: 600; }
+    .tile .value { font-size: 34px; font-weight: 800; letter-spacing: -.03em; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .tile .note { color: var(--faint); font-size: 12.5px; margin-top: 2px; }
+    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; min-width: 0; }
+    .panel.wide { grid-column: 1 / -1; }
+    .panel h2 { font-size: 16px; margin: 0; letter-spacing: -.01em; }
+    .panel .sub { color: var(--muted); font-size: 13px; margin: 2px 0 14px; }
+    .chart { position: relative; width: 100%; }
+    .chart svg { display: block; width: 100%; overflow: visible; }
+    .empty { color: var(--faint); font-size: 14px; padding: 26px 0; text-align: center; }
+    svg text { fill: var(--muted); font-size: 11.5px; font-family: inherit; }
+    svg .grid { stroke: var(--grid); stroke-width: 1; }
+    svg .base { stroke: rgba(255,255,255,.22); stroke-width: 1; }
+    svg .mark { fill: var(--series); pointer-events: none; }
+    svg .hit:hover + .mark, svg .mark.on { fill: var(--series-hover); }
+    svg .val { fill: var(--text); font-weight: 650; font-variant-numeric: tabular-nums; }
+    svg .line { fill: none; stroke: var(--series); stroke-width: 2; stroke-linejoin: round; }
+    svg .area { fill: url(#fade); }
+    svg .cross { stroke: rgba(255,255,255,.35); stroke-width: 1; }
+    svg .dot { fill: var(--series); stroke: var(--bg); stroke-width: 2; }
+    .hbars { display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; align-items: center; }
+    .hbars .name { font-size: 14px; color: var(--text); white-space: nowrap; }
+    .hbars .track { position: relative; height: 22px; }
+    .hbars .bar { position: absolute; left: 0; top: 3px; height: 16px; border-radius: 0 4px 4px 0; background: var(--series); min-width: 2px; transition: background .15s; }
+    .hbars .row:hover .bar, .hbars .track:hover .bar { background: var(--series-hover); }
+    .hbars .num { position: absolute; top: 0; font-size: 13px; font-weight: 650; line-height: 22px; font-variant-numeric: tabular-nums; padding-left: 8px; }
+    .tip { position: fixed; pointer-events: none; background: #1b1c2b; border: 1px solid var(--line); border-radius: 8px; padding: 7px 10px; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,.5); z-index: 10; opacity: 0; transition: opacity .1s; white-space: nowrap; }
+    .tip.on { opacity: 1; }
+    .tip b { font-variant-numeric: tabular-nums; }
+    .tip small { color: var(--muted); display: block; }
+    details.table { margin-top: 12px; }
+    .scroll { overflow-x: auto; }
+    details.table summary { color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+    th { color: var(--muted); font-weight: 600; font-size: 13px; }
+    td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+    .about { color: var(--muted); font-size: 14.5px; max-width: 760px; margin-top: 34px; }
+    .about h2 { color: var(--text); font-size: 18px; margin: 0 0 8px; }
+    .about li { margin-bottom: 6px; }
+    .error { color: #ff8a8a; }
+    @media (max-width: 600px) { th:nth-child(3), td:nth-child(3) { display: none; } }
+    @media (max-width: 760px) { .panels { grid-template-columns: 1fr; } nav .links a:not(:last-child) { display: none; } .tile .value { font-size: 28px; } }
+  </style>
+</head>
+<body>
+<div class="glow"></div>
+<div class="wrap">
+  <nav>
+    <a class="brand" href="./"><img src="logo.png" alt=""><span>Open<b>Wave</b></span></a>
+    <div class="links"><a href="./#features">Features</a><a href="./#install">Install</a><a href="https://github.com/SaiSiddharthBS/OpenWave">GitHub</a></div>
+  </nav>
+
+  <h1>OpenWave in numbers</h1>
+  <p class="lead">Downloads of every app and version, and how the project is growing. These are public counts from GitHub. The apps never report anything, so nobody is tracked.</p>
+  <p class="updated" id="updated">Loading the latest numbers from GitHub…</p>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="panels">
+    <section class="panel"><h2>Downloads by app</h2><p class="sub">All versions together</p><div class="chart" id="by-app"></div></section>
+    <section class="panel"><h2>Downloads by version</h2><p class="sub">Every release, oldest first</p><div class="chart" id="by-version"></div></section>
+    <section class="panel wide"><h2>Downloads per day</h2><p class="sub" id="per-day-sub">New downloads each day, counted once a day</p><div class="chart" id="per-day"></div></section>
+    <section class="panel"><h2>GitHub stars</h2><p class="sub">People who starred the project, over time</p><div class="chart" id="stars"></div></section>
+    <section class="panel"><h2>Visitors to the GitHub page</h2><p class="sub">Different people per day</p><div class="chart" id="visitors"></div></section>
+    <section class="panel wide">
+      <h2>Every file</h2><p class="sub">Each download of each release file</p>
+      <details class="table" open><summary>Show the table</summary><div id="files"></div></details>
+    </section>
+  </div>
+
+  <div class="about">
+    <h2>What these numbers mean</h2>
+    <ul>
+      <li><b>Downloads are not users.</b> One person can download twice (a new phone, a reinstall), and a file shared over WhatsApp counts once, however many people install it.</li>
+      <li><b>Updates count too.</b> When an app updates itself, it downloads the new version from GitHub, so later versions include people who updated.</li>
+      <li><b>Not counted:</b> Docker pulls and people running the server from source. Installs through Obtainium are counted, since it downloads the same files.</li>
+      <li>Downloads, stars and forks are saved once a day by a <a href="https://github.com/SaiSiddharthBS/OpenWave/blob/main/.github/workflows/stats.yml">GitHub workflow</a>; the totals at the top are live.</li>
+    </ul>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+const REPO = 'SaiSiddharthBS/OpenWave';
+const API = `https://api.github.com/repos/${REPO}`;
+const HISTORY = new URLSearchParams(location.search).get('history') || `https://raw.githubusercontent.com/${REPO}/stats/history.json`;
+const APPS = [ // which app a release file is; the order is the order they're listed in
+  ['Android', /\.apk$/i],
+  ['Mac (Apple Silicon)', /AppleSilicon|arm64\.dmg/i],
+  ['Mac (Intel)', /Intel|x86_64\.dmg/i],
+  ['Windows', /\.exe$|\.msi$/i],
+  ['Linux', /AppImage|\.deb$|\.tar\.gz$/i],
+];
+const appOf = (file) => APPS.find(([, re]) => re.test(file))?.[0] || 'Other';
+const fmt = (n) => n.toLocaleString('en');
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const day = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en', { day: 'numeric', month: 'short', timeZone: 'UTC' });
+const $ = (id) => document.getElementById(id);
+
+async function json(url, accept = 'application/vnd.github+json') {
+  const r = await fetch(url, { headers: { Accept: accept } });
+  if (!r.ok) throw new Error(`${r.status}`);
+  return r.json();
+}
+
+// ------------------------------------------------------------------ tooltip
+const tip = $('tip');
+function showTip(html, e) {
+  tip.innerHTML = html;
+  tip.classList.add('on');
+  const w = tip.offsetWidth, h = tip.offsetHeight;
+  let x = e.clientX + 14, y = e.clientY - h - 10;
+  if (x + w > innerWidth - 8) x = e.clientX - w - 14;
+  if (y < 8) y = e.clientY + 16;
+  tip.style.left = `${x}px`; tip.style.top = `${y}px`;
+}
+const hideTip = () => tip.classList.remove('on');
+
+// ------------------------------------------------------------------ charts
+/** Four whole-number steps that cover v: 0, 2, 4, 6, 8 rather than 0, 2.5, 5… */
+function axis(v) {
+  const raw = Math.max(1, v / 4);
+  const p = 10 ** Math.floor(Math.log10(raw));
+  const step = [1, 2, 5, 10].map((m) => m * p).find((x) => x >= raw);
+  return { max: step * Math.max(1, Math.ceil(v / step)), step };
+}
+const ns = (tag, attrs = {}) => { const el = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const k in attrs) el.setAttribute(k, attrs[k]); return el; };
+
+/** Horizontal bars, sorted, each labelled with its value. rows: [{label, value, tip}] */
+function hbars(box, rows) {
+  const max = Math.max(...rows.map((r) => r.value), 1);
+  box.innerHTML = `<div class="hbars">${rows.map((r, i) => `<div class="name">${esc(r.label)}</div>
+    <div class="track" data-i="${i}"><div class="bar" style="width:calc(${(r.value / max) * 100}% - 48px * ${r.value / max})"></div>
+      <div class="num" style="left:calc(${(r.value / max) * 100}% - 48px * ${r.value / max})">${fmt(r.value)}</div></div>`).join('')}</div>`;
+  box.querySelectorAll('.track').forEach((t) => {
+    const r = rows[+t.dataset.i];
+    t.addEventListener('pointermove', (e) => showTip(r.tip, e));
+    t.addEventListener('pointerleave', hideTip);
+  });
+}
+
+/** Vertical bars on a baseline. data: [{label, value, tip}] */
+function columns(box, data, { height = 210, labelEvery = 1, values = false } = {}) {
+  const W = box.clientWidth || 600, H = height, m = { l: 34, r: 6, t: values ? 18 : 8, b: 24 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const { max, step } = axis(Math.max(...data.map((d) => d.value), 1));
+  const band = iw / data.length;
+  const bw = Math.max(2, Math.min(56, band - Math.max(2, band * 0.3)));
+  const y = (v) => m.t + ih - (v / max) * ih;
+  const svg = ns('svg', { viewBox: `0 0 ${W} ${H}`, height: H, role: 'img' });
+  for (let v = 0; v <= max; v += step) {
+    const i = v;
+    svg.append(ns('line', { class: i ? 'grid' : 'base', x1: m.l, x2: W - m.r, y1: y(v), y2: y(v) }));
+    const t = ns('text', { x: m.l - 6, y: y(v) + 4, 'text-anchor': 'end' }); t.textContent = fmt(Math.round(v)); svg.append(t);
+  }
+  data.forEach((d, i) => {
+    const cx = m.l + band * i + band / 2;
+    const h = (d.value / max) * ih;
+    const r = Math.min(4, bw / 2, h);
+    const x0 = cx - bw / 2, y0 = m.t + ih - h;
+    const hit = ns('rect', { class: 'hit', x: m.l + band * i, y: m.t, width: band, height: ih, fill: 'transparent' });
+    const bar = ns('path', { class: 'mark', d: h > 0 ? `M${x0},${m.t + ih}V${y0 + r}Q${x0},${y0} ${x0 + r},${y0}H${x0 + bw - r}Q${x0 + bw},${y0} ${x0 + bw},${y0 + r}V${m.t + ih}Z` : '' });
+    hit.addEventListener('pointermove', (e) => { bar.classList.add('on'); showTip(d.tip, e); });
+    hit.addEventListener('pointerleave', () => { bar.classList.remove('on'); hideTip(); });
+    svg.append(hit, bar);
+    if (values && d.value > 0) { const t = ns('text', { class: 'val', x: cx, y: y0 - 5, 'text-anchor': 'middle' }); t.textContent = fmt(d.value); svg.append(t); }
+    if (i % labelEvery === 0) {
+      const t = ns('text', { x: cx, y: H - 6, 'text-anchor': 'middle' }); t.textContent = d.label; svg.append(t);
+    }
+  });
+  box.replaceChildren(svg);
+}
+
+/** A running total over time (a step line), with a crosshair. points: [{t: Date, value}] */
+function growth(box, points, { height = 210, unit = 'stars' } = {}) {
+  const W = box.clientWidth || 600, H = height, m = { l: 34, r: 10, t: 10, b: 24 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const t0 = points[0].t.getTime(), t1 = Math.max(Date.now(), t0 + 86400000);
+  const { max, step } = axis(Math.max(...points.map((p) => p.value), 1));
+  const x = (t) => m.l + ((t - t0) / (t1 - t0)) * iw;
+  const y = (v) => m.t + ih - (v / max) * ih;
+  const svg = ns('svg', { viewBox: `0 0 ${W} ${H}`, height: H, role: 'img' });
+  const defs = ns('defs'); const g = ns('linearGradient', { id: 'fade', x1: 0, x2: 0, y1: 0, y2: 1 });
+  g.append(ns('stop', { offset: '0', 'stop-color': '#7b7bff', 'stop-opacity': '.28' }), ns('stop', { offset: '1', 'stop-color': '#7b7bff', 'stop-opacity': '0' }));
+  defs.append(g); svg.append(defs);
+  for (let v = 0; v <= max; v += step) {
+    const i = v;
+    svg.append(ns('line', { class: i ? 'grid' : 'base', x1: m.l, x2: W - m.r, y1: y(v), y2: y(v) }));
+    const t = ns('text', { x: m.l - 6, y: y(v) + 4, 'text-anchor': 'end' }); t.textContent = fmt(Math.round(v)); svg.append(t);
+  }
+  [t0, (t0 + t1) / 2, t1].forEach((t, i) => {
+    const el = ns('text', { x: x(t), y: H - 6, 'text-anchor': ['start', 'middle', 'end'][i] });
+    el.textContent = new Date(t).toLocaleDateString('en', { day: 'numeric', month: 'short', year: '2-digit' }); svg.append(el);
+  });
+  let d = `M${x(t0)},${y(0)}`;
+  points.forEach((p) => { d += `H${x(p.t.getTime())}V${y(p.value)}`; });
+  d += `H${x(t1)}`;
+  svg.append(ns('path', { class: 'area', d: `${d}V${y(0)}Z` }), ns('path', { class: 'line', d }));
+  const cross = ns('line', { class: 'cross', y1: m.t, y2: m.t + ih, visibility: 'hidden' });
+  const dot = ns('circle', { class: 'dot', r: 4.5, visibility: 'hidden' });
+  const hit = ns('rect', { x: m.l, y: m.t, width: iw, height: ih, fill: 'transparent' });
+  hit.addEventListener('pointermove', (e) => {
+    const r = svg.getBoundingClientRect();
+    const t = t0 + (((e.clientX - r.left) * (W / r.width) - m.l) / iw) * (t1 - t0);
+    const p = [...points].reverse().find((q) => q.t.getTime() <= t);
+    const v = p ? p.value : 0;
+    const at = p ? p.t.getTime() : t0;
+    cross.setAttribute('x1', x(t)); cross.setAttribute('x2', x(t)); cross.setAttribute('visibility', 'visible');
+    dot.setAttribute('cx', x(t)); dot.setAttribute('cy', y(v)); dot.setAttribute('visibility', 'visible');
+    showTip(`<b>${fmt(v)}</b> ${unit}<small>${new Date(Math.max(at, t)).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })}</small>`, e);
+  });
+  hit.addEventListener('pointerleave', () => { cross.setAttribute('visibility', 'hidden'); dot.setAttribute('visibility', 'hidden'); hideTip(); });
+  svg.append(cross, dot, hit);
+  box.replaceChildren(svg);
+}
+
+/** When each star was given (GitHub lists them oldest first, 100 per page). */
+async function starHistory() {
+  const all = [];
+  for (let page = 1; page <= 30; page++) {
+    const batch = await json(`${API}/stargazers?per_page=100&page=${page}`, 'application/vnd.github.star+json');
+    all.push(...batch);
+    if (batch.length < 100) break;
+  }
+  return all;
+}
+
+// ------------------------------------------------------------------ the page
+let draw = () => {};
+async function main() {
+  const [releases, repo, history, stars] = await Promise.all([
+    json(`${API}/releases?per_page=100`),
+    json(API),
+    fetch(`${HISTORY}?t=${Date.now()}`).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    starHistory().catch(() => []),
+  ]);
+  const published = releases.filter((r) => !r.draft).sort((a, b) => new Date(a.published_at) - new Date(b.published_at));
+  const files = published.flatMap((r) => r.assets.filter((a) => !/\.(sha256|txt)$/.test(a.name)).map((a) => ({ version: r.tag_name, name: a.name, app: appOf(a.name), count: a.download_count })));
+  const total = files.reduce((s, f) => s + f.count, 0);
+  const latest = published.at(-1);
+  const latestCount = files.filter((f) => f.version === latest?.tag_name).reduce((s, f) => s + f.count, 0);
+
+  // Downloads per day: the difference between one day's saved total and the next.
+  const days = (history?.days || []).map((d) => ({ date: d.date, total: Object.values(d.downloads || {}).reduce((s, v) => s + Object.values(v).reduce((a, b) => a + b, 0), 0) }));
+  const perDay = days.slice(1).map((d, i) => ({ date: d.date, value: Math.max(0, d.total - days[i].total) }));
+  const week = perDay.slice(-7).reduce((s, d) => s + d.value, 0);
+  const daysOld = latest ? Math.max(0, Math.round((Date.now() - new Date(latest.published_at)) / 86400000)) : 0;
+
+  $('updated').textContent = `Live from GitHub, ${new Date().toLocaleString('en', { dateStyle: 'medium', timeStyle: 'short' })}${history?.updated ? ` · daily history saved ${new Date(history.updated).toLocaleDateString('en', { day: 'numeric', month: 'short' })}` : ''}`;
+  const tile = (label, value, note = '') => `<div class="tile"><div class="label">${label}</div><div class="value">${value}</div><div class="note">${note}</div></div>`;
+  $('tiles').innerHTML = [
+    tile('Downloads, all time', fmt(total), `${published.length} releases`),
+    tile('Downloads, last 7 days', perDay.length ? fmt(week) : '—', perDay.length ? `over ${Math.min(7, perDay.length)} day${perDay.length === 1 ? '' : 's'} saved` : 'Fills in from tomorrow'),
+    tile(`Downloads of ${esc(latest?.tag_name || 'the latest')}`, fmt(latestCount), latest ? `released ${daysOld ? `${daysOld} day${daysOld === 1 ? '' : 's'} ago` : 'today'}` : ''),
+    tile('GitHub stars', fmt(repo.stargazers_count), `${fmt(repo.forks_count)} forks · ${fmt(repo.subscribers_count)} watching`),
+  ].join('');
+
+  const byApp = APPS.map(([name]) => name).concat('Other').map((name) => ({ name, value: files.filter((f) => f.app === name).reduce((s, f) => s + f.count, 0) }))
+    .filter((a) => a.value > 0 || a.name !== 'Other').sort((a, b) => b.value - a.value);
+  const byVersion = published.map((r) => ({ version: r.tag_name, value: files.filter((f) => f.version === r.tag_name).reduce((s, f) => s + f.count, 0), date: r.published_at }));
+  const starPoints = stars.length ? stars.map((s, i) => ({ t: new Date(s.starred_at), value: i + 1 })) : null;
+  const visits = Object.entries(history?.traffic?.views || {}).sort(([a], [b]) => a.localeCompare(b)).slice(-60);
+
+  draw = () => {
+    hbars($('by-app'), byApp.map((a) => ({ label: a.name, value: a.value, tip: `<b>${fmt(a.value)}</b> downloads<small>${esc(a.name)}, all versions</small>` })));
+    columns($('by-version'), byVersion.map((v) => ({ label: v.version, value: v.value, tip: `<b>${fmt(v.value)}</b> downloads<small>${esc(v.version)}, released ${new Date(v.date).toLocaleDateString('en', { day: 'numeric', month: 'short', year: 'numeric' })}</small>` })), { values: true });
+    if (perDay.length) {
+      columns($('per-day'), perDay.map((d) => ({ label: day(d.date), value: d.value, tip: `<b>${fmt(d.value)}</b> downloads<small>${day(d.date)}</small>` })), { labelEvery: Math.ceil(perDay.length / 8) });
+    } else {
+      $('per-day').innerHTML = `<div class="empty">${days.length ? `Started counting on ${day(days[0].date)}. The first day's downloads show up tomorrow.` : 'Daily counting starts with the first run of the stats workflow.'}</div>`;
+    }
+    if (starPoints) growth($('stars'), starPoints);
+    else $('stars').innerHTML = '<div class="empty">No stars yet. <a href="https://github.com/SaiSiddharthBS/OpenWave">Be the first ⭐</a></div>';
+    if (visits.length) {
+      columns($('visitors'), visits.map(([date, v]) => ({ label: day(date), value: v.uniques, tip: `<b>${fmt(v.uniques)}</b> visitors<small>${fmt(v.count)} page views · ${day(date)}</small>` })), { labelEvery: Math.ceil(visits.length / 5) });
+    } else {
+      $('visitors').innerHTML = '<div class="empty">Appears once the stats workflow can read GitHub traffic (see MAINTAINING.md).</div>';
+    }
+  };
+  draw();
+
+  $('files').innerHTML = `<div class="scroll"><table><thead><tr><th>Version</th><th>App</th><th>File</th><th class="n">Downloads</th></tr></thead><tbody>
+    ${[...files].reverse().map((f) => `<tr><td>${esc(f.version)}</td><td>${esc(f.app)}</td><td>${esc(f.name)}</td><td class="n">${fmt(f.count)}</td></tr>`).join('')}
+    <tr><th colspan="3">Total</th><th class="n">${fmt(total)}</th></tr></tbody></table></div>`;
+}
+
+main().catch((e) => {
+  $('updated').innerHTML = `<span class="error">Couldn’t load the numbers from GitHub (${esc(e.message)}). GitHub allows 60 requests an hour per network, so try again later.</span>`;
+});
+let resizeTimer;
+addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => draw(), 150); });
+</script>
+</body>
+</html>

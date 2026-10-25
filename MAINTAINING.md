@@ -48,6 +48,24 @@ Until then, releases are saved as a **draft** without the Android app. Upload a 
 | Website | `site/` (updates itself when you push to main) |
 | Builds and releases | `.github/workflows/` (`publish.yml` makes releases) |
 
+## How many people download OpenWave
+
+The [Stats page](https://saisiddharthbs.github.io/OpenWave/stats.html) shows downloads per app and
+per version, downloads per day, stars and visitors. The totals come live from GitHub; the daily
+history is saved once a day by `.github/workflows/stats.yml` to the `stats` branch (run it by hand
+from the Actions tab any time). Nothing is collected from the apps.
+
+**Optional, visitors to the GitHub page:** GitHub only shows traffic to people who can change the
+repository, so the workflow needs a token for it. Once:
+
+1. GitHub → Settings → Developer settings → **Fine-grained tokens** → Generate new token.
+2. Repository access: only `OpenWave`. Permissions: **Administration: Read-only** (that's where
+   GitHub puts traffic). Pick the longest expiry.
+3. Repository → Settings → Secrets and variables → Actions → New secret named `STATS_TOKEN`.
+
+From the next daily run, the page also shows visitors per day, and keeps them for longer than the
+two weeks GitHub remembers.
+
 ## Checking things
 
 ```bash
