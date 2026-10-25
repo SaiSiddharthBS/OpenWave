@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-10-25
+
 ### Added
 - **Play on another device.** The new devices button in the player lists every OpenWave on your Wi-Fi. Pick one and the music moves there, carrying on from the same second, and this device becomes its remote: play, pause, skip, seek, volume, the queue, and anything you choose to play. "Play on this phone" brings it back.
 - **Listen together.** Start a listening session and anyone on the same Wi-Fi can join from their Devices list. Every device plays the same song at the same moment (kept within a few hundredths of a second by gently speeding up or slowing down). Anyone in the session can pause, skip or add songs.
