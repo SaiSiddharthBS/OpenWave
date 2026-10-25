@@ -15,7 +15,7 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 
-from . import __version__, music, releases, updater, youtube
+from . import __version__, link, music, releases, updater, youtube
 from .api_library import error_response, router as library_router
 from .config import FROZEN, data_dir
 from .library import LibraryError
@@ -31,7 +31,9 @@ client = httpx.AsyncClient(timeout=httpx.Timeout(20, read=60), follow_redirects=
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    await link.hub.start()
     yield
+    await link.hub.stop()
     await client.aclose()
 
 
@@ -39,7 +41,9 @@ app = FastAPI(title="OpenWave", version=__version__, docs_url="/api/docs", redoc
 
 
 app.include_router(library_router)
+app.include_router(link.router)
 app.add_exception_handler(LibraryError, lambda _req, exc: error_response(exc))
+app.add_exception_handler(link.LinkError, lambda _req, exc: link._error(exc))
 
 
 @app.exception_handler(youtube.StreamError)

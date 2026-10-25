@@ -1,11 +1,11 @@
 // Caches the app shell and artwork so OpenWave opens and shows your library with no connection.
 // Downloaded songs live in IndexedDB (see js/offline.js); live streams are never cached here.
-const VERSION = 'openwave-v12';
+const VERSION = 'openwave-v13';
 const IMAGES = 'openwave-img-v1';
 const MAX_IMAGES = 600;
 const SHELL = [
   '/', '/index.html', '/css/app.css', '/js/app.js', '/js/api.js', '/js/player.js', '/js/store.js', '/js/ui.js',
-  '/js/views.js', '/js/offline.js', '/js/profiles.js', '/js/importer.js', '/js/insights.js', '/js/native.js', '/js/update.js', '/js/gestures.js',
+  '/js/views.js', '/js/offline.js', '/js/profiles.js', '/js/importer.js', '/js/insights.js', '/js/native.js', '/js/update.js', '/js/gestures.js', '/js/link.js',
   '/icons/logo-mark-64.png', '/icons/logo-mark-128.png', '/icons/favicon-64.png', '/icons/icon-192.png', '/manifest.webmanifest',
 ];
 

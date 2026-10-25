@@ -55,6 +55,10 @@ final class ServerManager: ObservableObject {
         env["OPENWAVE_BIN_DIR"] = Bundle.main.resourceURL!.appendingPathComponent("bin").path
         if env["OPENWAVE_DATA"] == nil { env["OPENWAVE_DATA"] = Self.supportDir.path }
         env["PYTHONUNBUFFERED"] = "1"
+        // Other devices on the Wi-Fi see this Mac by its name, and can find it out of the box.
+        env["OPENWAVE_DEVICE_NAME"] = Host.current().localizedName ?? "Mac"
+        env["OPENWAVE_DEVICE_KIND"] = "computer"
+        env["OPENWAVE_LINK"] = "1"
         proc.environment = env
         FileManager.default.createFile(atPath: Self.logURL.path, contents: nil)
         if let log = try? FileHandle(forWritingTo: Self.logURL) {

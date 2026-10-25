@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
+import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Base64
@@ -61,6 +62,22 @@ class MainActivity : ComponentActivity() {
         fileCallback = null
     }
     private val askNotifications = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    /** Wi-Fi drops broadcast packets to save power; while the app is open, let through the ones
+     * other devices send to find OpenWave (Devices → play on this phone, listen together). */
+    private val discovery by lazy {
+        (applicationContext.getSystemService(WIFI_SERVICE) as WifiManager).createMulticastLock("openwave-devices").apply { setReferenceCounted(false) }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        runCatching { discovery.acquire() }
+    }
+
+    override fun onStop() {
+        runCatching { discovery.release() }
+        super.onStop()
+    }
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -322,6 +339,10 @@ class MainActivity : ComponentActivity() {
                 .putExtra(Intent.EXTRA_TEXT, text)
             runOnUiThread { startActivity(Intent.createChooser(send, title)) }
         }
+
+        /** The name other devices see for this phone (Devices → play on / listen together). */
+        @JavascriptInterface
+        fun deviceName(): String = if (trusted()) Engine.deviceName(this@MainActivity) else ""
 
         @JavascriptInterface
         fun haptic(kind: String) {

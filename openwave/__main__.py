@@ -1,20 +1,12 @@
 """Run with:  python -m openwave [--host 0.0.0.0] [--port 8787] [--no-browser]"""
 
 import argparse
-import socket
 import threading
 import webbrowser
 
 import uvicorn
 
-
-def lan_ip() -> str | None:
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-            s.connect(("10.255.255.255", 1))
-            return s.getsockname()[0]
-    except OSError:
-        return None
+from .link import lan_ip
 
 
 def main():

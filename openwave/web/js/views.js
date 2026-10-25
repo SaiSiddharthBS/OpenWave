@@ -4,6 +4,7 @@ import { get, img, enc } from './api.js';
 import { store } from './store.js';
 import { offline, fmtBytes } from './offline.js';
 import { checkForUpdate, updateHint } from './update.js';
+import { linkSettings } from './link.js';
 import {
   esc, icon, fmtTotal, trackList, trackCards, cards, section, registerList, trackRow, artistLinks, empty, avatar,
 } from './ui.js';
@@ -370,6 +371,20 @@ function androidServerSetting() {
       <div class="btn-row">${current ? '<button class="btn" data-act="android-use-phone">Use this phone</button>' : ''}<button class="btn" data-act="android-set-server">${current ? 'Change' : 'Connect to computer'}</button></div></div>`;
 }
 
+function devicesSetting(l) {
+  const allowed = l.allowed.length
+    ? l.allowed.map((a) => `<div class="setting sub"><div><b>${esc(a.name)}</b><p>Can play music here and join your listening sessions.</p></div>
+        <button class="btn" data-act="link-forget" data-engine="${esc(a.engine)}" data-name="${esc(a.name)}">Remove</button></div>`).join('')
+    : '';
+  return `<h2>Devices</h2>
+    <div class="setting"><div><b>Show this device on Wi-Fi</b><p>Lets your other phones and computers on the same Wi-Fi play music here, and friends join your listening sessions. Each one has to be allowed once.</p></div>
+      <button class="switch ${l.visible ? 'on' : ''}" data-act="link-visible" role="switch" aria-checked="${!!l.visible}" aria-label="Show this device on Wi-Fi"></button></div>
+    <div class="setting"><div><b>Device name</b><p>${esc(l.name)}${l.visible && l.address ? ` · ${esc(l.address)}` : ''}</p></div>
+      <button class="btn" data-act="link-rename" data-name="${esc(l.name)}">${icon('edit')} Rename</button></div>
+    <div class="setting"><div><b>Play on another device, or listen together</b><p>Tap ${icon('devices')} in the player.</p></div><button class="btn" data-act="devices">Devices</button></div>
+    ${allowed}`;
+}
+
 function updateLine(u) {
   if (!u?.latest) return '';
   if (u.available) return `<div class="setting"><div><b>OpenWave ${esc(u.latest)} is available</b><p>${esc(updateHint(u))}</p></div><button class="btn primary" data-act="app-update">Update</button></div>`;
@@ -384,7 +399,7 @@ export async function settings() {
   const p = store.profile;
   let health = null;
   try { health = await (await fetch('/api/health')).json(); } catch { /* offline */ }
-  const update = await checkForUpdate(3000);
+  const [update, link] = await Promise.all([checkForUpdate(3000), linkSettings()]);
   const sw = (key) => `<button class="switch ${s[key] ? 'on' : ''}" data-setting-toggle="${key}" role="switch" aria-checked="${!!s[key]}" aria-label="${key}"></button>`;
   const select = (key, options, type = '') => `<select class="select" data-setting="${key}" ${type ? `data-type="${type}"` : ''}>
     ${options.map(([v, l]) => `<option value="${v}" ${String(s[key]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
@@ -406,6 +421,7 @@ export async function settings() {
       ${document.documentElement.classList.contains('native-mac-app') ? `<div class="setting"><div><b>Song notifications</b><p>Show a notification when the song changes while OpenWave is in the background.</p></div>${sw('notifications')}</div>` : ''}
       ${window.OpenWaveAndroid ? androidServerSetting() : ''}
       ${window.OpenWaveAndroid?.addWidget ? '<div class="setting"><div><b>Home-screen widget</b><p>See what’s playing and skip songs right from your home screen.</p></div><button class="btn" data-act="android-add-widget">Add widget</button></div>' : ''}
+      ${link ? devicesSetting(link) : ''}
       <h2>Downloads</h2>
       <div class="setting"><div><b>Saved on this device</b><p id="dl-usage">${plural(offline.count, 'song')} • ${fmtBytes(await offline.usage().catch(() => 0))}. Downloads use the audio quality above.</p></div>
         <button class="btn danger" data-act="clear-downloads" ${offline.count ? '' : 'disabled'}>Delete all</button></div>

@@ -55,6 +55,11 @@ Each desktop app is self-contained: there's nothing else to install. The files a
 - 📊 **Insights:** minutes listened, top artists, top songs and when you listen. You get a **shareable card** for social media.
 - 📥 **Import** your playlists from Spotify, YouTube Music, Apple Music, Deezer, JioSaavn, Amazon Music and more, with no song limit.
 
+**Together**
+- 🔊 **Play on another device.** Tap the devices button in the player to send the music from your phone to your Mac (or the other way round). Your phone becomes the remote: skip, pause, change the volume and pick songs, and the music plays there. One tap brings it back.
+- 👥 **Listen together.** Start a listening session and friends on the same Wi-Fi join from their own phones or computers. Everyone hears the same song at the same moment, kept within a few hundredths of a second, and anyone can pause, skip or add songs.
+- Works between any OpenWave apps on the same Wi-Fi, with no account and no server. A device has to be allowed once, with a prompt on its screen, before another one can control it.
+
 **Everywhere**
 - 🍎 **Native Mac app** with media keys, Control Center, a menu-bar mini player, notifications, a Dock menu and keyboard shortcuts.
 - 🪟 **Windows and Linux apps** that install in one click and open in their own window.
@@ -243,6 +248,9 @@ Android has its own app that runs everything on the phone. On iPhone, use OpenWa
 
 **Can my family use it?**
 Yes. Run it on one computer or server and give everyone their own profile.
+
+**Can someone else on my Wi-Fi take over my music?**
+No. Other devices can see your device's name in their Devices list, but a device has to be allowed once, by tapping **Allow** on your screen, before it can play anything or join your session. Remove a device any time in **Settings → Devices**, or turn off **Show this device on Wi-Fi** to hide it completely. Only "what's playing" travels between devices (no audio, no library), over ports 47880–47889 on your local network. The Mac and Android apps start visible; the Windows and Linux apps, Docker and the server start hidden.
 
 ## 🗺️ Roadmap
 

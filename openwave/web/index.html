@@ -58,6 +58,12 @@
   <symbol id="i-album" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.5"/></symbol>
   <symbol id="i-next-up" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M3 6h12M3 12h12M3 18h7"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M18 13v8m-4-4h8"/></symbol>
   <symbol id="i-edit" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4"/></symbol>
+  <symbol id="i-devices" viewBox="0 0 24 24"><rect x="2.5" y="4" width="12" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="8.5" cy="14.5" r="2.4"/><circle cx="8.5" cy="8" r="1.1"/><rect x="16.5" y="8" width="5" height="12" rx="1.4" fill="none" stroke="currentColor" stroke-width="2"/></symbol>
+  <symbol id="i-speaker" viewBox="0 0 24 24"><rect x="5" y="2.5" width="14" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="14.5" r="3.2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="7" r="1.3"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6" y="2.5" width="12" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M10.5 18.5h3"/></symbol>
+  <symbol id="i-computer" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="12" rx="1.8" fill="none" stroke="currentColor" stroke-width="2"/><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M1.5 20h21"/></symbol>
+  <symbol id="i-people" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2 20a7 7 0 0 1 14 0z"/><circle cx="17" cy="9" r="2.6"/><path d="M15.6 13.4A5.5 5.5 0 0 1 22.5 19h-4.6a8.5 8.5 0 0 0-2.3-5.6z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
   <symbol id="i-expand" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
 </svg>
 
@@ -110,6 +116,7 @@
     <div class="pb-meta">
       <div class="pb-title ellipsis" data-bind="title">Nothing playing</div>
       <div class="pb-artist ellipsis" data-bind="artists">Search for something to play</div>
+      <div class="pb-device" data-bind="device" data-act="devices" hidden></div>
     </div>
     <button class="icon-btn like-btn desktop-only" data-act="like-current" aria-label="Like"><svg><use href="#i-heart"/></svg></button>
   </div>
@@ -131,6 +138,7 @@
     <button class="icon-btn" data-act="np-lyrics" title="Lyrics" aria-label="Lyrics"><svg><use href="#i-lyrics"/></svg></button>
     <button class="icon-btn" data-act="np-queue" title="Queue" aria-label="Queue"><svg><use href="#i-queue"/></svg></button>
     <button class="icon-btn toggle" data-act="sleep" title="Sleep timer" aria-label="Sleep timer"><svg><use href="#i-moon"/></svg></button>
+    <button class="icon-btn toggle link-only" data-act="devices" title="Devices" aria-label="Devices"><svg><use href="#i-devices"/></svg></button>
     <button class="icon-btn" data-act="mute" data-bind="mute" aria-label="Mute"><svg><use href="#i-volume"/></svg></button>
     <input type="range" class="range vol" id="volume" min="0" max="100" value="80" aria-label="Volume">
     <button class="icon-btn" data-act="open-np" title="Now playing" aria-label="Expand"><svg><use href="#i-expand"/></svg></button>
@@ -150,6 +158,7 @@
     <button class="icon-btn round" data-act="close-np" aria-label="Close"><svg><use href="#i-down"/></svg></button>
     <div class="np-from ellipsis"><small>Playing from</small><b data-bind="context">Queue</b></div>
     <button class="icon-btn toggle" data-act="sleep" title="Sleep timer" aria-label="Sleep timer"><svg><use href="#i-moon"/></svg></button>
+    <button class="icon-btn toggle link-only" data-act="devices" title="Devices" aria-label="Devices"><svg><use href="#i-devices"/></svg></button>
     <button class="icon-btn" data-act="np-more" title="More" aria-label="More"><svg><use href="#i-more"/></svg></button>
   </header>
   <div class="np-body">
@@ -183,6 +192,7 @@
       <button class="icon-btn" data-act="next" aria-label="Next"><svg><use href="#i-next"/></svg></button>
       <button class="icon-btn toggle" data-act="repeat" data-bind="repeat" aria-label="Repeat"><svg><use href="#i-repeat"/></svg></button>
     </div>
+    <button class="np-device" data-bind="device" data-act="devices" hidden></button>
     <div class="np-sheet-btns">
       <button data-act="sheet-queue"><svg><use href="#i-queue"/></svg>Up next</button>
       <button data-act="sheet-lyrics"><svg><use href="#i-lyrics"/></svg>Lyrics</button>

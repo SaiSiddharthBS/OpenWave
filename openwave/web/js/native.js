@@ -15,6 +15,11 @@ export function haptic(kind = 'light') {
   try { android?.haptic?.(kind); } catch { /* an older app without haptics */ }
 }
 
+/** Bring the app's window forward when something needs an answer (the Mac app). */
+export function attention() {
+  try { mac?.postMessage({ type: 'attention' }); } catch { /* app closing */ }
+}
+
 /** The system share sheet for a link or text: Android app, or browsers that support it. */
 export async function shareText(title, text, url = '') {
   if (android?.shareText) { android.shareText(title, url ? `${text}\n${url}` : text); return true; }

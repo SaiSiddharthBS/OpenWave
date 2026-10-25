@@ -4,6 +4,10 @@
 // change-over is gapless (or crossfaded, if enabled) and skipping is instant. OpenWave plays audio
 // tracks only: a music video in the queue is swapped for its song version before it plays.
 // Listening time is tracked per song for history and insights.
+//
+// While this device plays on another one, or listens together with one (see link.js), `remote` is
+// set: the controls are sent to that device instead, and in "remote" mode the getters show what it
+// is playing rather than anything local.
 
 import { get, img } from './api.js';
 import { store, slim } from './store.js';
@@ -52,14 +56,20 @@ class Player extends EventTarget {
   listenTrack = null;
   listened = 0;
   lastPos = null;
+  remote = null; // {mode: 'remote' | 'follow', send(cmd), state, position()} while linked to another device
 
   get current() { return this.queue[this.index] || null; }
   get audioEl() { return decks[this.deck]; }
   get spare() { return decks[1 - this.deck]; }
   get el() { return this.audioEl; }
-  get paused() { return this.el.paused; }
-  get time() { return this.loaded ? this.el.currentTime : this.resumeAt; }
+  get mirror() { return this.remote?.mode === 'remote'; }
+  get paused() { return this.mirror ? !this.remote.state?.playing : this.el.paused; }
+  get time() {
+    if (this.mirror) return this.remote.position();
+    return this.loaded ? this.el.currentTime : this.resumeAt;
+  }
   get duration() {
+    if (this.mirror) return this.remote.state?.duration || this.current?.duration || 0;
     const media = this.loaded && Number.isFinite(this.el.duration) ? this.el.duration : 0;
     const known = this.current?.duration || 0;
     return this.misreadLength() ? known : media || known;
@@ -227,7 +237,7 @@ class Player extends EventTarget {
 
   async preloadNext() {
     const i = this.nextIndex();
-    if (i < 0 || !this.dualDeck) return;
+    if (i < 0 || !this.dualDeck || this.remote) return;
     const token = this.token;
     const p = { videoId: this.queue[i].videoId, index: i, ready: false };
     this.preloaded = p;
@@ -302,6 +312,10 @@ class Player extends EventTarget {
   // ---------------------------------------------------------------- queue
   playList(tracks, i = 0, context = null) {
     if (!tracks.length) return;
+    if (this.remote) {
+      const from = Math.max(0, i - 100); // a sensible slice of a huge list
+      return this.remote.send({ cmd: 'playList', tracks: tracks.slice(from, from + 500).map(slim), i: i - from, context });
+    }
     const list = tracks.map(tag);
     if (this.shuffle) {
       const [first] = list.splice(i, 1);
@@ -317,6 +331,7 @@ class Player extends EventTarget {
   }
 
   playRadio(track, context = null) {
+    if (this.remote) return this.remote.send({ cmd: 'playRadio', track: slim(track), context });
     this.queue = [tag(track)];
     this.index = 0;
     this.context = context || { label: `${track.title} radio` };
@@ -326,23 +341,27 @@ class Player extends EventTarget {
   }
 
   async playPlaylistRadio(seedId, playlistId, label) {
+    if (this.remote) return this.remote.send({ cmd: 'playPlaylistRadio', seed: seedId, playlistId, label });
     const data = await get.next(seedId, playlistId);
     this.playList(data.tracks, 0, { label });
   }
 
   playNext(tracks) {
+    if (this.remote) return this.remote.send({ cmd: 'playNext', tracks: tracks.slice(0, 500).map(slim) });
     if (!this.current) return this.playList(tracks);
     this.queue.splice(this.index + 1, 0, ...tracks.map(tag));
     this.queueChanged();
   }
 
   addToQueue(tracks) {
+    if (this.remote) return this.remote.send({ cmd: 'addToQueue', tracks: tracks.slice(0, 500).map(slim) });
     if (!this.current) return this.playList(tracks);
     this.queue.push(...tracks.map(tag));
     this.queueChanged();
   }
 
   move(from, to) {
+    if (this.remote) return this.remote.send({ cmd: 'move', ...this.remote.at(from), to: this.remote.at(to).i });
     if (from === to || from <= this.index || to <= this.index || from >= this.queue.length) return;
     const [t] = this.queue.splice(from, 1);
     this.queue.splice(Math.min(to, this.queue.length), 0, t);
@@ -358,6 +377,7 @@ class Player extends EventTarget {
 
   removeAt(i) {
     if (i < 0 || i >= this.queue.length) return;
+    if (this.remote) return this.remote.send({ cmd: 'removeAt', ...this.remote.at(i) });
     const wasCurrent = i === this.index;
     this.queue.splice(i, 1);
     if (i < this.index) this.index--;
@@ -373,6 +393,7 @@ class Player extends EventTarget {
 
   jump(i) {
     if (i < 0 || i >= this.queue.length) return;
+    if (this.remote) return this.remote.send({ cmd: 'jump', ...this.remote.at(i) });
     if (i === this.nextIndex() && this.preloadValid()) return this.skipToPreloaded();
     this.index = i;
     this.emit('queue');
@@ -380,7 +401,7 @@ class Player extends EventTarget {
   }
 
   async extend(seed = this.queue.at(-1)?.videoId) {
-    if (!seed || this.extending) return this.extending;
+    if (!seed || this.extending || this.remote) return this.extending;
     this.extending = (async () => {
       try {
         let tracks;
@@ -416,14 +437,23 @@ class Player extends EventTarget {
 
   // ---------------------------------------------------------------- transport
   toggle() {
+    if (this.remote) return this.remote.send({ cmd: 'toggle' });
     if (!this.current) return;
     if (!this.loaded) return this.load({ at: this.resumeAt, fresh: true });
     if (this.el.paused) this.el.play().catch(() => {});
     else this.el.pause();
   }
 
-  play() { if (!this.current) return; if (!this.loaded || this.el.paused) this.toggle(); }
-  pause() { if (this.loaded && !this.el.paused) this.el.pause(); }
+  play() {
+    if (this.remote) return this.remote.send({ cmd: 'play' });
+    if (!this.current) return;
+    if (!this.loaded || this.el.paused) this.toggle();
+  }
+
+  pause() {
+    if (this.remote) return this.remote.send({ cmd: 'pause' });
+    if (this.loaded && !this.el.paused) this.el.pause();
+  }
 
   skipToPreloaded() {
     const incoming = this.spare;
@@ -436,6 +466,7 @@ class Player extends EventTarget {
   }
 
   async next() {
+    if (this.remote) return this.remote.send({ cmd: 'next' });
     this.cancelFade();
     if (this.loaded && this.preloadValid()) return this.skipToPreloaded();
     if (this.index < this.queue.length - 1) { this.index++; this.emit('queue'); return this.load(); }
@@ -448,6 +479,7 @@ class Player extends EventTarget {
   }
 
   prev() {
+    if (this.remote) return this.remote.send({ cmd: 'prev' });
     this.cancelFade();
     if (this.time > 3 || this.index <= 0) return this.seek(0);
     this.index--;
@@ -456,12 +488,14 @@ class Player extends EventTarget {
   }
 
   seek(seconds) {
+    if (this.remote) return this.remote.send({ cmd: 'seek', t: Math.max(0, seconds) });
     if (!this.loaded) { this.resumeAt = seconds; this.emit('time'); return; }
     this.el.currentTime = Math.max(0, Math.min(seconds, this.duration || seconds));
   }
 
   setVolume(v) {
     v = Math.max(0, Math.min(1, v));
+    if (this.mirror) { this.remote.send({ cmd: 'volume', v }); this.emit('volume'); return; }
     this.vol = v;
     if (!this.fade) decks.forEach((d) => { d.volume = d === this.audioEl ? v : d.volume && v; });
     decks.forEach((d) => { d.muted = false; });
@@ -470,15 +504,17 @@ class Player extends EventTarget {
   }
 
   toggleMute() {
+    if (this.mirror) return this.remote.send({ cmd: 'mute' });
     const m = !this.audioEl.muted;
     decks.forEach((d) => { d.muted = m; });
     this.emit('volume');
   }
 
-  get muted() { return this.audioEl.muted; }
-  get volume() { return this.vol; }
+  get muted() { return this.mirror ? false : this.audioEl.muted; }
+  get volume() { return this.mirror ? this.remote.state?.volume ?? this.vol : this.vol; }
 
   toggleShuffle() {
+    if (this.remote) { this.shuffle = !this.shuffle; this.emit('state'); return this.remote.send({ cmd: 'shuffle', on: this.shuffle }); }
     this.shuffle = !this.shuffle;
     const head = this.queue.slice(0, this.index + 1);
     const rest = this.upcoming;
@@ -490,6 +526,7 @@ class Player extends EventTarget {
 
   cycleRepeat() {
     this.repeat = { off: 'all', all: 'one', one: 'off' }[this.repeat];
+    if (this.remote) { this.emit('state'); return this.remote.send({ cmd: 'repeat', mode: this.repeat }); }
     if (this.preloaded && !this.preloadValid()) this.clearPreload();
     this.emit('state');
     this.saveQueue(true);
@@ -553,6 +590,7 @@ class Player extends EventTarget {
       this.emit('slept');
       return;
     }
+    if (this.remote) return; // listening together: the host moves everyone on to the next song
     if (this.repeat === 'one') { this.el.currentTime = 0; this.el.play().catch(() => {}); return; }
     if (store.settings.gapless !== false && this.preloadValid()) return this.skipToPreloaded();
     this.next();
@@ -576,7 +614,75 @@ class Player extends EventTarget {
     }
     this.emit('error', `Can't play “${t.title}”${message ? ` — ${message}` : ''}`);
     this.errors = 0;
-    if (this.index < this.queue.length - 1) setTimeout(() => this.current === t && this.next(), 1500);
+    if (this.index < this.queue.length - 1 && !this.remote) setTimeout(() => this.current === t && this.next(), 1500);
+  }
+
+  // ---------------------------------------------------------------- other devices (link.js)
+  /** Play another device's queue here: listening together, or moving its music to this device. */
+  adopt(s, { position = 0, playing = true } = {}) {
+    if (!s?.track) return;
+    const same = this.loaded && this.current?.videoId === s.track.videoId;
+    this.queue = s.queue.map(tag);
+    this.index = Math.min(Math.max(0, s.index), this.queue.length - 1);
+    if (this.current?.videoId !== s.track.videoId) { this.queue = [tag(s.track)]; this.index = 0; }
+    this.context = s.context || null;
+    this.shuffle = !!s.shuffle;
+    this.repeat = s.repeat || 'off';
+    this.emit('queue');
+    this.emit('state');
+    if (!same) return this.load({ at: position, autoplay: playing });
+    if (Math.abs(this.el.currentTime - position) > 1.5) this.el.currentTime = position;
+    if (playing && this.el.paused) this.el.play().catch(() => {});
+    if (!playing && !this.el.paused) this.el.pause();
+  }
+
+  /** Start or stop mirroring another device (remote.mode 'remote') or following it ('follow'). */
+  link(remote) {
+    const was = this.remote;
+    if (was?.mode === 'remote' || remote?.mode === 'remote') {
+      this.token++; // abandon any load in flight
+      this.commitListen();
+      this.cancelFade();
+      this.clearPreload();
+      this.stopMedia();
+      this.setLoading(false);
+    }
+    if (remote?.mode === 'follow') this.clearPreload();
+    this.remote = remote;
+    if (was?.mode === 'remote' && !remote) {
+      // Keep showing what was playing there, ready to carry on here with one tap.
+      this.resumeAt = was.position();
+      this.loaded = false;
+    }
+    decks.forEach((d) => { d.playbackRate = 1; });
+    this.emit('track', this.current);
+    this.emit('queue');
+    this.emit('state');
+    this.emit('time');
+    this.emit('volume');
+  }
+
+  /** Remote mode: show the other device's queue and state. */
+  mirrorState(s) {
+    const before = this.current?.videoId;
+    this.queue = s?.track ? s.queue.map(tag) : [];
+    this.index = s?.track ? Math.min(Math.max(0, s.index), this.queue.length - 1) : -1;
+    if (s?.track && this.current?.videoId !== s.track.videoId) { this.queue = [tag(s.track)]; this.index = 0; }
+    this.context = s?.context || null;
+    this.shuffle = !!s?.shuffle;
+    this.repeat = s?.repeat || 'off';
+    this.loaded = !!s?.track;
+    this.loading = !!s?.loading;
+    if (before !== this.current?.videoId) this.emit('track', this.current);
+    this.emit('queue');
+    this.emit('state');
+    this.emit('time');
+    this.emit('volume');
+  }
+
+  /** Listening together: nudge the speed (or jump) so this device stays in step with the host. */
+  setRate(rate) {
+    if (this.el.playbackRate !== rate) this.el.playbackRate = rate;
   }
 
   // ---------------------------------------------------------------- persistence

@@ -12,13 +12,17 @@ def _log(message: str) -> None:
     print(f"OpenWave engine: {message}", flush=True)  # Chaquopy sends stdout to logcat (python.stdout)
 
 
-def start(data_dir: str, port: int = 47878, host: str = "127.0.0.1") -> None:
+def start(data_dir: str, port: int = 47878, host: str = "127.0.0.1", device_name: str = "") -> None:
     """Run the HTTP server on a background thread; returns once it answers."""
     global _server
     if _server is not None:
         return
     began = time.time()
     os.environ["OPENWAVE_DATA"] = data_dir
+    # Other devices on the Wi-Fi see this phone by its name, and can find it out of the box.
+    os.environ["OPENWAVE_DEVICE_NAME"] = device_name or "Android phone"
+    os.environ["OPENWAVE_DEVICE_KIND"] = "phone"
+    os.environ["OPENWAVE_LINK"] = "1"
     import certifi
 
     # Python on Android has no system CA bundle: point every HTTP stack at certifi's.

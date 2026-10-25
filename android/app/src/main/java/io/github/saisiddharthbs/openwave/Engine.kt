@@ -1,6 +1,8 @@
 package io.github.saisiddharthbs.openwave
 
 import android.content.Context
+import android.os.Build
+import android.provider.Settings
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -9,7 +11,8 @@ import java.util.concurrent.Executors
 
 /**
  * The OpenWave engine (the same Python server the desktop apps run) living inside this app.
- * It listens on 127.0.0.1 only, so nothing outside the phone can reach it.
+ * The app talks to it on 127.0.0.1. Other devices on the Wi-Fi only reach its small "devices"
+ * listener (see openwave/link.py), and only once they've been allowed on this phone.
  */
 object Engine {
     const val TAG = "OpenWave"
@@ -27,6 +30,11 @@ object Engine {
     private val worker = Executors.newSingleThreadExecutor()
     private val waiting = mutableListOf<(Boolean) -> Unit>()
 
+    /** The phone's name as its owner set it ("Sai's Pixel"), else the model. */
+    fun deviceName(context: Context): String =
+        (if (Build.VERSION.SDK_INT >= 25) Settings.Global.getString(context.contentResolver, Settings.Global.DEVICE_NAME) else null)
+            ?.takeIf { it.isNotBlank() } ?: Build.MODEL
+
     /** Starts the engine once; [done] runs on the main thread with true when it's ready. */
     fun start(context: Context, done: (Boolean) -> Unit) {
         when (state) {
@@ -41,7 +49,7 @@ object Engine {
             Log.i(TAG, "starting engine in $dataDir")
             val started = System.currentTimeMillis()
             val ok = try {
-                Python.getInstance().getModule("android_main").callAttr("start", dataDir, PORT)
+                Python.getInstance().getModule("android_main").callAttr("start", dataDir, PORT, "127.0.0.1", deviceName(context))
                 true
             } catch (t: Throwable) {
                 error = t.message ?: t.toString()

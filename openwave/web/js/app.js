@@ -11,6 +11,7 @@ import { ensureProfile, switchProfile } from './profiles.js';
 import { initNative, shareFile, shareText, haptic } from './native.js';
 import { initGestures } from './gestures.js';
 import { initUpdates, checkForUpdate, startUpdate } from './update.js';
+import { initLink, openDevices, linkLabel, linkEvents, setVisible, rename, forget } from './link.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
   confirmDialog, sampleTint, artistLinks, errorBox, skeleton, empty, avatar,
@@ -400,6 +401,22 @@ const ACTIONS = {
   'open-np': () => openNP(),
   'close-np': () => closeNP(),
   'np-more': (el) => { if (player.current) trackMenu(el, player.current); },
+  devices: () => openDevices(),
+  'link-visible': async (el) => {
+    try { await setVisible(!el.classList.contains('on')); } catch (e) { toast(e.message); }
+    render({ keepScroll: true });
+  },
+  'link-rename': async (el) => {
+    const name = await askText('Name this device', { value: el.dataset.name || '', ok: 'Save' });
+    if (!name) return;
+    try { await rename(name); toast('Renamed'); } catch (e) { toast(e.message); }
+    render({ keepScroll: true });
+  },
+  'link-forget': async (el) => {
+    if (!await confirmDialog(`Remove “${el.dataset.name}”?`, 'It won’t be able to play music on this device or join your listening sessions until you allow it again.', 'Remove')) return;
+    try { await forget(el.dataset.engine); } catch (e) { toast(e.message); }
+    render({ keepScroll: true });
+  },
   'np-queue': () => toggleNP('queue'),
   'np-lyrics': () => toggleNP('lyrics'),
   'sheet-queue': () => toggleSheet('queue'),
@@ -811,6 +828,18 @@ player.addEventListener('volume', bindVolume);
 player.addEventListener('queue', () => { bind('context').forEach((el) => { el.textContent = player.context?.label || 'Queue'; }); if (!np.hidden) renderQueue(); markPlaying(); });
 player.addEventListener('error', (e) => toast(e.detail, 4500));
 
+// Playing on, or listening together with, another device: say so under the song, Spotify-style.
+function bindLink() {
+  const l = linkLabel();
+  document.body.classList.toggle('linked', !!l);
+  bind('device').forEach((el) => {
+    el.hidden = !l;
+    el.innerHTML = l ? `${icon(l.icon)}<span class="ellipsis">${esc(l.text)}</span>` : '';
+  });
+  $$('[data-act="devices"]').forEach((b) => b.classList.toggle('on', !!l));
+}
+linkEvents.addEventListener('change', bindLink);
+
 // ================================================================== now playing
 function openNP(tab) {
   np.classList.remove('closing');
@@ -950,6 +979,7 @@ bindTrack(player.current);
 bindSleep();
 initUpdates();
 initGestures({ np, closeNP });
+initLink();
 Promise.all([offline.init(), ensureProfile()]).finally(() => {
   renderProfileChip();
   renderSidebar();

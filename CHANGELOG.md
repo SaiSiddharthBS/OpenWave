@@ -6,6 +6,9 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 ## [Unreleased]
 
 ### Added
+- **Play on another device.** The new devices button in the player lists every OpenWave on your Wi-Fi. Pick one and the music moves there, carrying on from the same second, and this device becomes its remote: play, pause, skip, seek, volume, the queue, and anything you choose to play. "Play on this phone" brings it back.
+- **Listen together.** Start a listening session and anyone on the same Wi-Fi can join from their Devices list. Every device plays the same song at the same moment (kept within a few hundredths of a second by gently speeding up or slowing down). Anyone in the session can pause, skip or add songs.
+- Devices find each other automatically, with no account and no server, and a device has to be allowed once (a prompt on its screen) before another one can control it or join it. Manage this under **Settings → Devices**, where you can also rename the device, hide it, or remove allowed devices. If a network stops devices seeing each other, add one by its address.
 - **Import from more apps, with no song limit.** Paste a playlist or album link from **Spotify, YouTube Music, Apple Music, Deezer or JioSaavn**. Or import an export file: **Exportify** or Spotify's own data download (every song, every playlist), **TuneMyMusic** (Amazon Music, Tidal, SoundCloud and more), **Soundiiz**, the **Apple Music** app's Export Playlist, and **Google Takeout** for YouTube Music. A file with several playlists becomes several playlists. The import screen explains where to get each file.
 - YouTube and YouTube Music playlists import every song (before: the first 300).
 - **A smoother, more native phone app.** Pages slide in and out. Swipe the player down to close it, and swipe the artwork or the mini player to change songs. Long-press a song for its menu. Android gives a small vibration for these, images fade in, and everything you tap reacts.
