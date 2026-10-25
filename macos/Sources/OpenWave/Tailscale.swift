@@ -30,16 +30,20 @@ enum Tailscale {
         p.standardOutput = pipe
         p.standardError = pipe
         do { try p.run() } catch { return (-1, error.localizedDescription) }
-        let deadline = Date().addingTimeInterval(timeout)
-        while p.isRunning && Date() < deadline { Thread.sleep(forTimeInterval: 0.1) }
-        if p.isRunning { p.terminate() }
-        let out = String(data: pipe.fileHandleForReading.availableData, encoding: .utf8) ?? ""
-        return (p.isRunning ? -1 : p.terminationStatus, out)
+        // Read while it runs (a full pipe would stall it); stop it if it hangs.
+        let watchdog = DispatchWorkItem { if p.isRunning { p.terminate() } }
+        DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: watchdog)
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        p.waitUntilExit()
+        watchdog.cancel()
+        return (p.terminationStatus, String(data: data, encoding: .utf8) ?? "")
     }
 
     private static func json(_ args: [String]) -> [String: Any]? {
         let r = run(args, timeout: 10)
-        return r.code == 0 ? (try? JSONSerialization.jsonObject(with: Data(r.out.utf8))) as? [String: Any] : nil
+        // Tailscale may print a warning (e.g. a version mismatch) around the JSON.
+        guard r.code == 0, let start = r.out.firstIndex(of: "{"), let end = r.out.lastIndex(of: "}") else { return nil }
+        return (try? JSONSerialization.jsonObject(with: Data(r.out[start...end].utf8))) as? [String: Any]
     }
 
     /// Call off the main thread: it asks the Tailscale app.
