@@ -1,7 +1,7 @@
 {
   "name": "OpenWave",
   "short_name": "OpenWave",
-  "description": "Free and open-source music for everyone. No ads, no subscriptions, no premium.",
+  "description": "An open-source music player for every device you own.",
   "id": "/",
   "start_url": "/#/home",
   "scope": "/",

@@ -433,7 +433,7 @@ export async function settings() {
       <div class="setting"><div><b>Delete profile</b><p>Permanently delete “${esc(p.name)}” from this server.</p></div><button class="btn danger" data-act="delete-profile">Delete</button></div>` : ''}
       <h2>About</h2>
       <div class="prose">
-        <p><b>OpenWave ${esc(health?.version || '')}</b> — free and open-source software under the GNU GPL v3. No ads, no subscriptions, no tracking, no premium tier. Ever.</p>
+        <p><b>OpenWave ${esc(health?.version || '')}</b> — free and open-source software under the GNU GPL v3. Non-commercial, with no accounts and no tracking.</p>
         ${updateLine(update)}
         <p>Catalog and streams come from YouTube's public endpoints via <a href="https://github.com/sigma67/ytmusicapi" target="_blank" rel="noopener">ytmusicapi</a> and <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener">yt-dlp</a>. OpenWave is not affiliated with or endorsed by YouTube or Google.</p>
         <p>Server: ${health ? `online • yt-dlp ${esc(health.ytDlp)} • JS runtime: ${esc(health.jsRuntimes.join(', ') || 'none found (install Deno or Node)')}${Object.keys(health.extractorUpdates || {}).length ? ' • update downloaded, restart OpenWave to apply' : ''}` : 'unreachable'}</p>

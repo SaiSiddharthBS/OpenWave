@@ -4,7 +4,8 @@ Thank you for helping keep music free and open. Every kind of contribution helps
 
 ## Ground rules
 
-- **Free forever.** OpenWave will never have ads, paid tiers, accounts or tracking. PRs that add any of these won't be merged.
+- **Non-commercial, forever.** OpenWave will never be monetised: no ads, paid tiers, accounts or tracking. PRs that add any of these won't be merged.
+- **No content, no circumvention.** OpenWave never hosts or redistributes music, and contributions must not break DRM or other technical protection measures.
 - **Privacy first.** Libraries live only on the server the user runs (and downloads only on their device). No analytics, no third-party calls from the client, nothing phones home.
 - **No YouTube/Google branding.** Don't add their logos, names in the app title, or look-alike trademarks.
 - **Be kind.** Treat everyone with respect in issues and reviews.

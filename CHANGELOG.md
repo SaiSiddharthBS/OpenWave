@@ -15,6 +15,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - The website's Mac button no longer offers the Apple Silicon download to Intel Macs.
 - A new README with fresh screenshots of every platform, line icons instead of emoji on the website, and release notes without emoji.
 - A security policy, code of conduct, pull request template and clearer issue forms.
+- OpenWave now describes itself as an open-source, non-commercial music player, with no "ad-free" or "instead of a subscription" wording in the app, website, README or release notes, and a clearer note on legal and responsible use.
 
 ## [0.3.1] — 2026-10-25
 

@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>OpenWave — free music for everyone</title>
-  <meta name="description" content="Free, open-source music app. Search almost any song, play it with no ads, download for offline, sync your playlists. No subscriptions, ever.">
-  <meta property="og:title" content="OpenWave — free music for everyone">
-  <meta property="og:description" content="No ads. No subscriptions. No premium tier. Ever.">
+  <title>OpenWave — an open-source music player for every device</title>
+  <meta name="description" content="OpenWave is an open-source music player for macOS, Windows, Linux, Android and iPhone, with a synced library, gapless playback and listen-together across your devices.">
+  <meta property="og:title" content="OpenWave — an open-source music player for every device">
+  <meta property="og:description" content="One engine, native apps on five platforms, a synced library and listen-together across your devices.">
   <meta property="og:image" content="screenshots/hero.png">
   <meta name="theme-color" content="#0a0b14">
   <link rel="icon" href="favicon-64.png">
@@ -87,21 +87,21 @@
 
   <header>
     <img class="hero-logo" src="logo.png" alt="OpenWave">
-    <h1>All the music.<br><span class="grad">None of the bills.</span></h1>
-    <p class="sub">OpenWave is a free, open-source music app. Search almost any song, play it with no ads and no gaps, download it for offline, and keep your playlists everywhere. No subscriptions. Ever.</p>
+    <h1>One music app.<br><span class="grad">Every device you own.</span></h1>
+    <p class="sub">OpenWave is an open-source music player. Search YouTube Music's public catalogue, play it gaplessly, keep your library in sync, and listen together across your Mac, PC and phone.</p>
     <div class="cta">
       <a class="btn primary" id="primary" href="#install">Download OpenWave</a>
-      <span class="small" id="primary-note">Free · Open source (GPL-3.0) · No account needed</span>
+      <span class="small" id="primary-note">Open source (GPL-3.0) · No account needed</span>
       <div class="others" id="others"></div>
     </div>
     <div class="shot"><img src="screenshots/hero.png" alt="OpenWave on a Mac and a phone, listening together"></div>
   </header>
 
   <section id="features">
-    <h2>Everything you'd pay for. Free.</h2>
-    <p class="lead">Built to replace a premium subscription, not to upsell you one.</p>
+    <h2>Built for listening, on every device.</h2>
+    <p class="lead">A complete music player, built in the open. Non-commercial, with no accounts and no tracking.</p>
     <div class="grid">
-      <div class="card"><div class="ico"><svg aria-hidden="true"><use href="#i-play"/></svg></div><h3>No ads, no gaps</h3><p>Songs flow into each other, with optional crossfade. Skips are instant.</p></div>
+      <div class="card"><div class="ico"><svg aria-hidden="true"><use href="#i-play"/></svg></div><h3>Gapless playback</h3><p>Songs flow into each other, with optional crossfade. Skips are instant.</p></div>
       <div class="card"><div class="ico"><svg aria-hidden="true"><use href="#i-album"/></svg></div><h3>Songs, never videos</h3><p>Always the clean audio track. No film dialogue, intros or skits.</p></div>
       <div class="card"><div class="ico"><svg aria-hidden="true"><use href="#i-radio"/></svg></div><h3>Never-ending radio</h3><p>When your queue ends, music you'll like keeps playing.</p></div>
       <div class="card"><div class="ico"><svg aria-hidden="true"><use href="#i-download"/></svg></div><h3>Offline downloads</h3><p>Save albums and playlists and listen anywhere, even with no internet.</p></div>
@@ -167,7 +167,7 @@
   <footer>
     <p><a class="brand" href="#" style="justify-content:center"><img src="logo.png" alt=""><span>Open<b>Wave</b></span></a></p>
     <p>Free and open source under the GNU GPL v3 · Your library stays on your own devices · <a href="https://github.com/SaiSiddharthBS/OpenWave">Source code</a> · <a href="https://github.com/SaiSiddharthBS/OpenWave/issues">Report a problem</a></p>
-    <p>OpenWave is an independent project, not affiliated with YouTube, Google or Spotify. It hosts no content. Please support the artists you love.</p>
+    <p>OpenWave is an independent, non-commercial project, not affiliated with YouTube, Google, Spotify or any record label. It hosts no content. Use it in line with the terms of the services it connects to, and please support the artists you listen to.</p>
   </footer>
 </div>
 <script>
@@ -184,7 +184,7 @@
   if (os) {
     primary.textContent = P[os].label;
     primary.href = P[os].href || REL + P[os].file;
-    document.getElementById('primary-note').textContent = `Free · ${P[os].note}`;
+    document.getElementById('primary-note').textContent = P[os].note;
   } else {
     primary.textContent = 'Get OpenWave on your phone';
     primary.href = '#phone';

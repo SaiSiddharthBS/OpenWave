@@ -12,4 +12,4 @@
 - [ ] Added or updated tests for engine changes
 - [ ] Added a line under `## [Unreleased]` in `CHANGELOG.md`
 - [ ] Bumped `VERSION` in `openwave/web/sw.js` if cached web files changed
-- [ ] No ads, accounts, tracking or third-party calls from the client (see CONTRIBUTING.md)
+- [ ] No monetisation, accounts, tracking or third-party calls from the client (see CONTRIBUTING.md)

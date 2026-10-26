@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "openwave"
 version = "0.3.1"
-description = "Free, open-source music player backed by YouTube. No ads, no subscriptions, no premium."
+description = "Open-source music player for every device, with a synced library and listen-together."
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
 requires-python = ">=3.10"

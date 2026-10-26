@@ -4,9 +4,9 @@
 
 <h1>OpenWave</h1>
 
-<p><b>The free, open-source music app for every device you own.</b></p>
+<p><b>An open-source music player for every device you own.</b></p>
 
-<p>Search almost any song, play it with no ads and no gaps, download it for offline listening,<br>and take your library, playlists and listening sessions across your Mac, PC and phone.</p>
+<p>Search YouTube Music's public catalogue, play it gaplessly, and take your library, playlists<br>and listening sessions across your Mac, PC and phone.</p>
 
 <p>
 <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/SaiSiddharthBS/OpenWave?label=release&color=7b7bff"></a>
@@ -33,14 +33,14 @@
 
 ## Overview
 
-OpenWave is a complete music app built on YouTube Music's catalogue. It has the features people pay a subscription for, and none of the things they pay to avoid: no ads, no account, no tracking, no premium tier.
+OpenWave is an open-source, non-commercial music client for YouTube Music's public catalogue. It is an engineering project first: one engine, native apps on five platforms, a synced personal library, and devices that play together. It has no accounts, no tracking and no monetisation of any kind, and it hosts no content.
 
 - **One engine, every platform.** A single Python engine powers native apps for macOS, Windows, Linux and Android, a web app for iPhone, and a Docker image for home servers. Every feature ships everywhere at once.
 - **Your library is yours.** Profiles, likes, playlists and listening history live in a SQLite database on your own device or server. Nothing is sent to a cloud service, and the apps never report usage.
 - **Built like a product, not a script.** Gapless playback, personal mixes, synced lyrics, offline downloads, playlist import from other services, multi-device control and listen-together sessions, in-app updates, and signed, checksummed releases.
 
 <table>
-  <tr><td><b>Cost</b></td><td>Free, forever. GPL-3.0.</td></tr>
+  <tr><td><b>License</b></td><td>GPL-3.0. Free and open-source software, non-commercial.</td></tr>
   <tr><td><b>Account</b></td><td>None. Profiles are local, with an optional PIN.</td></tr>
   <tr><td><b>Platforms</b></td><td>macOS 13+ (Apple Silicon and Intel), Windows 10/11, Linux x86-64, Android 7+ (64-bit), iPhone via Safari, Docker (amd64, arm64)</td></tr>
   <tr><td><b>Latest release</b></td><td><a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest">v0.3.1</a>, with every installer, SHA-256 checksums and a Docker image</td></tr>
@@ -384,9 +384,9 @@ Release history is in [CHANGELOG.md](CHANGELOG.md). Ideas and requests are welco
 ## FAQ
 
 <details>
-<summary><b>Is it really free?</b></summary>
+<summary><b>Is OpenWave a commercial product?</b></summary>
 
-Yes. There is nothing to buy, and the GPL-3.0 license keeps every version free and open source.
+No. It is free and open-source software under the GPL-3.0, with nothing to buy and no paid tier, and it will not be monetised.
 </details>
 
 <details>
@@ -433,9 +433,13 @@ Contributions of every kind are welcome: code, design, translations, documentati
 
 OpenWave is built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ytmusicapi](https://github.com/sigma67/ytmusicapi), [FastAPI](https://fastapi.tiangolo.com), [Deno](https://deno.com), [PyInstaller](https://pyinstaller.org) and [Chaquopy](https://chaquo.com/chaquopy/), and inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
 
-## Disclaimer
+## Legal and responsible use
 
-OpenWave is an independent project. It is not affiliated with, endorsed by, or connected to YouTube, Google or Spotify. It hosts no content: it is a client for publicly available content, built on the same open-source libraries used by other community projects. Using third-party clients may conflict with YouTube's Terms of Service. OpenWave is intended for personal use; please support the artists you listen to.
+- **OpenWave hosts no content.** It is a client for content that YouTube makes publicly available, built on the same open-source libraries as other community projects such as yt-dlp and NewPipe. It does not store, redistribute or sell music.
+- **Non-commercial.** OpenWave is not monetised and never will be. It is intended for personal use.
+- **Respect the rights of others.** You are responsible for using OpenWave in line with the terms of the services it connects to and the copyright law of your country. Using third-party clients may conflict with YouTube's Terms of Service. Please support the artists you listen to through official channels.
+- **Not affiliated.** OpenWave is an independent project, not affiliated with, endorsed by or connected to YouTube, Google, Spotify or any record label. Product names are used only to describe compatibility.
+- **Rights holders** with a concern can [open an issue](https://github.com/SaiSiddharthBS/OpenWave/issues/new/choose) or reach the maintainer privately through the repository's [private reporting form](https://github.com/SaiSiddharthBS/OpenWave/security/advisories/new); concerns are reviewed promptly.
 
 ## License
 

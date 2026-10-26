@@ -16,8 +16,8 @@ REPO = "SaiSiddharthBS/OpenWave"
 
 TEMPLATE = """<p align="center"><img src="https://raw.githubusercontent.com/{repo}/v{v}/docs/logo.png" width="200" alt="OpenWave"></p>
 
-<h3 align="center">All the music. None of the bills.</h3>
-<p align="center">Free and open source. No ads, no subscriptions, no premium tier. Ever.</p>
+<h3 align="center">One music app. Every device you own.</h3>
+<p align="center">Open-source, non-commercial software under the GPL-3.0, with no accounts and no tracking.</p>
 
 ## Download
 
@@ -49,8 +49,8 @@ __SUMS__
 
 ---
 
-**OpenWave is free and open source (GPL-3.0).** If you find it useful, star the repo, share it, and [report anything that breaks](https://github.com/{repo}/issues/new/choose).
-<sub>OpenWave is an independent project, not affiliated with YouTube, Google or Spotify. It hosts no content. Please support the artists you love.</sub>
+**OpenWave is free and open source (GPL-3.0).** If you find it useful, star the repo and [report anything that breaks](https://github.com/{repo}/issues/new/choose).
+<sub>OpenWave is an independent, non-commercial project, not affiliated with YouTube, Google, Spotify or any record label. It hosts no content. Please support the artists you listen to through official channels.</sub>
 """
 
 
