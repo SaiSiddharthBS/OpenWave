@@ -1,5 +1,6 @@
 name: Feature request
-description: Suggest an idea
+description: Suggest an idea for OpenWave
+labels: [enhancement]
 body:
   - type: textarea
     id: idea
@@ -11,3 +12,8 @@ body:
     id: why
     attributes:
       label: Why would it help people?
+  - type: textarea
+    id: how
+    attributes:
+      label: Anything else?
+      description: How other apps do it, sketches or screenshots.

@@ -1,6 +1,6 @@
 # Contributing to OpenWave
 
-Thanks for helping keep music free and open! Every kind of contribution helps: bug reports, translations, design, docs and code.
+Thank you for helping keep music free and open. Every kind of contribution helps: bug reports, translations, design, documentation and code. By taking part, you agree to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Ground rules
 
@@ -8,6 +8,7 @@ Thanks for helping keep music free and open! Every kind of contribution helps: b
 - **Privacy first.** Libraries live only on the server the user runs (and downloads only on their device). No analytics, no third-party calls from the client, nothing phones home.
 - **No YouTube/Google branding.** Don't add their logos, names in the app title, or look-alike trademarks.
 - **Be kind.** Treat everyone with respect in issues and reviews.
+- **Security issues** go to the maintainer privately, not to public issues. See [SECURITY.md](SECURITY.md).
 
 ## Getting started
 
@@ -30,6 +31,8 @@ If you change files the service worker caches, bump `VERSION` in `openwave/web/s
 | `openwave/library.py` · `api_library.py` | Profiles, PINs and the per-profile library in SQLite (ops-based sync), insights, mixes, personal radio |
 | `openwave/importer.py` | Spotify / CSV / text playlist parsing and YouTube Music matching |
 | `openwave/updater.py` · `desktop.py` | Packaged-app entry point and background yt-dlp / ytmusicapi updates |
+| `openwave/link.py` | Devices on the same Wi-Fi: UDP discovery, the LAN listener, pairing, remote control and listening sessions |
+| `openwave/releases.py` | In-app update checks (`/api/app-update`) |
 | `openwave/web/js/store.js` | Client library cache + offline outbox that syncs to `/api/me/ops` |
 | `openwave/web/js/profiles.js` · `insights.js` · `importer.js` · `native.js` | Profile picker, insights + share card, import dialog, Mac app bridge |
 | `android/` | Android app (Kotlin): runs the engine on the phone via Chaquopy, WebView UI, media notification / lock screen / Bluetooth controls, audio focus |
@@ -38,6 +41,9 @@ If you change files the service worker caches, bump `VERSION` in `openwave/web/s
 | `openwave/web/js/offline.js` | Offline downloads in IndexedDB |
 | `openwave/web/js/views.js` | Page rendering |
 | `openwave/web/js/app.js` | Router, event handling, player UI bindings |
+| `openwave/web/js/link.js` | Devices menu, remote control and listen-together sync in the browser |
+| `openwave/web/js/gestures.js` · `update.js` | Touch gestures; the update card |
+| `site/` | Website, the Mac installer script (`install.sh`) and the Stats page |
 
 ## The Mac app
 
@@ -71,9 +77,8 @@ Contributors: add your change under `## [Unreleased]` in [CHANGELOG.md](CHANGELO
 
 ## Good first issues
 
-- Translations / i18n of UI strings
-- Equalizer and loudness normalisation
-- Windows desktop shell (port of `macos/`)
-- Native wrappers for Android / iOS
+- Translations of the interface
+- Equaliser and loudness normalisation
+- Listen together over the internet (today it works on the same Wi-Fi)
 - Touch drag-to-reorder on phones
-- Translations
+- Packaging for F-Droid / IzzyOnDroid

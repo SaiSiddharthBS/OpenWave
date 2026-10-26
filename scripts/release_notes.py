@@ -19,26 +19,27 @@ TEMPLATE = """<p align="center"><img src="https://raw.githubusercontent.com/{rep
 <h3 align="center">All the music. None of the bills.</h3>
 <p align="center">Free and open source. No ads, no subscriptions, no premium tier. Ever.</p>
 
-## ⬇️ Download
+## Download
 
 | Your device | Download | First launch (once) |
 |---|---|---|
-| 🤖 **Android** 7+ (64-bit) | [**OpenWave-Android.apk**]({dl}/OpenWave-Android.apk) | Open the file → allow **Install unknown apps** → **Install** |
-| 🍎 **Mac** with Apple Silicon (M1–M4) | [**OpenWave-macOS-AppleSilicon.dmg**]({dl}/OpenWave-macOS-AppleSilicon.dmg) | Open the app → **System Settings → Privacy & Security → Open Anyway** |
-| 🍎 **Mac** with Intel | [**OpenWave-macOS-Intel.dmg**]({dl}/OpenWave-macOS-Intel.dmg) | Same as above |
-| 🪟 **Windows** 10 / 11 | [**OpenWave-Windows-Setup.exe**]({dl}/OpenWave-Windows-Setup.exe) | "Windows protected your PC" → **More info → Run anyway** |
-| 🐧 **Linux** (x86-64) | [**OpenWave-Linux-x86_64.AppImage**]({dl}/OpenWave-Linux-x86_64.AppImage) | `chmod +x` the file, then double-click |
-| 🏠 **Home server** | `docker run -d -p 8787:8787 -v openwave:/data ghcr.io/{repo_lower}:{v}` | Open `http://<server>:8787` |
+| **Android** 7+ (64-bit) | [**OpenWave-Android.apk**]({dl}/OpenWave-Android.apk) | Open the file → allow **Install unknown apps** → **Install** |
+| **Mac** (any) | `curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh \| bash` in Terminal | Picks Apple Silicon or Intel and opens with no security prompt |
+| **Mac** with Apple Silicon (M1 and later) | [**OpenWave-macOS-AppleSilicon.dmg**]({dl}/OpenWave-macOS-AppleSilicon.dmg) | Open the app, then **System Settings → Privacy & Security → Open Anyway** |
+| **Mac** with Intel | [**OpenWave-macOS-Intel.dmg**]({dl}/OpenWave-macOS-Intel.dmg) | Same as above |
+| **Windows** 10 / 11 | [**OpenWave-Windows-Setup.exe**]({dl}/OpenWave-Windows-Setup.exe) | "Windows protected your PC" → **More info → Run anyway** |
+| **Linux** (x86-64) | [**OpenWave-Linux-x86_64.AppImage**]({dl}/OpenWave-Linux-x86_64.AppImage) | `chmod +x` the file, then double-click |
+| **Home server** | `docker run -d -p 8787:8787 -v openwave:/data ghcr.io/{repo_lower}:{v}` | Open `http://<server>:8787` |
 
 Already using OpenWave? The app tells you about this update and downloads it in one tap. Your library stays as it is.
 
-## ✨ What's new
+## What's new
 
 {changes}
 
 Full details are in [CHANGELOG.md](https://github.com/{repo}/blob/v{v}/CHANGELOG.md).
 
-## 🔐 Verify your download
+## Verify your download
 
 SHA-256 checksums (also attached as `SHA256SUMS.txt`):
 
@@ -48,7 +49,7 @@ __SUMS__
 
 ---
 
-**OpenWave is free and open source (GPL-3.0).** If you love it, star the repo, share it, and [report anything that breaks](https://github.com/{repo}/issues/new/choose).
+**OpenWave is free and open source (GPL-3.0).** If you find it useful, star the repo, share it, and [report anything that breaks](https://github.com/{repo}/issues/new/choose).
 <sub>OpenWave is an independent project, not affiliated with YouTube, Google or Spotify. It hosts no content. Please support the artists you love.</sub>
 """
 

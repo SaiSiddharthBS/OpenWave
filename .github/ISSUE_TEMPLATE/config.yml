@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security problem
+    url: https://github.com/SaiSiddharthBS/OpenWave/security/advisories/new
+    about: Please report security issues privately, not as a public issue.
+  - name: Install guide
+    url: https://saisiddharthbs.github.io/OpenWave/#install
+    about: Step-by-step installation for every platform.

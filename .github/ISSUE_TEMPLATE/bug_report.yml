@@ -1,11 +1,11 @@
 name: Bug report
-description: Something doesn't work
+description: Something doesn't work as expected
+labels: [bug]
 body:
   - type: markdown
     attributes:
       value: |
-        **Playback suddenly broken for every song?** YouTube changes often. First update the extractors:
-        `pip install -U "yt-dlp[default]" ytmusicapi` (the start scripts do this automatically; Docker users: pull/rebuild the image).
+        **Playback suddenly broken for every song?** YouTube changes from time to time. The desktop apps update their YouTube support automatically: restart the app and try again. On a server, run `pip install -U "yt-dlp[default]" ytmusicapi` (the start scripts do this for you) or pull the latest Docker image.
   - type: textarea
     id: what
     attributes:
@@ -16,12 +16,33 @@ body:
     id: steps
     attributes:
       label: Steps to reproduce
-  - type: input
-    id: env
+      placeholder: |
+        1. Open …
+        2. Tap …
+        3. See …
+  - type: dropdown
+    id: platform
     attributes:
-      label: Device / browser / how you run the server (script, pip, Docker)
+      label: Platform
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows
+        - Linux
+        - Android
+        - iPhone (Safari / Home Screen)
+        - Docker or server, in a browser
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OpenWave version
+      description: Shown in Settings → About.
+      placeholder: "0.3.1"
   - type: textarea
     id: logs
     attributes:
-      label: Server log or browser console output
+      label: Logs
+      description: The server log or browser console output, if you have it.
       render: text

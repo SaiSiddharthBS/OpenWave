@@ -13,6 +13,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 ### Changed
 - **Mac updates install themselves.** The app downloads the new version, checks its checksum, swaps itself and restarts, with no browser and no security warning.
 - The website's Mac button no longer offers the Apple Silicon download to Intel Macs.
+- A new README with fresh screenshots of every platform, line icons instead of emoji on the website, and release notes without emoji.
+- A security policy, code of conduct, pull request template and clearer issue forms.
 
 ## [0.3.1] — 2026-10-25
 

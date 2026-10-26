@@ -305,7 +305,7 @@ async function main() {
       $('per-day').innerHTML = `<div class="empty">${days.length ? `Started counting on ${day(days[0].date)}. The first day's downloads show up tomorrow.` : 'Daily counting starts with the first run of the stats workflow.'}</div>`;
     }
     if (starPoints) growth($('stars'), starPoints);
-    else $('stars').innerHTML = '<div class="empty">No stars yet. <a href="https://github.com/SaiSiddharthBS/OpenWave">Be the first ⭐</a></div>';
+    else $('stars').innerHTML = '<div class="empty">No stars yet. <a href="https://github.com/SaiSiddharthBS/OpenWave">Be the first to star it</a></div>';
     if (visits.length) {
       columns($('visitors'), visits.map(([date, v]) => ({ label: day(date), value: v.uniques, tip: `<b>${fmt(v.uniques)}</b> visitors<small>${fmt(v.count)} page views · ${day(date)}</small>` })), { labelEvery: Math.ceil(visits.length / 5) });
     } else {
