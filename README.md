@@ -39,25 +39,30 @@ OpenWave is a complete music app built on YouTube Music's catalogue. It has the 
 - **Your library is yours.** Profiles, likes, playlists and listening history live in a SQLite database on your own device or server. Nothing is sent to a cloud service, and the apps never report usage.
 - **Built like a product, not a script.** Gapless playback, personal mixes, synced lyrics, offline downloads, playlist import from other services, multi-device control and listen-together sessions, in-app updates, and signed, checksummed releases.
 
-| | |
-|---|---|
-| **Cost** | Free, forever. GPL-3.0. |
-| **Account** | None. Profiles are local, with an optional PIN. |
-| **Platforms** | macOS 13+ (Apple Silicon and Intel), Windows 10/11, Linux x86-64, Android 7+ (64-bit), iPhone via Safari, Docker (amd64, arm64) |
-| **Latest release** | [v0.3.1](https://github.com/SaiSiddharthBS/OpenWave/releases/latest), with every installer, SHA-256 checksums and a Docker image |
+<table>
+  <tr><td><b>Cost</b></td><td>Free, forever. GPL-3.0.</td></tr>
+  <tr><td><b>Account</b></td><td>None. Profiles are local, with an optional PIN.</td></tr>
+  <tr><td><b>Platforms</b></td><td>macOS 13+ (Apple Silicon and Intel), Windows 10/11, Linux x86-64, Android 7+ (64-bit), iPhone via Safari, Docker (amd64, arm64)</td></tr>
+  <tr><td><b>Latest release</b></td><td><a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest">v0.3.1</a>, with every installer, SHA-256 checksums and a Docker image</td></tr>
+</table>
 
 ## Download
 
-| Platform | Get it | First launch |
+**macOS, in one command.** Picks the Apple Silicon or Intel build, verifies its checksum, installs it to Applications and opens it, with no security prompt.
+
+```bash
+curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash
+```
+
+| Platform | Download | First launch |
 |---|---|---|
-| **macOS** (recommended) | `curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh \| bash` | Picks the Apple Silicon or Intel build, verifies its checksum, installs it to Applications and opens it with no security prompt. |
 | **macOS**, Apple Silicon | [OpenWave-macOS-AppleSilicon.dmg](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-AppleSilicon.dmg) | Drag to Applications. If macOS can't verify it: **System Settings → Privacy & Security → Open Anyway**, once. |
 | **macOS**, Intel | [OpenWave-macOS-Intel.dmg](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-Intel.dmg) | As above. |
 | **Windows** 10/11 | [OpenWave-Windows-Setup.exe](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Windows-Setup.exe) | On "Windows protected your PC", choose **More info → Run anyway**. No administrator rights needed. |
 | **Linux** x86-64 | [OpenWave-Linux-x86_64.AppImage](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Linux-x86_64.AppImage) | `chmod +x` the file, then open it. |
 | **Android** 7+ | [OpenWave-Android.apk](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk) | Open the file and allow your browser to install apps. For automatic updates, add this repository to [Obtainium](https://github.com/ImranR98/Obtainium). |
 | **iPhone** | Served by OpenWave on your Mac, PC or server | See [iPhone](#iphone). |
-| **Home server** | `docker run -d -p 8787:8787 -v openwave:/data ghcr.io/saisiddharthbs/openwave` | Open `http://<server>:8787` on any device. |
+| **Home server** | [Docker image](#self-hosting) for amd64 and arm64 | Open `http://<server>:8787` on any device. |
 
 Every app is self-contained, with nothing else to install. Installers are attached to each [GitHub release](https://github.com/SaiSiddharthBS/OpenWave/releases) together with `SHA256SUMS.txt`.
 
@@ -173,11 +178,7 @@ A native Swift app (AppKit and SwiftUI) that runs its own engine, with nothing t
 - **Self-installing updates**, verified by SHA-256 before the app replaces itself.
 - **Deep links** such as `openwave://play/<videoId>`, and launch at login.
 
-<p align="center">
-  <img src="docs/screenshots/mac-miniplayer.png" width="300" alt="Menu-bar mini player">
-  &nbsp;&nbsp;
-  <img src="docs/screenshots/mac-iphone.png" width="420" alt="Phone access settings">
-</p>
+<p align="center"><img src="docs/screenshots/mac-miniplayer.png" width="300" alt="Menu-bar mini player"><br><sub>The menu-bar mini player</sub></p>
 
 > **About the macOS security prompt.** OpenWave is not signed with a paid Apple Developer ID, so macOS asks for confirmation when the app is downloaded through a browser. The one-line installer above avoids the prompt entirely, and in-app updates never show it. Builds signed with a Developer ID open with no prompt at all (see `macos/build.sh`).
 
@@ -211,6 +212,8 @@ Apple does not allow apps like OpenWave on the App Store, so the iPhone plays fr
 2. On the Mac, open **OpenWave → Settings → Phone → Anywhere → Turn On**. A QR code appears.
 3. Scan it with the iPhone camera, then in Safari choose **Share → Add to Home Screen**.
 
+<p align="center"><img src="docs/screenshots/mac-iphone.png" width="460" alt="Settings → Phone in the Mac app"></p>
+
 OpenWave gets a private HTTPS address that only your own devices can open. It works at home, at work and on mobile data; downloads play offline; and the lock screen shows playback controls. The Mac needs to be on and awake while you listen.
 
 **At home only.** Settings → Phone → **At home**, then scan the QR code on the same Wi-Fi. Offline downloads require the "Anywhere" option, because browsers only allow them over HTTPS.
@@ -233,20 +236,35 @@ One-click apps that bundle the same engine with a small launcher (`openwave/laun
 
 ## Architecture
 
-```
-  Clients                                   OpenWave engine (FastAPI)                      Upstream
- ┌───────────────────────────────┐        ┌────────────────────────────────────────┐
- │ Shared web UI (ES modules)    │ /api/* │ music.py     ytmusicapi: catalogue,    │ ──▶ music.youtube.com
- │  · two audio decks: gapless   │──────▶ │              radio, lyrics             │
- │    playback and crossfade     │        │ youtube.py   yt-dlp + Deno: streams    │ ──▶ youtube.com
- │  · offline store (IndexedDB)  │◀────── │ app.py       byte-range audio proxy    │ ◀── googlevideo.com
- │  · offline outbox → sync      │ audio  │ library.py   SQLite: profiles, likes,  │
- │                               │        │              playlists, plays, mixes   │
- │ Native shells                 │        │ importer.py  playlist import, matching │
- │  · macOS: Swift + WKWebView   │        │ link.py      device discovery, remote  │ ◀─▶ other OpenWave
- │  · Android: Kotlin + WebView  │        │              control, listen together  │     engines on the LAN
- │  · Windows/Linux: app window  │        │ releases.py  in-app update checks      │
- └───────────────────────────────┘        └────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  subgraph Clients
+    UI["Shared web interface<br/>gapless player · offline store · sync outbox"]
+    Mac["macOS app<br/>Swift + WKWebView"]
+    And["Android app<br/>Kotlin + WebView"]
+    Desk["Windows / Linux<br/>app window"]
+    Web["iPhone and browsers"]
+  end
+  subgraph Engine["OpenWave engine (FastAPI)"]
+    Music["music.py<br/>catalogue, radio, lyrics"]
+    Stream["youtube.py + app.py<br/>stream resolution, range proxy"]
+    Lib["library.py<br/>SQLite: profiles, playlists, plays"]
+    Imp["importer.py<br/>playlist import and matching"]
+    Link["link.py<br/>devices, remote, listen together"]
+  end
+  YTM[("YouTube Music")]
+  YT[("YouTube streams")]
+  Peers["Other OpenWave engines<br/>on the same Wi-Fi"]
+  Mac --- UI
+  And --- UI
+  Desk --- UI
+  Web --- UI
+  UI -->|catalogue API| Music
+  UI -->|audio| Stream
+  UI -->|library sync| Lib
+  Music --> YTM
+  Stream --> YT
+  Link <-->|UDP discovery, paired HTTP| Peers
 ```
 
 - **One engine, many shells.** The engine is a FastAPI application. Each platform wraps the same web interface in a native shell (Swift on macOS, Kotlin on Android, an app window on Windows and Linux) that adds system integration such as media keys, notifications and widgets.
@@ -262,10 +280,12 @@ Run the engine once on a PC, Mac, home server or VPS, then open OpenWave from an
 **Docker** (amd64 and arm64)
 
 ```bash
-docker run -d -p 8787:8787 -v openwave:/data --restart unless-stopped ghcr.io/saisiddharthbs/openwave
-# or, from a clone of this repository:
-docker compose up -d --build
+docker run -d --name openwave -p 8787:8787 \
+  -v openwave:/data --restart unless-stopped \
+  ghcr.io/saisiddharthbs/openwave
 ```
+
+Or, from a clone of this repository: `docker compose up -d --build`.
 
 **From source** (Python 3.10+, plus [Deno](https://deno.com) or Node.js 20+ for YouTube's player scripts)
 
