@@ -35,20 +35,20 @@
 
 OpenWave is an open-source, non-commercial music client for YouTube Music's public catalogue. It is an engineering project first: one engine, native apps on five platforms, a synced personal library, and devices that play together. It has no accounts, no tracking and no monetisation of any kind, and it hosts no content.
 
-- **One engine, every platform.** A single Python engine powers native apps for macOS, Windows, Linux and Android, a web app for iPhone, and a Docker image for home servers. Every feature ships everywhere at once.
+- **One engine, every platform.** A single Python engine powers native apps for macOS, Windows, Linux and Android, a web app for iPhone, and a Docker image for home servers. Shared services keep the core listening and library experience consistent.
 - **Your library is yours.** Profiles, likes, playlists and listening history live in a SQLite database on your own device or server. Nothing is sent to a cloud service, and the apps never report usage.
-- **Built like a product, not a script.** Gapless playback, personal mixes, synced lyrics, offline downloads, playlist import from other services, multi-device control and listen-together sessions, in-app updates, and signed, checksummed releases.
+- **Built like a product, not a script.** Gapless playback, personal mixes, synced lyrics, offline downloads, playlist import from other services, multi-device control and listen-together sessions, in-app updates, and release checksums.
 
 <table>
-  <tr><td><b>License</b></td><td>GPL-3.0. Free and open-source software, non-commercial.</td></tr>
+  <tr><td><b>License</b></td><td>GPL-3.0. The project is offered free, with no accounts or monetisation.</td></tr>
   <tr><td><b>Account</b></td><td>None. Profiles are local, with an optional PIN.</td></tr>
   <tr><td><b>Platforms</b></td><td>macOS 13+ (Apple Silicon and Intel), Windows 10/11, Linux x86-64, Android 7+ (64-bit), iPhone via Safari, Docker (amd64, arm64)</td></tr>
-  <tr><td><b>Latest release</b></td><td><a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest">v0.3.1</a>, with every installer, SHA-256 checksums and a Docker image</td></tr>
+  <tr><td><b>Latest release</b></td><td><a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest">Current installers</a>, SHA-256 checksums and a Docker image</td></tr>
 </table>
 
 ## Download
 
-**macOS, in one command.** Picks the Apple Silicon or Intel build, verifies its checksum, installs it to Applications and opens it, with no security prompt.
+**macOS, in one command.** Picks the Apple Silicon or Intel build, verifies its checksum, and installs it to Applications. macOS may still ask you to confirm an unsigned app at first launch.
 
 ```bash
 curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash
@@ -180,7 +180,7 @@ A native Swift app (AppKit and SwiftUI) that runs its own engine, with nothing t
 
 <p align="center"><img src="docs/screenshots/mac-miniplayer.png" width="300" alt="Menu-bar mini player"><br><sub>The menu-bar mini player</sub></p>
 
-> **About the macOS security prompt.** OpenWave is not signed with a paid Apple Developer ID, so macOS asks for confirmation when the app is downloaded through a browser. The one-line installer above avoids the prompt entirely, and in-app updates never show it. Builds signed with a Developer ID open with no prompt at all (see `macos/build.sh`).
+> **About the macOS security prompt.** OpenWave is not notarised with a paid Apple Developer ID. macOS may ask for confirmation at first launch, depending on how the app was downloaded and installed. The install script verifies the published checksum; it is not a substitute for reviewing a downloaded app before running it. Signed and notarised builds remain on the [roadmap](#roadmap).
 
 ### Android
 
