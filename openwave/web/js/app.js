@@ -200,7 +200,7 @@ function renderSidebar() {
   const pic = (url, round) => `<img class="${round ? 'round' : ''}" loading="lazy" src="${img(url, 120)}" alt="">`;
   const html = [
     item('#/liked', `<span class="tile liked-tile">${icon('heart-fill')}</span>`, 'Liked songs', `Playlist • ${store.liked.length} songs`),
-    ...store.playlists.map((p) => item(`#/my/${p.id}`, p.tracks[0] ? pic(p.tracks[0].thumbnail) : `<span class="tile liked-tile" style="background:var(--surface-3)">${icon('queue')}</span>`, p.name, `Playlist • ${p.tracks.length} songs`)),
+    ...store.playlists.map((p) => item(`#/my/${p.id}`, p.tracks[0] ? pic(p.tracks[0].thumbnail) : `<span class="tile liked-tile" style="background:var(--surface-3)">${icon(p.shared ? 'people' : 'queue')}</span>`, p.name, `${p.shared ? 'Shared' : 'Playlist'} • ${p.tracks.length} songs`)),
     ...store.savedList('playlist').map((c) => item(`#/playlist/${enc(c.id)}`, pic(c.thumbnail), c.title, 'Playlist')),
     ...store.savedList('album').map((c) => item(`#/album/${enc(c.id)}`, pic(c.thumbnail), c.title, c.subtitle || 'Album')),
     ...store.savedList('artist').map((c) => item(`#/artist/${enc(c.id)}`, pic(c.thumbnail, true), c.title, 'Artist')),

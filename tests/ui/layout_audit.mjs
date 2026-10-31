@@ -345,7 +345,9 @@ async function audit(dataset, out) {
           try { await page.ev(step); } catch (e) { stepError = e.message.split('\n')[0]; }
           await sleep(700);
         }
-        const missing = stepError || await page.ev(opened(sc));
+        // Give slower screens (e.g. lyrics loading) up to 5 s to finish before judging them.
+        let missing = stepError || await page.ev(opened(sc));
+        for (let i = 0; missing && !stepError && i < 20; i++) { await sleep(250); missing = await page.ev(opened(sc)); }
         const found = missing ? [{ what: 'open', at: `the screen did not open: ${missing}`, left: 0, right: 0, text: '' }] : await page.ev(CHECK);
         if (found.length || process.env.AUDIT_ALL) {
           const shot = join(out, `${dataset}-${vp.name}-${sc.name}.png`);

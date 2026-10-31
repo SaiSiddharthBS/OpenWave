@@ -6,6 +6,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 ## [Unreleased]
 
 ### Added
+- **Shared playlists.** Invite friends and family to a playlist with a link: everyone adds, removes and reorders songs from their own OpenWave on any device, anywhere, and each song shows who added it. Changes sync within seconds, and edits made offline sync when you're back online. Only the owner can rename it, remove people (who are then locked out with a new key) or delete it for everyone; anyone else can leave. It syncs end-to-end encrypted through public Nostr relays, so OpenWave still runs no servers. Find it under a playlist's people button, and Library → Join.
 - **iPhone, anywhere:** the Mac app's Settings → Phone has a new "Anywhere" option. With Tailscale (free) on the Mac and the iPhone, one click gives the iPhone a private HTTPS address for OpenWave on the Mac: it works on mobile data, downloads play offline, and only your own devices can open it.
 - **Install on a Mac with one command**, with no "can't verify the developer" warning: `curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash`. It picks the Apple Silicon or Intel version by itself.
 - **Stats page** on the website: downloads per app, version and day, stars and visitors. Public numbers from GitHub only; nothing is collected from the apps.
@@ -13,22 +14,19 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 ### Changed
 - **Mac updates install themselves.** The app downloads the new version, checks its checksum, swaps itself and restarts, with no browser and no security warning.
 - The website's Mac button no longer offers the Apple Silicon download to Intel Macs.
-- A new README with fresh screenshots of every platform, line icons instead of emoji on the website, and release notes without emoji.
+- A new README with fresh screenshots of every platform (including shared playlists and the Library), line icons instead of emoji on the website, and release notes without emoji.
 - A security policy, code of conduct, pull request template and clearer issue forms.
 - OpenWave now describes itself as an open-source, non-commercial music player, with no "ad-free" or "instead of a subscription" wording in the app, website, README or release notes, and a clearer note on legal and responsible use.
-
-### Added
-- **Shared playlists.** Invite friends and family to a playlist with a link: everyone adds, removes and reorders songs from their own OpenWave on any device, anywhere, and each song shows who added it. Changes sync within seconds and edits made offline sync later. Only the owner can rename, remove people (who are then locked out with a new key) or delete it for everyone; others can leave. Syncs end-to-end encrypted through public Nostr relays, so OpenWave still runs no servers. Find it in a playlist's people button, and Library → Join.
 
 ### Fixed
 - **Long song names on phones:** a long title or artist list no longer pushes the artwork, the end time and the controls of the Now Playing screen (and its Up next and Lyrics sheets) off the right edge, and no longer makes Search results wider than the screen. Titles are shortened with "…" instead. Fixed at the root: no one-column layout can grow wider than the screen any more.
 - Very long unbroken words in album, artist and playlist headers now wrap instead of widening the header.
-
-- **Notices** in the app were squeezed into half the screen width on phones; they now use the full width.
+- Notices in the app were squeezed into half the screen width on phones; they now use the full width.
 - A change the engine refuses no longer blocks every later library change on that device.
 
-### Added (development)
-- **Layout audit** (`tests/ui/layout_audit.mjs`, run in CI on every push): opens all 16 main screens at eight sizes, from a 320 px phone to a desktop, with real-world and extremely long names, and fails if anything goes past the edge of the screen or a screen fails to open.
+### Development
+- **Layout audit** (`tests/ui/layout_audit.mjs`, run in CI on every push): opens 19 screens at eight sizes, from a 320 px phone to a desktop, with real-world and extremely long names, and fails if anything goes past the edge of the screen or a screen fails to open.
+- Shared-playlist tests: encryption, signatures (BIP-340 test vectors), merging, permissions, and three engines syncing through a private relay (`tests/test_shared.py`).
 
 ## [0.3.1] — 2026-10-25
 

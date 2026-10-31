@@ -79,10 +79,11 @@ export async function openSharing(playlistId) {
         <button type="button" class="btn danger-text" data-leave>${info.owner ? 'Delete for everyone' : 'Leave playlist'}</button>
         <span class="spacer"></span>
         <button type="button" class="btn" data-send>${icon('share')} Send invite</button>
-        <button class="btn primary" value="ok">Done</button>
+        <button class="btn primary" value="ok" data-done>Done</button>
       </div></form>`, {
     wide: true,
     onMount: (d) => {
+      d.querySelector('[data-done]').focus({ preventScroll: true });    // never start on a Remove button
       const input = d.querySelector('.share-link input');
       d.querySelector('[data-copy]').onclick = () => copy(info.invite, input);
       d.querySelector('[data-send]').onclick = async () => {

@@ -36,8 +36,8 @@
 OpenWave is an open-source, non-commercial music client for YouTube Music's public catalogue. It is an engineering project first: one engine, native apps on five platforms, a synced personal library, and devices that play together. It has no accounts, no tracking and no monetisation of any kind, and it hosts no content.
 
 - **One engine, every platform.** A single Python engine powers native apps for macOS, Windows, Linux and Android, a web app for iPhone, and a Docker image for home servers. Shared services keep the core listening and library experience consistent.
-- **Your library is yours.** Profiles, likes, playlists and listening history live in a SQLite database on your own device or server. Nothing is sent to a cloud service, and the apps never report usage.
-- **Built like a product, not a script.** Gapless playback, personal mixes, synced lyrics, offline downloads, playlist import from other services, multi-device control and listen-together sessions, in-app updates, and release checksums.
+- **Your library is yours.** Profiles, likes, playlists and listening history live in a SQLite database on your own device or server. Nothing is sent to a cloud service (except an end-to-end encrypted copy of a playlist you choose to share), and the apps never report usage.
+- **Built like a product, not a script.** Gapless playback, personal mixes, synced lyrics, offline downloads, playlist import from other services, shared playlists with friends anywhere, multi-device control and listen-together sessions, in-app updates, and release checksums.
 
 <table>
   <tr><td><b>License</b></td><td>GPL-3.0. The project is offered free, with no accounts or monetisation.</td></tr>
@@ -96,7 +96,7 @@ Every app is self-contained, with nothing else to install. Installers are attach
 - **Liked songs, playlists you can reorder by dragging, saved albums and followed artists.**
 - **Made for you.** Personal mixes built from what you actually play, plus two smart playlists: **On Repeat** (your most-played songs this month) and **Rediscover** (favourites you haven't played in a while).
 - **Insights.** Minutes listened, top artists, top songs and when you listen, for the last week, month, year or all time, with a shareable image card.
-- **Shared playlists.** Invite friends and family to one of your playlists with a link. Everyone adds, removes and reorders songs from their own OpenWave, on any device, anywhere, and each song shows who added it. Changes reach everyone within seconds, and edits made offline sync when you reconnect. Only the owner can rename the playlist, remove people or delete it, and removing someone locks them out with a new key. See [how shared playlists sync](#privacy-and-security).
+- **Shared playlists** with friends and family on their own devices, anywhere (see [below](#shared-playlists-one-playlist-everyones-devices)).
 - **Share** any song, album, playlist or artist as a link anyone can open, or share your own playlist as a song list a friend can import.
 
 <table>
@@ -109,6 +109,29 @@ Every app is self-contained, with nothing else to install. Installers are attach
     <td width="50%"><img src="docs/screenshots/profiles.png" alt="Profile picker"><p align="center"><sub>A profile for everyone, synced everywhere</sub></p></td>
   </tr>
 </table>
+
+### Shared playlists: one playlist, everyone's devices
+
+Invite friends and family to a playlist with a link, and edit it together from your own phones and computers, wherever you each are. No shared Wi-Fi, accounts or servers are needed.
+
+- **Everyone edits.** Add, remove and reorder songs from your own OpenWave; each song shows a tag for who added it. Changes reach everyone in a few seconds, and edits made offline sync as soon as you are back online.
+- **Invite with a link.** Tap the people button on any of your playlists, then **Send invite**. Friends paste the link in **Library → Join**.
+- **The owner stays in charge.** Only the owner can rename the playlist, remove someone or delete it for everyone. A removed person keeps a copy of the songs but is locked out with a new key, and old invite links stop working.
+- **Private.** The playlist is end-to-end encrypted with a key that exists only in the invite link. It syncs through public Nostr relays, which never see song names or who you are ([details](#privacy-and-security)).
+
+<table>
+  <tr>
+    <td width="62%"><img src="docs/screenshots/shared-playlist.png" alt="A shared playlist showing who added each song"><p align="center"><sub>A shared playlist: each song shows who added it</sub></p></td>
+    <td width="38%"><img src="docs/screenshots/shared-with.png" alt="The Shared with panel"><p align="center"><sub>Who's in it, and the invite link</sub></p></td>
+  </tr>
+</table>
+
+<p align="center">
+  <img src="docs/screenshots/mobile-shared.png" width="260" alt="The same shared playlist on a friend's phone">
+  &nbsp;
+  <img src="docs/screenshots/mobile-join.png" width="260" alt="Joining a shared playlist from an invite link">
+</p>
+<p align="center"><sub>The same playlist on a friend's phone, and joining from an invite link.</sub></p>
 
 ### Devices: play anywhere, listen together
 
