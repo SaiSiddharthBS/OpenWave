@@ -17,6 +17,9 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - A security policy, code of conduct, pull request template and clearer issue forms.
 - OpenWave now describes itself as an open-source, non-commercial music player, with no "ad-free" or "instead of a subscription" wording in the app, website, README or release notes, and a clearer note on legal and responsible use.
 
+### Fixed
+- **Now playing on phones:** a song with a long title no longer pushes the artwork, the end time and the controls off the right edge of the screen; the title is shortened with "…" instead.
+
 ## [0.3.1] — 2026-10-25
 
 ### Added
