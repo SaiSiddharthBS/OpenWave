@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-10-31
+
 ### Added
 - **Shared playlists.** Invite friends and family to a playlist with a link: everyone adds, removes and reorders songs from their own OpenWave on any device, anywhere, and each song shows who added it. Changes sync within seconds, and edits made offline sync when you're back online. Only the owner can rename it, remove people (who are then locked out with a new key) or delete it for everyone; anyone else can leave. It syncs end-to-end encrypted through public Nostr relays, so OpenWave still runs no servers. Find it under a playlist's people button, and Library → Join.
 - **iPhone, anywhere:** the Mac app's Settings → Phone has a new "Anywhere" option. With Tailscale (free) on the Mac and the iPhone, one click gives the iPhone a private HTTPS address for OpenWave on the Mac: it works on mobile data, downloads play offline, and only your own devices can open it.

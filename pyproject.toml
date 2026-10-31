@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openwave"
-version = "0.3.1"
+version = "0.3.2"
 description = "Open-source music player for every device, with a synced library and listen-together."
 readme = "README.md"
 license = { text = "GPL-3.0-or-later" }
