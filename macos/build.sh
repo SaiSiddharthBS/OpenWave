@@ -88,18 +88,25 @@ echo "▸ Creating disk image"
 case "$ARCH" in arm64) LABEL="AppleSilicon" ;; *) LABEL="Intel" ;; esac
 DMG="$DIST/OpenWave-macOS-$LABEL.dmg"
 STAGE="$WORK/dmg"
+RW="$WORK/rw.dmg"
 mkdir -p "$STAGE/.background"
 cp -R "$APP" "$STAGE/"
 ln -s /Applications "$STAGE/Applications"
 cp "$HERE/Resources/dmg-background.tiff" "$STAGE/.background/background.tiff"
-RW="$WORK/rw.dmg"
-hdiutil create -volname "OpenWave" -srcfolder "$STAGE" -fs HFS+ -format UDRW -ov "$RW" >/dev/null
-MOUNT="$(hdiutil attach -readwrite -noverify -noautoopen "$RW" | awk -F'\t' '/\/Volumes\// {print $NF}')"
-VOLNAME="$(basename "$MOUNT")"
-# Lay out the Finder window (best effort: needs a logged-in Finder, skipped silently on headless CI).
-perl -e 'alarm 60; exec @ARGV' osascript <<APPLESCRIPT >/dev/null 2>&1 || echo "  (Finder layout skipped: allow Terminal to control Finder to get the styled window)"
+
+# hdiutil sometimes fails for no lasting reason ("resource busy"), especially on CI machines,
+# so each attempt cleans up after itself and the whole step is retried.
+make_dmg() {
+  local mount volname
+  rm -f "$RW" "$DMG"
+  hdiutil create -volname "OpenWave" -srcfolder "$STAGE" -fs HFS+ -format UDRW -ov "$RW" >/dev/null || { echo "  hdiutil create failed"; return 1; }
+  mount="$(hdiutil attach -readwrite -noverify -noautoopen "$RW" | awk -F'\t' '/\/Volumes\// {print $NF}')" || true
+  [ -n "$mount" ] || { echo "  hdiutil attach failed"; return 1; }
+  volname="$(basename "$mount")"
+  # Lay out the Finder window (best effort: needs a logged-in Finder, skipped silently on headless CI).
+  perl -e 'alarm 60; exec @ARGV' osascript <<APPLESCRIPT >/dev/null 2>&1 || echo "  (Finder layout skipped: allow Terminal to control Finder to get the styled window)"
 tell application "Finder"
-  tell disk "$VOLNAME"
+  tell disk "$volname"
     open
     set current view of container window to icon view
     set toolbar visible of container window to false
@@ -118,12 +125,20 @@ tell application "Finder"
   end tell
 end tell
 APPLESCRIPT
-SetFile -a C "$MOUNT" 2>/dev/null || true
-sync
-hdiutil detach "$MOUNT" -quiet || hdiutil detach "$MOUNT" -force -quiet
-rm -f "$DMG"
-hdiutil convert "$RW" -format UDZO -imagekey zlib-level=9 -o "$DMG" >/dev/null
-rm -f "$RW"
+  SetFile -a C "$mount" 2>/dev/null || true
+  sync
+  hdiutil detach "$mount" -quiet || hdiutil detach "$mount" -force -quiet || { echo "  hdiutil detach failed"; return 1; }
+  hdiutil convert "$RW" -format UDZO -imagekey zlib-level=9 -o "$DMG" >/dev/null || { echo "  hdiutil convert failed"; return 1; }
+  rm -f "$RW"
+  hdiutil verify "$DMG" >/dev/null 2>&1 || { echo "  the disk image didn't verify"; return 1; }
+}
+for attempt in 1 2 3; do
+  if make_dmg; then break; fi
+  [ "$attempt" = 3 ] && { echo "✗ Couldn't create the disk image after 3 attempts" >&2; exit 1; }
+  echo "  retrying in $((attempt * 10)) s"
+  for v in /Volumes/OpenWave*; do [ -d "$v" ] && hdiutil detach "$v" -force -quiet 2>/dev/null; done
+  sleep $((attempt * 10))
+done
 
 if [ "$SIGN_ID" != "-" ] && [ -n "${APPLE_ID:-}" ]; then
   echo "▸ Notarising with Apple (a few minutes)"
