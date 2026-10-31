@@ -19,7 +19,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ### Fixed
 - **Long song names on phones:** a long title or artist list no longer pushes the artwork, the end time and the controls of the Now Playing screen (and its Up next and Lyrics sheets) off the right edge, and no longer makes Search results wider than the screen. Titles are shortened with "…" instead. Fixed at the root: no one-column layout can grow wider than the screen any more.
-- Very long unbroken words in album and artist descriptions now wrap.
+- Very long unbroken words in album, artist and playlist headers now wrap instead of widening the header.
 
 ### Added
 - **Layout audit** (`tests/ui/layout_audit.mjs`, run in CI on every push): opens all 16 main screens at eight sizes, from a 320 px phone to a desktop, with real-world and extremely long names, and fails if anything goes past the edge of the screen or a screen fails to open.
