@@ -18,7 +18,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - The website's Mac button no longer offers the Apple Silicon download to Intel Macs.
 - A new README with fresh screenshots of every platform (including shared playlists and the Library), line icons instead of emoji on the website, and release notes without emoji.
 - A security policy, code of conduct, pull request template and clearer issue forms.
-- OpenWave now describes itself as an open-source, non-commercial music player, with no "ad-free" or "instead of a subscription" wording in the app, website, README or release notes, and a clearer note on legal and responsible use.
+- OpenWave now describes itself consistently as an open-source, non-commercial music player in the app, website, README and release notes, with a clearer note on legal and responsible use.
 
 ### Fixed
 - **Long song names on phones:** a long title or artist list no longer pushes the artwork, the end time and the controls of the Now Playing screen (and its Up next and Lyrics sheets) off the right edge, and no longer makes Search results wider than the screen. Titles are shortened with "…" instead. Fixed at the root: no one-column layout can grow wider than the screen any more.
