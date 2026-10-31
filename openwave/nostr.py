@@ -410,6 +410,7 @@ class RelayPool:
         self.on_event, self.on_caught_up = on_event, on_caught_up
         self.rooms: list[str] = []
         self.seen: dict[str, float] = {}
+        self._background: set[asyncio.Task] = set()
 
     def filter(self) -> dict | None:
         return {"kinds": [30078], "#d": sorted(self.rooms)} if self.rooms else None
@@ -433,19 +434,40 @@ class RelayPool:
             r.task = None
 
     async def publish(self, ev: dict, wait: float = 6) -> list[str]:
-        """Sends to every connected relay; returns the relays that stored it."""
+        """Sends to every connected relay and returns as soon as one has stored it (the others
+        finish in the background), so one slow relay never delays a change. Returns the relays
+        that had stored it by then; empty if none did."""
         live = [r for r in self.relays.values() if r.ws]
         if not live:
             # Give fresh connections a moment (e.g. right after the first share).
-            await asyncio.wait([asyncio.create_task(r.connected.wait()) for r in self.relays.values()], timeout=wait,
-                               return_when=asyncio.FIRST_COMPLETED)
+            waits = [asyncio.create_task(r.connected.wait()) for r in self.relays.values()]
+            await asyncio.wait(waits, timeout=wait, return_when=asyncio.FIRST_COMPLETED)
+            for w in waits:
+                w.cancel()
             live = [r for r in self.relays.values() if r.ws]
-        results = await asyncio.gather(*(r.publish(ev) for r in live))
-        ok = [r.url for r, (accepted, _msg) in zip(live, results) if accepted]
-        for r, (accepted, why) in zip(live, results):
-            if not accepted:
-                r.error = f"rejected: {why}"[:120]
+        if not live:
+            return []
+        tasks = {asyncio.create_task(r.publish(ev)): r for r in live}
+        ok: list[str] = []
+        pending = set(tasks)
+        while pending and not ok:
+            done, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            for t in done:
+                self._settled(t, tasks[t], ok)
+        for t in pending:     # keep slower relays going; just record how they did
+            self._background.add(t)
+            t.add_done_callback(lambda t, r=tasks[t]: (self._background.discard(t), self._settled(t, r, [])))
         return ok
+
+    @staticmethod
+    def _settled(task: asyncio.Task, relay: "Relay", ok: list[str]) -> None:
+        if task.cancelled():
+            return
+        accepted, why = task.result()
+        if accepted:
+            ok.append(relay.url)
+        else:
+            relay.error = f"rejected: {why}"[:120]
 
     async def received(self, ev: dict, url: str) -> None:
         eid = ev.get("id")
