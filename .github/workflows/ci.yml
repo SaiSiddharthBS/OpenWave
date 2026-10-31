@@ -19,6 +19,30 @@ jobs:
       - run: pip install -e ".[dev]"
       - run: pytest -q
 
+  layout:
+    # Every screen at phone, tablet and desktop sizes, with long song and artist names:
+    # fails if anything is pushed past the edge of the screen. See tests/ui/layout_audit.mjs.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - run: pip install -e .
+      - run: node tests/ui/layout_audit.mjs
+        env:
+          OPENWAVE_PYTHON: python
+          CHROME: /usr/bin/google-chrome
+          AUDIT_OUT: audit-shots
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: layout-audit-screenshots
+          path: audit-shots
+
   android-engine:
     # The Android app runs the engine on FastAPI 0.99 + pydantic 1.x (pure Python): keep it working there.
     runs-on: ubuntu-latest

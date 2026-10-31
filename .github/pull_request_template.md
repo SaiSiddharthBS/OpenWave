@@ -9,6 +9,7 @@
 ## Checklist
 
 - [ ] `pytest` passes
+- [ ] For UI changes: `node tests/ui/layout_audit.mjs` passes (nothing goes past the edge of the screen)
 - [ ] Added or updated tests for engine changes
 - [ ] Added a line under `## [Unreleased]` in `CHANGELOG.md`
 - [ ] Bumped `VERSION` in `openwave/web/sw.js` if cached web files changed

@@ -22,6 +22,10 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 The frontend in `openwave/web/` is plain HTML/CSS/ES modules with no build step: edit and reload.
 If you change files the service worker caches, bump `VERSION` in `openwave/web/sw.js`.
 
+`node tests/ui/layout_audit.mjs` (Node 22+ and Chrome) opens every screen at eight sizes, from a
+320 px phone to a desktop, with real-world and very long song, artist and playlist names, and fails
+if anything is pushed past the edge of the screen. CI runs it on every push.
+
 ## Where things live
 
 | Path | What |
@@ -69,7 +73,7 @@ because pydantic 2's Rust core has no Android build. Keep server code compatible
 
 1. Open an issue first for anything big, so we can agree on the approach.
 2. Keep PRs focused; add or update tests in `tests/` for server changes.
-3. `pytest` must pass. For UI changes, include a screenshot (desktop + phone width).
+3. `pytest` must pass. For UI changes, `node tests/ui/layout_audit.mjs` must pass too, and include a screenshot (desktop + phone width).
 
 ## Releases
 

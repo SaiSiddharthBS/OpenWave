@@ -31,6 +31,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
+  overflow-wrap: break-word;   /* a long unbroken word wraps instead of running off the screen */
   font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -101,7 +102,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
 }
 .nav-arrows { display: flex; gap: 8px; }
 .searchbar {
-  position: relative; flex: 1; max-width: 520px;
+  position: relative; flex: 1; min-width: 0; max-width: 520px;
   display: flex; align-items: center; gap: 10px;
   background: var(--surface-2); border-radius: 999px; padding: 0 16px; height: 44px;
   border: 1px solid transparent; transition: border-color .15s, background .15s;
@@ -315,7 +316,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
 .chip { padding: 7px 15px; border-radius: 999px; background: var(--surface-2); font-weight: 600; font-size: 13.5px; transition: background .15s; white-space: nowrap; }
 .chip:hover { background: var(--surface-3); }
 .chip.on { background: var(--text); color: var(--bg); }
-.top-grid { display: grid; grid-template-columns: minmax(260px, 420px) 1fr; gap: 24px; }
+.top-grid { display: grid; grid-template-columns: minmax(260px, 420px) minmax(0, 1fr); gap: 24px; }
 .top-card { display: block; background: var(--surface); border-radius: 12px; padding: 20px; cursor: pointer; position: relative; transition: background .2s; min-width: 0; }
 .top-card:hover { background: var(--surface-2); }
 .top-card img { width: 100px; height: 100px; border-radius: 8px; object-fit: cover; box-shadow: 0 8px 24px rgba(0,0,0,.4); }
@@ -366,6 +367,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
 .np-bg { position: absolute; inset: 0; background: radial-gradient(120% 90% at 20% 10%, rgba(var(--np-tint, var(--tint)), .65), transparent 70%), linear-gradient(180deg, rgba(var(--np-tint, var(--tint)), .35), var(--bg)); transition: background 1s; pointer-events: none; }
 .np-head { position: relative; display: flex; align-items: center; gap: 16px; padding: 16px 24px; }
 .np-from { flex: 1; min-width: 0; text-align: center; display: flex; flex-direction: column; }
+.np-from small, .np-from b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .np-from small { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .1em; }
 .seg { display: flex; background: rgba(0,0,0,.35); border-radius: 999px; padding: 3px; }
 .seg button { padding: 6px 16px; border-radius: 999px; font-weight: 650; font-size: 13px; color: var(--muted); }
@@ -443,7 +445,8 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
   :root { --player-h: 64px; --tabbar-h: 58px; }
   .desktop-only { display: none !important; }
   .mobile-only { display: flex !important; }
-  .app { grid-template-columns: 1fr; height: calc(100dvh - var(--player-h) - var(--tabbar-h) - var(--safe-b)); }
+  /* minmax(0, …) on every one-column phone grid: long text must never make a column wider than the screen. */
+  .app { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - var(--player-h) - var(--tabbar-h) - var(--safe-b)); }
   .sidebar { display: none; }
   .topbar { padding: 10px 16px; gap: 10px; }
   .topbar .nav-arrows { display: none; }
@@ -473,13 +476,13 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
   .hero.artist { min-height: 340px; align-items: flex-start; text-align: left; }
   .hero.artist h1 { font-size: 42px; }
   .actions { justify-content: flex-start; padding: 12px 0; gap: 10px; }
-  .top-grid { grid-template-columns: 1fr; }
+  .top-grid { grid-template-columns: minmax(0, 1fr); }
   .top-card h3 { font-size: 22px; }
 
   .playerbar {
     left: 8px; right: 8px; bottom: calc(var(--tabbar-h) + var(--safe-b) + 6px);
     height: var(--player-h); padding: 0 6px 0 8px; border-radius: 12px;
-    grid-template-columns: 1fr auto; gap: 8px; border: 0;
+    grid-template-columns: minmax(0, 1fr) auto; gap: 8px; border: 0;
     background: rgba(var(--np-tint, 40, 40, 52), .92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
     overflow: hidden; transition: background .6s;
   }
@@ -721,12 +724,12 @@ body.offline .offline-pill { display: flex !important; }
   .quick { display: flex; flex-direction: column; overflow: visible; margin: 0; padding: 0; gap: 0; scroll-snap-type: none; }
   .quick .row:nth-child(n+9) { display: none; }
   .shelf { scroll-snap-type: x mandatory; }
-  .shortcuts { grid-template-columns: 1fr 1fr; }
+  .shortcuts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .shortcut { height: 52px; font-size: 12.5px; gap: 10px; }
   .shortcut .art { width: 52px; height: 52px; }
 
   /* Library: a list, like other music apps. */
-  .route-library .grid { grid-template-columns: 1fr; gap: 2px; }
+  .route-library .grid { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .route-library .grid .card { display: grid; grid-template-columns: 60px minmax(0, 1fr); column-gap: 14px; align-items: center; margin: 0 -8px; padding: 7px 8px; border-radius: 10px; }
   .route-library .grid .card .art { grid-row: span 2; width: 60px; height: 60px; border-radius: 6px; box-shadow: none; }
   .route-library .grid .card.artist { text-align: left; }
