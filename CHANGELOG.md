@@ -17,11 +17,17 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - A security policy, code of conduct, pull request template and clearer issue forms.
 - OpenWave now describes itself as an open-source, non-commercial music player, with no "ad-free" or "instead of a subscription" wording in the app, website, README or release notes, and a clearer note on legal and responsible use.
 
+### Added
+- **Shared playlists.** Invite friends and family to a playlist with a link: everyone adds, removes and reorders songs from their own OpenWave on any device, anywhere, and each song shows who added it. Changes sync within seconds and edits made offline sync later. Only the owner can rename, remove people (who are then locked out with a new key) or delete it for everyone; others can leave. Syncs end-to-end encrypted through public Nostr relays, so OpenWave still runs no servers. Find it in a playlist's people button, and Library → Join.
+
 ### Fixed
 - **Long song names on phones:** a long title or artist list no longer pushes the artwork, the end time and the controls of the Now Playing screen (and its Up next and Lyrics sheets) off the right edge, and no longer makes Search results wider than the screen. Titles are shortened with "…" instead. Fixed at the root: no one-column layout can grow wider than the screen any more.
 - Very long unbroken words in album, artist and playlist headers now wrap instead of widening the header.
 
-### Added
+- **Notices** in the app were squeezed into half the screen width on phones; they now use the full width.
+- A change the engine refuses no longer blocks every later library change on that device.
+
+### Added (development)
 - **Layout audit** (`tests/ui/layout_audit.mjs`, run in CI on every push): opens all 16 main screens at eight sizes, from a 320 px phone to a desktop, with real-world and extremely long names, and fails if anything goes past the edge of the screen or a screen fails to open.
 
 ## [0.3.1] — 2026-10-25

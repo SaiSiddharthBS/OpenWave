@@ -96,6 +96,7 @@ Every app is self-contained, with nothing else to install. Installers are attach
 - **Liked songs, playlists you can reorder by dragging, saved albums and followed artists.**
 - **Made for you.** Personal mixes built from what you actually play, plus two smart playlists: **On Repeat** (your most-played songs this month) and **Rediscover** (favourites you haven't played in a while).
 - **Insights.** Minutes listened, top artists, top songs and when you listen, for the last week, month, year or all time, with a shareable image card.
+- **Shared playlists.** Invite friends and family to one of your playlists with a link. Everyone adds, removes and reorders songs from their own OpenWave, on any device, anywhere, and each song shows who added it. Changes reach everyone within seconds, and edits made offline sync when you reconnect. Only the owner can rename the playlist, remove people or delete it, and removing someone locks them out with a new key. See [how shared playlists sync](#privacy-and-security).
 - **Share** any song, album, playlist or artist as a link anyone can open, or share your own playlist as a song list a friend can import.
 
 <table>
@@ -311,6 +312,7 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 | `OPENWAVE_LANGUAGE` | Metadata language, for example `en`, `hi` or `es`. |
 | `OPENWAVE_LINK` | `1` makes the device visible to other OpenWave devices on the network from the start. The Mac and Android apps set this; it can also be changed in Settings → Devices. |
 | `OPENWAVE_DEVICE_NAME` | The name other devices see. Defaults to the computer's name. |
+| `OPENWAVE_RELAYS` | Comma-separated `wss://` Nostr relays that shared playlists sync through, or `off` to keep shared playlists on this server only. Defaults to four public relays. |
 
 </details>
 
@@ -337,6 +339,7 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 
 - **No telemetry.** The apps never report usage, crashes or identifiers. The public [Stats page](https://saisiddharthbs.github.io/OpenWave/stats.html) is built only from GitHub's public numbers: downloads per file, version and day, and stars.
 - **Local data.** Libraries live in SQLite on the device or server you run. Client devices talk only to your engine, never to Google.
+- **Shared playlists are end-to-end encrypted.** OpenWave runs no servers, so a shared playlist syncs through a few free, public [Nostr](https://nostr.com) relays. Each member's OpenWave publishes its copy encrypted with a key that exists only in the invite link (after the `#`, which browsers never send to a server). Relays see only encrypted data, a random identity per profile and your IP address, never song names or who you are. Owner-only changes are signed by the owner. Nothing is sent to a relay unless you share or join a playlist. Self-hosters can choose relays with `OPENWAVE_RELAYS` (or `off`).
 - **Device pairing.** Devices on the network can see each other's names, but cannot play anything or join a session until approved on the target device's own screen. Only playback state crosses the network: no audio, and no library data.
 - **Remote access stays private.** The "Anywhere" phone option uses Tailscale, so the address is reachable only by devices signed in to your own Tailscale account, over HTTPS.
 - **Verified releases.** Every installer ships with a SHA-256 checksum, which the Mac installer and the Mac app's updater verify before installing. Android releases are signed with a single, stable key.
@@ -376,7 +379,7 @@ The web interface in `openwave/web/` is plain HTML, CSS and ES modules with no b
 - [ ] Distribution on F-Droid and IzzyOnDroid
 - [ ] Notarised macOS and signed Windows builds
 - [ ] Equaliser and loudness normalisation
-- [ ] Collaborative playlists across profiles
+- [x] Shared playlists with friends and family on any device, anywhere
 - [ ] Translations
 
 Release history is in [CHANGELOG.md](CHANGELOG.md). Ideas and requests are welcome in [issues](https://github.com/SaiSiddharthBS/OpenWave/issues).

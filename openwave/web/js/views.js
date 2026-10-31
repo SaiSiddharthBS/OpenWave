@@ -5,6 +5,7 @@ import { store } from './store.js';
 import { offline, fmtBytes } from './offline.js';
 import { checkForUpdate, updateHint } from './update.js';
 import { linkSettings } from './link.js';
+import { peopleLine, syncLine } from './sharing.js';
 import {
   esc, icon, fmtTotal, trackList, trackCards, cards, section, registerList, trackRow, artistLinks, empty, avatar,
 } from './ui.js';
@@ -207,12 +208,13 @@ function downloadButton(tracks) {
   return `<button class="icon-btn lg dl-btn ${all ? 'on' : ''}" data-act="download-collection" title="${all ? 'Downloaded' : 'Download'}" aria-label="${all ? 'Remove downloads' : 'Download'}">${icon(all ? 'downloaded' : 'download')}</button>`;
 }
 
-function actions({ play, shuffle = true, save = null, edit = false, del = false, more = true, tracks = null }) {
+function actions({ play, shuffle = true, save = null, edit = false, del = false, invite = '', more = true, tracks = null }) {
   return `<div class="actions">
     <button class="big-play" data-act="${play}" aria-label="Play">${icon('play')}</button>
     ${shuffle ? `<button class="icon-btn lg" data-act="${play}-shuffle" title="Shuffle play" aria-label="Shuffle play">${icon('shuffle')}</button>` : ''}
     ${downloadButton(tracks)}
     ${save ? `<button class="icon-btn lg like-btn ${save.on ? 'on' : ''}" data-act="save-collection" title="${save.on ? 'Remove from library' : 'Save to library'}" aria-label="Save">${icon(save.on ? 'heart-fill' : 'heart')}</button>` : ''}
+    ${invite ? `<button class="icon-btn lg" data-act="${invite}" title="${invite === 'sharing' ? 'Shared with' : 'Share with friends'}" aria-label="${invite === 'sharing' ? 'Shared with' : 'Share with friends'}">${icon('people')}</button>` : ''}
     ${edit ? `<button class="icon-btn lg" data-act="rename-playlist" title="Rename" aria-label="Rename">${icon('edit')}</button>` : ''}
     ${del ? `<button class="icon-btn lg" data-act="delete-playlist" title="Delete" aria-label="Delete playlist">${icon('trash')}</button>` : ''}
     ${more ? `<button class="icon-btn lg" data-act="collection-menu" aria-label="More">${icon('more')}</button>` : ''}
@@ -323,17 +325,23 @@ export function history() {
 
 export function myPlaylist({ id }) {
   const p = store.playlist(id);
-  if (!p) return { html: empty('library', 'Playlist not found', 'It may have been deleted.') };
+  if (!p) return { html: empty('library', 'Playlist not found', 'It may have been deleted, or you left it.') };
   const context = { label: p.name, href: `#/my/${id}` };
   const covers = [...new Set(p.tracks.map((t) => t.thumbnail))].slice(0, 4);
-  const art = covers.length >= 4 ? { mosaic: covers } : covers.length ? { cover: covers[0] } : { tile: `<div class="cover liked-tile" style="background:var(--surface-3)">${icon('queue')}</div>` };
+  const art = covers.length >= 4 ? { mosaic: covers } : covers.length ? { cover: covers[0] } : { tile: `<div class="cover liked-tile" style="background:var(--surface-3)">${icon(p.shared ? 'people' : 'queue')}</div>` };
+  const sh = p.shared;
+  const songs = `${plural(p.tracks.length, 'song')}${p.tracks.length ? ' • ' + fmtTotal(p.tracks) : ''}`;
+  const meta = sh ? `<a href="#" data-act="sharing" class="share-people-link">${esc(peopleLine(sh))}</a> • ${songs}<br>${syncLine(sh)}` : songs;
+  const emptyText = sh
+    ? (p.tracks.length ? '' : empty('people', sh.owner || sh.people.length > 1 ? 'Add the first song' : 'Getting the songs…',
+      sh.owner || sh.people.length > 1 ? 'Use “Add to playlist” from any song’s menu. Everyone in the playlist sees it.' : 'They appear as soon as your OpenWave syncs with the others.'))
+    : empty('search', "Let's find something for your playlist", 'Use “Add to playlist” from any song’s menu.', '<p><a class="btn" href="#/search">Search</a></p>');
   return {
     tint: covers[0],
-    collection: { tracks: p.tracks, context, kind: 'local', localId: id },
-    html: collectionHeader({ kind: 'Your playlist', title: p.name, meta: `${plural(p.tracks.length, 'song')}${p.tracks.length ? ' • ' + fmtTotal(p.tracks) : ''}`, ...art })
-      + actions({ play: 'play-collection', edit: true, del: true, more: !!p.tracks.length, tracks: p.tracks })
-      + (p.tracks.length ? trackList(p.tracks, { album: true, context, localId: id })
-        : empty('search', "Let's find something for your playlist", 'Use “Add to playlist” from any song’s menu.', '<p><a class="btn" href="#/search">Search</a></p>')),
+    collection: { tracks: p.tracks, context, kind: 'local', localId: id, shared: !!sh },
+    html: collectionHeader({ kind: sh ? 'Shared playlist' : 'Your playlist', title: p.name, meta, ...art })
+      + actions({ play: 'play-collection', edit: !sh || sh.owner, del: !sh, invite: sh ? 'sharing' : 'share-playlist', more: !!p.tracks.length || !!sh, tracks: p.tracks })
+      + (p.tracks.length ? trackList(p.tracks, { album: true, context, localId: id, addedBy: !!sh }) : emptyText),
   };
 }
 
@@ -345,7 +353,7 @@ export function library({ tab = 'playlists' }) {
       `<a class="card" href="#/liked"><div class="art liked-tile">${icon('heart-fill')}</div><div class="title">Liked songs</div><div class="sub">${plural(store.liked.length, 'song')}</div></a>`,
       `<a class="card" href="#/downloads"><div class="art download-tile">${icon('download')}</div><div class="title">Downloads</div><div class="sub">${plural(offline.count, 'song')} on this device</div></a>`,
       `<a class="card" href="#/history"><div class="art history-tile">${icon('repeat')}</div><div class="title">Recently played</div><div class="sub">${plural(store.history.length, 'song')}</div></a>`,
-      ...store.playlists.map((p) => cards([{ type: 'local', id: p.id, title: p.name, subtitle: `Your playlist • ${plural(p.tracks.length, 'song')}`, thumbnail: p.tracks[0]?.thumbnail }])),
+      ...store.playlists.map((p) => cards([{ type: 'local', id: p.id, title: p.name, subtitle: `${p.shared ? 'Shared' : 'Your playlist'} • ${plural(p.tracks.length, 'song')}`, thumbnail: p.tracks[0]?.thumbnail }])),
       cards(store.savedList('playlist')),
     ];
     body = `<div class="grid">${tiles.join('')}</div>`;
@@ -356,7 +364,7 @@ export function library({ tab = 'playlists' }) {
         tab === 'albums' ? 'Tap the heart on an album to save it.' : 'Tap Follow on an artist page.');
   }
   return {
-    html: `<div class="lib-head"><h1>Your Library</h1><div class="lib-actions"><button class="btn" data-act="import-playlists">${icon('download')} Import</button><button class="btn" data-act="new-playlist">${icon('plus')} New playlist</button></div></div>
+    html: `<div class="lib-head"><h1>Your Library</h1><div class="lib-actions"><button class="btn" data-act="import-playlists">${icon('download')} Import</button><button class="btn" data-act="join-shared">${icon('people')} Join</button><button class="btn" data-act="new-playlist">${icon('plus')} New playlist</button></div></div>
       <div class="chips">${tabs.map(([k, l]) => `<a class="chip ${k === tab ? 'on' : ''}" href="#/library?tab=${k}">${l}</a>`).join('')}</div>${body}`,
   };
 }

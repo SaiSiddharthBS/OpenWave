@@ -44,7 +44,7 @@ export function registerList(tracks, opts = {}) {
 }
 export const getList = (key) => lists.get(key);
 
-export function trackRow(t, i, key, { numbered = false, album = false, playing = false } = {}) {
+export function trackRow(t, i, key, { numbered = false, album = false, playing = false, addedBy = false } = {}) {
   const lead = numbered
     ? `<span class="lead num">${i + 1}</span>`
     : `<span class="lead"><img class="thumb" loading="lazy" src="${img(t.thumbnail, 120)}" alt=""></span>`;
@@ -52,7 +52,7 @@ export function trackRow(t, i, key, { numbered = false, album = false, playing =
   const cls = ['row', numbered && 'numbered', album && 'with-album', playing && 'playing'].filter(Boolean).join(' ');
   return `<div class="${cls}" data-list="${key}" data-i="${i}" data-vid="${esc(t.videoId)}"${t.type === 'video' ? ' data-mv="1"' : ''} role="button" tabindex="0">
     ${lead}
-    <div class="ellipsis"><div class="t ellipsis">${esc(t.title)}</div><div class="a ellipsis">${badges}${artistLinks(t.artists) || 'Song'}</div></div>
+    <div class="ellipsis"><div class="t ellipsis">${esc(t.title)}</div><div class="a ellipsis">${addedBy && t.addedBy ? `<span class="added-by" title="Added by ${esc(t.addedBy)}" aria-label="Added by ${esc(t.addedBy)}">${esc(t.addedBy)}</span>` : ''}${badges}${artistLinks(t.artists) || 'Song'}</div></div>
     ${album ? `<div class="alb ellipsis">${t.album?.id ? `<a href="#/album/${esc(t.album.id)}" data-stop>${esc(t.album.name)}</a>` : esc(t.album?.name || '')}</div>` : ''}
     <span class="d">${t.duration ? fmtTime(t.duration) : ''}</span>
     <button class="icon-btn more" data-menu aria-label="More options">${icon('more')}</button>
@@ -197,11 +197,11 @@ export function askText(title, { value = '', placeholder = '', ok = 'Save' } = {
   });
 }
 
-export function confirmDialog(title, text, ok = 'Delete') {
+export function confirmDialog(title, text, ok = 'Delete', { danger = true } = {}) {
   return new Promise((resolve) => {
     const d = $('#dialog');
     d.innerHTML = `<form method="dialog"><h3>${esc(title)}</h3><p>${esc(text)}</p>
-      <div class="row-btns"><button class="btn" value="cancel">Cancel</button><button class="btn danger" value="ok">${esc(ok)}</button></div></form>`;
+      <div class="row-btns"><button class="btn" value="cancel">Cancel</button><button class="btn ${danger ? 'danger' : 'primary'}" value="ok">${esc(ok)}</button></div></form>`;
     d.onclose = () => resolve(d.returnValue === 'ok');
     d.returnValue = '';
     d.showModal();

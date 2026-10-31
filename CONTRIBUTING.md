@@ -6,7 +6,7 @@ Thank you for helping keep music free and open. Every kind of contribution helps
 
 - **Non-commercial, forever.** OpenWave will never be monetised: no ads, paid tiers, accounts or tracking. PRs that add any of these won't be merged.
 - **No content, no circumvention.** OpenWave never hosts or redistributes music, and contributions must not break DRM or other technical protection measures.
-- **Privacy first.** Libraries live only on the server the user runs (and downloads only on their device). No analytics, no third-party calls from the client, nothing phones home.
+- **Privacy first.** Libraries live only on the server the user runs (and downloads only on their device). No analytics, no third-party calls from the client, nothing phones home. The one exception is opt-in: shared playlists sync end-to-end encrypted through public Nostr relays, and only once a user shares or joins one.
 - **No YouTube/Google branding.** Don't add their logos, names in the app title, or look-alike trademarks.
 - **Be kind.** Treat everyone with respect in issues and reviews.
 - **Security issues** go to the maintainer privately, not to public issues. See [SECURITY.md](SECURITY.md).

@@ -16,7 +16,7 @@ from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 
 from . import __version__, link, music, releases, updater, youtube
-from .api_library import error_response, router as library_router
+from .api_library import error_response, router as library_router, sync as shared_sync
 from .config import FROZEN, data_dir
 from .library import LibraryError
 
@@ -32,7 +32,9 @@ client = httpx.AsyncClient(timeout=httpx.Timeout(20, read=60), follow_redirects=
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     await link.hub.start()
+    await shared_sync().start()
     yield
+    await shared_sync().stop()
     await link.hub.stop()
     await client.aclose()
 

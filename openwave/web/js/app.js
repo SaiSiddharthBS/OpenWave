@@ -12,6 +12,7 @@ import { initNative, shareFile, shareText, haptic } from './native.js';
 import { initGestures } from './gestures.js';
 import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import { initLink, openDevices, linkLabel, linkEvents, setVisible, rename, forget } from './link.js';
+import { startSharing, openSharing, openJoin, showNotices, isInvite } from './sharing.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
   confirmDialog, sampleTint, artistLinks, errorBox, skeleton, empty, avatar,
@@ -86,6 +87,7 @@ async function render({ keepScroll = false } = {}) {
     if (token !== renderToken) return;
     clearTimeout(slow);
     page = { ...out, name };
+    if (out.collection?.shared) document.body.dataset.sharedView = '1'; else delete document.body.dataset.sharedView;
     view.innerHTML = out.html;
     main.scrollTop = keepScroll ? scroll : 0;
     if (!keepScroll) enter(back ? 'enter-back' : sk === 'detail' ? 'enter-fwd' : 'enter-tab');
@@ -168,6 +170,7 @@ store.on(async (what) => {
   renderSidebar();
   renderProfileChip();
   bindLike();
+  if (what === 'all') showNotices();
   if (dragging) return;
   const live = { library: true, settings: what === 'settings' || what === 'all' || what === 'profile', home: what === 'all' };
   if (what === 'history' && !location.hash.startsWith('#/history')) return;
@@ -217,6 +220,7 @@ function hideSuggest() { $('#suggest').hidden = true; suggestIndex = -1; suggest
 function submitSearch(q) {
   q = q.trim();
   if (!q) return;
+  if (isInvite(q)) { searchInput.value = ''; openJoin(q); return; }
   clearTimeout(suggestTimer);
   hideSuggest();
   store.pushSearch(q);
@@ -378,6 +382,14 @@ function collectionMenu(anchor) {
     const url = `https://music.youtube.com/${links[c.kind]}${c.card.id}`;
     items.push('sep', { icon: 'share', label: 'Share', run: () => share(c.context.label, c.context.label, url) },
       { icon: 'link', label: 'Copy link', run: () => copyText(url) });
+  } else if (c.kind === 'local') {
+    const p = store.playlist(c.localId);
+    items.push('sep', p?.shared
+      ? { icon: 'people', label: p.shared.owner ? 'Shared with…' : 'People and invite…', run: () => openSharing(c.localId) }
+      : { icon: 'people', label: 'Share with friends…', run: () => p && startSharing(p) });
+    if (p?.shared) items.push({ icon: 'trash', label: p.shared.owner ? 'Delete for everyone…' : 'Leave playlist…', run: () => openSharing(c.localId) });
+    if (c.tracks.length) items.push({ icon: 'share', label: 'Share as a song list', run: () => share(c.context.label,
+      `${c.context.label}\n\n${c.tracks.map((t, n) => `${n + 1}. ${(t.artists || []).map((a) => a.name).join(', ')} - ${t.title}`).join('\n')}\n\nImport it in OpenWave: Library → Import → Paste list`) });
   } else if (c.tracks.length) {
     // Your own playlists live on your device, so share them as a song list friends can import.
     items.push('sep', { icon: 'share', label: 'Share as a song list', run: () => share(c.context.label,
@@ -465,6 +477,9 @@ const ACTIONS = {
   },
   'android-use-phone': () => window.OpenWaveAndroid.setServer(''),
   'import-playlists': () => openImport(),
+  'join-shared': () => openJoin(),
+  'share-playlist': () => { const p = store.playlist(page.collection?.localId); if (p) startSharing(p); },
+  sharing: (el, e) => { e?.preventDefault?.(); if (page.collection?.localId) openSharing(page.collection.localId); },
   'share-insights': () => shareInsights(),
   'profile-menu': (el) => profileMenu(el),
   sleep: (el) => sleepMenu(el),

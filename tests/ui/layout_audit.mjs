@@ -131,7 +131,7 @@ async function startEngine(dir) {
   const port = free();
   const py = process.env.OPENWAVE_PYTHON || (existsSync(join(ROOT, '.venv/bin/python')) ? join(ROOT, '.venv/bin/python') : 'python3');
   const proc = spawn(py, ['-m', 'openwave', '--host', '127.0.0.1', '--port', String(port), '--no-browser'],
-    { cwd: ROOT, env: { ...process.env, OPENWAVE_DATA: join(dir, 'data'), OPENWAVE_LINK: '0' }, stdio: 'ignore' });
+    { cwd: ROOT, env: { ...process.env, OPENWAVE_DATA: join(dir, 'data'), OPENWAVE_LINK: '0', OPENWAVE_RELAYS: 'off' }, stdio: 'ignore' });
   await waitFor(`http://127.0.0.1:${port}/api/health`, 'The engine');
   return { proc, base: `http://127.0.0.1:${port}` };
 }
@@ -249,6 +249,9 @@ const SCREENS = [
   { name: 'insights', hash: '#/insights', route: 'insights', expect: '.view h1' },
   { name: 'settings', hash: '#/settings', route: 'settings', expect: '.view .setting' },
   { name: 'track-menu', hash: '#/album/MPREb_audit', route: 'album', steps: [`document.querySelector('.view .row [data-menu]').click()`], expect: '#menu .menu-head' },
+  { name: 'shared-playlist', hash: '#/my/auditshared', route: 'library', expect: '.view .row .added-by' },
+  { name: 'shared-with', hash: '#/my/auditshared', route: 'library', steps: [`document.querySelector('[data-act=sharing]').click()`], expect: '#dialog .share-link input' },
+  { name: 'join-dialog', hash: '#/library', route: 'library', steps: [`document.querySelector('[data-act=join-shared]').click()`], expect: '#dialog textarea' },
   { name: 'now-playing', hash: '#/home', steps: [OPEN_NP], expect: '#np .np-art' },
   { name: 'now-playing-queue', hash: '#/home', steps: [OPEN_NP, NP_TAB('queue')], expect: '#np-queue .row' },
   { name: 'now-playing-lyrics', hash: '#/home', steps: [OPEN_NP, NP_TAB('lyrics')], expect: '#np-lyrics .lyrics p' },
@@ -285,8 +288,10 @@ async function seed(base, d, cat) {
     { op: 'save', kind: 'artist', card: { id: 'UCaudit0', title: d.artist, subtitle: 'Artist', thumbnail: THUMB } },
     ...songs.flatMap((t, i) => Array.from({ length: 1 + (i % 4) }, (_, k) => ({ op: 'play', track: t, seconds: 180, at: now - (i * 5 + k) * 3600e3 }))),
     { op: 'search', q: d.titles[0] },
+    { op: 'playlist.create', id: 'auditshared', name: d.playlist, tracks: songs.slice(0, 10), at: now },
   ];
   await call('/api/me/ops', { ops }, token);
+  await call('/api/me/shares/auditshared', {}, token);     // a shared playlist (local only: relays are off)
   return { token, profile: made.profile };
 }
 
@@ -301,6 +306,11 @@ async function audit(dataset, out) {
     const page = await cdp(chrome.ws);
     await page.send('Page.enable');
     await page.send('Runtime.enable');
+    await page.send('Network.enable');
+    // Every request goes through the fakes below: no browser cache, and no service worker (it would
+    // fetch artwork itself, out of reach of this page's interception, and could serve cached files).
+    await page.send('Network.setCacheDisabled', { cacheDisabled: true });
+    await page.send('Network.setBypassServiceWorker', { bypass: true });
     await page.send('Fetch.enable', { patterns: [{ urlPattern: `${engine.base}/api/*` }, { urlPattern: `${engine.base}/sw.js` }] });
     page.on('Fetch.requestPaused', async ({ requestId, request }) => {
       const ans = request.url.endsWith('/sw.js') ? { status: 404, type: 'text/plain', body: Buffer.from('') } : fake(cat, request.url);
@@ -323,7 +333,7 @@ async function audit(dataset, out) {
       await page.send('Page.navigate', { url: `${engine.base}/?size=${vp.name}#/play/${vid(1)}` });
       await sleep(2500);
       for (const sc of SCREENS) {
-        await page.ev(`document.querySelector('.np')?.hidden === false && document.querySelector('[data-act=close-np]')?.click(); document.getElementById('menu')?.setAttribute('hidden', ''); true`);
+        await page.ev(`document.querySelector('.np')?.hidden === false && document.querySelector('[data-act=close-np]')?.click(); document.getElementById('menu')?.setAttribute('hidden', ''); document.getElementById('dialog').open && document.getElementById('dialog').close(); true`);
         await sleep(300);
         await page.ev(`location.hash = ${JSON.stringify(typeof sc.hash === 'function' ? sc.hash(d) : sc.hash)}; true`);
         await sleep(600);

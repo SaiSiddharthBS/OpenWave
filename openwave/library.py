@@ -14,7 +14,10 @@ import sqlite3
 import threading
 import time
 from collections import Counter, defaultdict
+from contextlib import contextmanager
 from pathlib import Path
+
+from . import nostr, shared
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS profiles (
@@ -53,6 +56,24 @@ CREATE TABLE IF NOT EXISTS searches (
 );
 CREATE TABLE IF NOT EXISTS settings (
   profile_id TEXT PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE, data TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS identities (
+  profile_id TEXT PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE, secret TEXT NOT NULL
+);
+-- Shared playlists (see shared.py). The playlist row stays the profile's own; `doc` is the copy
+-- everyone merges, and playlist_tracks mirrors it so everything else reads playlists as usual.
+CREATE TABLE IF NOT EXISTS shares (
+  playlist_id TEXT PRIMARY KEY REFERENCES playlists(id) ON DELETE CASCADE,
+  share_id TEXT NOT NULL, room TEXT NOT NULL, owner TEXT NOT NULL,
+  keys TEXT NOT NULL, epoch INTEGER NOT NULL, doc TEXT NOT NULL,
+  published TEXT NOT NULL DEFAULT '', keys_published INTEGER NOT NULL DEFAULT 0,
+  gone TEXT NOT NULL DEFAULT '', synced_at REAL, error TEXT NOT NULL DEFAULT '', joined_at REAL NOT NULL,
+  acked INTEGER NOT NULL DEFAULT 0   -- the owner's copy has listed us as a member at least once
+);
+CREATE INDEX IF NOT EXISTS shares_by_room ON shares (room);
+CREATE TABLE IF NOT EXISTS notices (
+  id INTEGER PRIMARY KEY AUTOINCREMENT, profile_id TEXT NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  text TEXT NOT NULL, at REAL NOT NULL
 );
 """
 
@@ -109,6 +130,7 @@ class Library:
         self.db.row_factory = sqlite3.Row
         self.lock = threading.RLock()
         self.failed_pins: dict[str, list[float]] = defaultdict(list)
+        self.on_share_change = lambda: None   # set by shared.Sync: wakes it to publish
         with self.lock:
             self.db.execute("PRAGMA journal_mode=WAL")
             self.db.execute("PRAGMA foreign_keys=ON")
@@ -117,6 +139,21 @@ class Library:
     # ------------------------------------------------------------------ helpers
     def _q(self, sql: str, args=()):
         return self.db.execute(sql, args)
+
+    @contextmanager
+    def _tx(self):
+        """A transaction, unless already inside one (apply_ops)."""
+        with self.lock:
+            if self.db.in_transaction:
+                yield
+                return
+            self._q("BEGIN")
+            try:
+                yield
+                self._q("COMMIT")
+            except BaseException:
+                self._q("ROLLBACK")
+                raise
 
     def _put_track(self, t: dict, now: float) -> str:
         t = _clean_track(t)
@@ -198,6 +235,10 @@ class Library:
         with self.lock:
             if name is not None and name.strip():
                 self._q("UPDATE profiles SET name = ? WHERE id = ?", (name.strip()[:40], profile_id))
+                me = nostr.public_key(self.identity(profile_id))
+                for s in self.share_rows(profile_id=profile_id):
+                    self._share_save(s, shared.set_person(s["doc"], me, name.strip()[:40]))
+                self.on_share_change()
             if color in COLORS:
                 self._q("UPDATE profiles SET color = ? WHERE id = ?", (color, profile_id))
             if pin is not None:
@@ -224,12 +265,23 @@ class Library:
                 "SELECT t.data FROM likes l JOIN tracks t ON t.video_id = l.video_id WHERE l.profile_id = ? ORDER BY l.liked_at DESC",
                 (profile_id,)))
             playlists = []
+            shares = {s["playlist_id"]: s for s in self.share_rows(profile_id=profile_id)}
             for p in self._q("SELECT * FROM playlists WHERE profile_id = ? ORDER BY updated_at DESC", (profile_id,)).fetchall():
-                tracks = self._tracks(self._q(
-                    "SELECT t.data FROM playlist_tracks pt JOIN tracks t ON t.video_id = pt.video_id WHERE pt.playlist_id = ? ORDER BY pt.position",
-                    (p["id"],)))
-                playlists.append({"id": p["id"], "name": p["name"], "description": p["description"], "tracks": tracks,
-                                  "created": p["created_at"] * 1000, "updated": p["updated_at"] * 1000})
+                s = shares.get(p["id"])
+                if s and s["gone"]:
+                    continue   # left or deleted: only waiting to tell the others
+                if s:
+                    tracks = shared.view(s["doc"])
+                else:
+                    tracks = self._tracks(self._q(
+                        "SELECT t.data FROM playlist_tracks pt JOIN tracks t ON t.video_id = pt.video_id WHERE pt.playlist_id = ? ORDER BY pt.position",
+                        (p["id"],)))
+                entry = {"id": p["id"], "name": p["name"], "description": p["description"], "tracks": tracks,
+                         "created": p["created_at"] * 1000, "updated": p["updated_at"] * 1000}
+                if s:
+                    entry["shared"] = self._share_summary(s)
+                playlists.append(entry)
+            notices = [r["text"] for r in self._q("SELECT text FROM notices WHERE profile_id = ? ORDER BY at", (profile_id,))]
             saved = {k: [] for k in SAVED_KINDS}
             for r in self._q("SELECT kind, data FROM saved WHERE profile_id = ? ORDER BY saved_at DESC", (profile_id,)):
                 saved.setdefault(r["kind"], []).append(json.loads(r["data"]))
@@ -250,6 +302,7 @@ class Library:
             "history": history,
             "searches": searches,
             "settings": json.loads(srow["data"]) if srow else {},
+            "notices": notices,
         }
 
     # ------------------------------------------------------------------ writing
@@ -269,6 +322,8 @@ class Library:
             except Exception:
                 self._q("ROLLBACK")
                 raise
+            if any(isinstance(op, dict) and str(op.get("op", "")).startswith("playlist.") for op in ops):
+                self.on_share_change()
             return self.version(profile_id)
 
     def _apply(self, pid: str, op: dict) -> None:
@@ -290,6 +345,8 @@ class Library:
                         (plid, pid, str(op.get("name") or "My playlist")[:100], str(op.get("description") or "")[:500], at, at))
             if op.get("tracks"):
                 self._apply(pid, {"op": "playlist.add", "id": plid, "tracks": op["tracks"], "at": op.get("at")})
+        elif kind.startswith("playlist.") and kind != "playlist.create" and self._shared(pid, op.get("id")):
+            self._shared_op(pid, kind, op)
         elif kind == "playlist.update":
             self._own_playlist(pid, op["id"])
             if op.get("name"):
@@ -347,8 +404,10 @@ class Library:
             row = self._q("SELECT data FROM settings WHERE profile_id = ?", (pid,)).fetchone()
             merged = {**(json.loads(row["data"]) if row else {}), **(op.get("patch") or {})}
             self._q("INSERT OR REPLACE INTO settings (profile_id, data) VALUES (?, ?)", (pid, json.dumps(merged)[:20000]))
+        elif kind == "notices.clear":
+            self._q("DELETE FROM notices WHERE profile_id = ?", (pid,))
         elif kind == "reset":
-            for table in ("likes", "playlists", "saved", "plays", "searches", "settings"):
+            for table in ("likes", "playlists", "saved", "plays", "searches", "settings", "notices"):
                 self._q(f"DELETE FROM {table} WHERE profile_id = ?", (pid,))
         else:
             raise LibraryError(f"unknown op {kind!r}")
@@ -360,6 +419,261 @@ class Library:
             self._q("INSERT INTO playlist_tracks (playlist_id, position, video_id, added_at) VALUES (?, ?, ?, ?)",
                     (playlist_id, pos, vid, added.get(vid, now)))
         self._q("UPDATE playlists SET updated_at = ? WHERE id = ?", (now, playlist_id))
+
+    # ------------------------------------------------------------------ shared playlists
+    def identity(self, profile_id: str) -> str:
+        """This profile's signing key for shared playlists (made on first use)."""
+        with self.lock:
+            row = self._q("SELECT secret FROM identities WHERE profile_id = ?", (profile_id,)).fetchone()
+            if row:
+                return row["secret"]
+            secret = nostr.new_secret()
+            self._q("INSERT INTO identities (profile_id, secret) VALUES (?, ?)", (profile_id, secret))
+            return secret
+
+    def share_rows(self, profile_id: str | None = None, room: str | None = None, playlist_id: str | None = None) -> list[dict]:
+        sql = "SELECT s.*, p.profile_id FROM shares s JOIN playlists p ON p.id = s.playlist_id"
+        where, args = [], []
+        for col, val in (("p.profile_id", profile_id), ("s.room", room), ("s.playlist_id", playlist_id)):
+            if val is not None:
+                where.append(f"{col} = ?")
+                args.append(val)
+        with self.lock:
+            rows = self._q(sql + (" WHERE " + " AND ".join(where) if where else ""), args).fetchall()
+            out = []
+            for r in rows:
+                d = dict(r)
+                d["doc"] = json.loads(r["doc"])
+                d["keys"] = {k: shared._unb64(v) for k, v in json.loads(r["keys"]).items()}
+                d["hash"] = hashlib.sha256(r["doc"].encode()).hexdigest()
+                d["me"] = nostr.public_key(self.identity(r["profile_id"]))
+                d["is_owner"] = d["me"] == r["owner"]
+                out.append(d)
+            return out
+
+    def _shared(self, profile_id: str, playlist_id) -> dict | None:
+        if not isinstance(playlist_id, str):
+            return None
+        rows = self.share_rows(profile_id=profile_id, playlist_id=playlist_id)
+        return rows[0] if rows and not rows[0]["gone"] else None
+
+    def _share_save(self, s: dict, doc: dict, **cols) -> None:
+        """Store a new copy and mirror it into the playlist the rest of the app reads."""
+        text = json.dumps(doc, separators=(",", ":"), ensure_ascii=False, sort_keys=True)
+        sets = ", ".join(["doc = ?"] + [f"{k} = ?" for k in cols])
+        self._q(f"UPDATE shares SET {sets} WHERE playlist_id = ?", (text, *cols.values(), s["playlist_id"]))
+        now = time.time()
+        meta = doc.get("meta") or {}
+        if meta.get("name"):
+            self._q("UPDATE playlists SET name = ?, description = ? WHERE id = ?",
+                    (str(meta["name"])[:100], str(meta.get("description") or "")[:500], s["playlist_id"]))
+        vids = []
+        for t in shared.view(doc):
+            try:
+                vids.append(self._put_track(t, now))
+            except LibraryError:
+                continue
+        self._set_order(s["playlist_id"], vids, now)
+
+    def _share_summary(self, s: dict) -> dict:
+        doc = s["doc"]
+        people = [{"id": pub, "name": (doc["people"][pub].get("name") or [""])[0] or "Someone",
+                   "owner": pub == s["owner"], "you": pub == s["me"]} for pub in shared.members(doc)]
+        if not any(p["you"] for p in people):
+            people.append({"id": s["me"], "name": "You", "owner": s["is_owner"], "you": True})
+        return {"owner": s["is_owner"], "people": people, "syncedAt": (s["synced_at"] or 0) * 1000,
+                "pending": s["published"] != s["hash"], "error": s["error"]}
+
+    def share_create(self, profile_id: str, playlist_id: str) -> dict:
+        with self._tx():
+            self._own_playlist(profile_id, playlist_id)
+            existing = self._shared(profile_id, playlist_id)
+            if existing:
+                return self.share_info(profile_id, playlist_id)
+            p = self._q("SELECT * FROM playlists WHERE id = ?", (playlist_id,)).fetchone()
+            tracks = self._tracks(self._q(
+                "SELECT t.data FROM playlist_tracks pt JOIN tracks t ON t.video_id = pt.video_id WHERE pt.playlist_id = ? ORDER BY pt.position",
+                (playlist_id,)))
+            secret = self.identity(profile_id)
+            me = nostr.public_key(secret)
+            share_id = shared._b64(secrets.token_bytes(16))
+            key = secrets.token_bytes(32)
+            name = self._q("SELECT name FROM profiles WHERE id = ?", (profile_id,)).fetchone()["name"]
+            doc = shared.set_person(shared.new_doc(share_id, me), me, name)
+            doc = shared.set_meta(doc, secret, name=p["name"], description=p["description"], epoch=1)
+            doc = shared.edit_add(doc, tracks[:shared.MAX_TRACKS], me)
+            self._q("INSERT INTO shares (playlist_id, share_id, room, owner, keys, epoch, doc, joined_at) VALUES (?, ?, ?, ?, ?, 1, '{}', ?)",
+                    (playlist_id, share_id, shared.room_of(share_id), me, json.dumps({"1": shared._b64(key)}), time.time()))
+            self._share_save(self.share_rows(playlist_id=playlist_id)[0], doc)
+            self._q("UPDATE profiles SET version = version + 1 WHERE id = ?", (profile_id,))
+        self.on_share_change()
+        return self.share_info(profile_id, playlist_id)
+
+    def share_join(self, profile_id: str, invite: str) -> str:
+        inv = shared.parse_invite(invite)
+        with self._tx():
+            for s in self.share_rows(profile_id=profile_id):
+                if s["share_id"] == inv["share"]:
+                    if s["gone"]:
+                        self._q("UPDATE shares SET gone = '' WHERE playlist_id = ?", (s["playlist_id"],))
+                    return s["playlist_id"]
+            secret = self.identity(profile_id)
+            me = nostr.public_key(secret)
+            if me == inv["owner"]:
+                raise LibraryError("This is your own shared playlist.", 409)
+            plid = secrets.token_urlsafe(8)
+            now = time.time()
+            self._q("INSERT INTO playlists (id, profile_id, name, description, created_at, updated_at) VALUES (?, ?, ?, '', ?, ?)",
+                    (plid, profile_id, inv["name"], now, now))
+            name = self._q("SELECT name FROM profiles WHERE id = ?", (profile_id,)).fetchone()["name"]
+            doc = shared.set_person(shared.new_doc(inv["share"], inv["owner"]), me, name)
+            self._q("INSERT INTO shares (playlist_id, share_id, room, owner, keys, epoch, doc, joined_at) VALUES (?, ?, ?, ?, ?, ?, '{}', ?)",
+                    (plid, inv["share"], shared.room_of(inv["share"]), inv["owner"],
+                     json.dumps({str(inv["epoch"]): shared._b64(inv["key"])}), inv["epoch"], now))
+            self._share_save(self.share_rows(playlist_id=plid)[0], doc)
+            self._q("UPDATE profiles SET version = version + 1 WHERE id = ?", (profile_id,))
+        self.on_share_change()
+        return plid
+
+    def share_info(self, profile_id: str, playlist_id: str) -> dict:
+        s = self._shared(profile_id, playlist_id)
+        if not s:
+            raise LibraryError("This playlist isn't shared.", 404)
+        with self.lock:
+            name = self._q("SELECT name FROM playlists WHERE id = ?", (playlist_id,)).fetchone()["name"]
+        return {**self._share_summary(s), "invite": shared.invite_link(s["share_id"], s["keys"][str(s["epoch"])], s["epoch"], s["owner"], name)}
+
+    def share_remove_person(self, profile_id: str, playlist_id: str, person: str) -> dict:
+        with self._tx():
+            s = self._shared(profile_id, playlist_id)
+            if not s:
+                raise LibraryError("This playlist isn't shared.", 404)
+            if not s["is_owner"]:
+                raise LibraryError("Only the person who shared this playlist can remove people.", 403)
+            if person == s["me"]:
+                raise LibraryError("You can't remove yourself; delete the playlist instead.")
+            removed = {**(s["doc"].get("meta") or {}).get("removed", {}), person: shared.now_ms()}
+            epoch = s["epoch"] + 1
+            keys = {k: shared._b64(v) for k, v in s["keys"].items()}
+            keys[str(epoch)] = shared._b64(secrets.token_bytes(32))
+            doc = shared.set_meta(s["doc"], self.identity(profile_id), removed=removed, epoch=epoch)
+            self._q("UPDATE shares SET keys = ?, epoch = ? WHERE playlist_id = ?", (json.dumps(keys), epoch, playlist_id))
+            self._share_save(s, doc)
+            self._q("UPDATE profiles SET version = version + 1 WHERE id = ?", (profile_id,))
+        self.on_share_change()
+        return self.share_info(profile_id, playlist_id)
+
+    def _shared_op(self, pid: str, kind: str, op: dict) -> None:
+        s = self._shared(pid, op["id"])
+        me = s["me"]
+        if kind == "playlist.add":
+            tracks = [_clean_track(t) for t in op.get("tracks") or []]
+            room = shared.MAX_TRACKS - len(shared.view(s["doc"]))
+            if len(tracks) > room:
+                name = self._q("SELECT name FROM playlists WHERE id = ?", (op["id"],)).fetchone()["name"]
+                self._q("INSERT INTO notices (profile_id, text, at) VALUES (?, ?, ?)", (pid,
+                        f"“{name}” is full: shared playlists hold up to {shared.MAX_TRACKS} songs, so {len(tracks) - max(room, 0)} weren’t added.", time.time()))
+                tracks = tracks[:max(room, 0)]
+            doc = shared.edit_add(s["doc"], tracks, me)
+        elif kind == "playlist.remove":
+            doc = shared.edit_remove(s["doc"], op["videoId"], me)
+        elif kind == "playlist.reorder":
+            doc = shared.edit_order(s["doc"], [str(v) for v in op.get("videoIds") or []], me)
+        elif kind == "playlist.update":
+            if not s["is_owner"]:
+                return    # only the owner renames (the app doesn't offer it to others); never block the batch
+            changes = {}
+            if op.get("name"):
+                changes["name"] = str(op["name"])[:100]
+            if "description" in op:
+                changes["description"] = str(op["description"] or "")[:500]
+            doc = shared.set_meta(s["doc"], self.identity(pid), **changes)
+        elif kind == "playlist.delete":
+            # Owner: deleted for everyone. Member: leaves. Either way the others are told first.
+            if s["is_owner"]:
+                doc, gone = shared.set_meta(s["doc"], self.identity(pid), deleted=True), "deleted"
+            else:
+                doc, gone = shared.set_person(s["doc"], me, left=True), "left"
+            self._share_save(s, doc, gone=gone)
+            return
+        else:
+            raise LibraryError(f"unknown op {kind!r}")
+        self._share_save(s, doc)
+        self._q("UPDATE playlists SET updated_at = ? WHERE id = ?", (time.time(), op["id"]))
+
+    def share_merge(self, playlist_id: str, incoming: dict) -> bool:
+        """Merge a copy from another member. True if anything changed (so ours is republished)."""
+        with self._tx():
+            rows = self.share_rows(playlist_id=playlist_id)
+            if not rows or rows[0]["gone"]:
+                return False
+            s = rows[0]
+            doc = shared.merge(s["doc"], incoming)
+            if json.dumps(doc, sort_keys=True) == json.dumps(s["doc"], sort_keys=True):
+                self._q("UPDATE shares SET synced_at = ? WHERE playlist_id = ?", (time.time(), playlist_id))
+                return False
+            meta = doc.get("meta") or {}
+            if not s["is_owner"] and (meta.get("deleted") or s["me"] in (meta.get("removed") or {})):
+                self._share_save(s, doc)
+                self._share_end(s, "deleted" if meta.get("deleted") else "removed")
+                return False
+            self._share_save(s, doc, synced_at=time.time())
+            self._q("UPDATE playlists SET updated_at = ? WHERE id = ?", (time.time(), playlist_id))
+            self._q("UPDATE profiles SET version = version + 1 WHERE id = ?", (s["profile_id"],))
+            return True
+
+    def _share_end(self, s: dict, why: str) -> None:
+        """The playlist stops being shared with us; we keep the songs as our own playlist."""
+        name = self._q("SELECT name FROM playlists WHERE id = ?", (s["playlist_id"],)).fetchone()["name"]
+        self._q("DELETE FROM shares WHERE playlist_id = ?", (s["playlist_id"],))
+        if why == "expired":
+            self._q("DELETE FROM playlists WHERE id = ?", (s["playlist_id"],))
+            text = f"The invite to “{name}” is out of date. Ask for a new invite link."
+        elif why == "deleted":
+            text = f"“{name}” is no longer shared: the owner deleted it. You keep a copy in your library."
+        else:
+            text = f"You were removed from the shared playlist “{name}”. You keep a copy in your library."
+        self._q("INSERT INTO notices (profile_id, text, at) VALUES (?, ?, ?)", (s["profile_id"], text, time.time()))
+        self._q("UPDATE profiles SET version = version + 1 WHERE id = ?", (s["profile_id"],))
+
+    def share_ended(self, playlist_id: str, why: str) -> None:
+        with self._tx():
+            rows = self.share_rows(playlist_id=playlist_id)
+            if rows and not rows[0]["gone"]:
+                self._share_end(rows[0], why)
+
+    def share_new_key(self, playlist_id: str, epoch: int, key: bytes) -> None:
+        with self._tx():
+            s = self.share_rows(playlist_id=playlist_id)[0]
+            keys = {k: shared._b64(v) for k, v in s["keys"].items()}
+            keys[str(epoch)] = shared._b64(key)
+            self._q("UPDATE shares SET keys = ?, epoch = ? WHERE playlist_id = ?", (json.dumps(keys), epoch, playlist_id))
+
+    def share_published(self, playlist_id: str, doc_hash: str, keys_epoch: int | None = None) -> None:
+        with self._tx():
+            rows = self.share_rows(playlist_id=playlist_id)
+            if not rows:
+                return
+            s = rows[0]
+            if s["gone"] and doc_hash == s["hash"]:
+                # The others now know we left (or that it was deleted): remove it for good.
+                self._q("DELETE FROM playlists WHERE id = ?", (playlist_id,))
+                return
+            self._q("UPDATE shares SET published = ?, error = '', synced_at = ? WHERE playlist_id = ?", (doc_hash, time.time(), playlist_id))
+            if keys_epoch:
+                self._q("UPDATE shares SET keys_published = ? WHERE playlist_id = ?", (keys_epoch, playlist_id))
+
+    def share_acked(self, playlist_id: str) -> None:
+        with self.lock:
+            self._q("UPDATE shares SET acked = 1 WHERE playlist_id = ?", (playlist_id,))
+
+    def share_error(self, playlist_id: str, message: str) -> None:
+        with self.lock:
+            self._q("UPDATE shares SET error = ? WHERE playlist_id = ?", (message[:200], playlist_id))
+
+    def share_synced_now(self) -> None:
+        with self.lock:
+            self._q("UPDATE shares SET synced_at = ? WHERE gone = ''", (time.time(),))
 
     # ------------------------------------------------------------------ insights
     def stats(self, profile_id: str, days: int = 30, tz_offset_min: int = 0) -> dict:

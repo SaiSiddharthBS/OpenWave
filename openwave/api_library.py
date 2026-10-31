@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import importer, music
+from . import importer, music, shared
 from .config import data_dir
 from .library import Library, LibraryError
 
@@ -25,8 +25,9 @@ def library() -> Library:
 
 def use_library(lib: Library) -> None:
     """Swap the backing store (tests)."""
-    global _library
+    global _library, _sync
     _library = lib
+    _sync = None
 
 
 def error_response(exc: LibraryError) -> JSONResponse:
@@ -173,6 +174,56 @@ async def mixes(pid: str = Depends(me)):
             used.add(t["videoId"])
             seeds.append({"seed": t, "title": f"Because you liked {t['title']}", "subtitle": "A mix inspired by a song you love"})
     return {"mixes": seeds, "topArtists": top["topArtists"][:8]}
+
+
+# --------------------------------------------------------------------------- shared playlists
+
+
+class JoinShare(BaseModel):
+    invite: str
+
+
+class RemovePerson(BaseModel):
+    person: str
+
+
+_sync: shared.Sync | None = None
+
+
+def sync() -> shared.Sync:
+    global _sync
+    if _sync is None:
+        _sync = shared.Sync(library())
+    return _sync
+
+
+def _share_call(fn, *args):
+    try:
+        return fn(*args)
+    except shared.ShareError as e:
+        raise LibraryError(str(e), e.status) from e
+
+
+@router.post("/me/shares/join")
+def share_join(body: JoinShare, pid: str = Depends(me)):
+    """Join a friend's shared playlist from their invite link."""
+    return {"playlistId": _share_call(library().share_join, pid, body.invite)}
+
+
+@router.post("/me/shares/{playlist_id}")
+def share_create(playlist_id: str, pid: str = Depends(me)):
+    """Turn one of your playlists into a shared one; returns the invite link."""
+    return _share_call(library().share_create, pid, playlist_id)
+
+
+@router.get("/me/shares/{playlist_id}")
+def share_info(playlist_id: str, pid: str = Depends(me)):
+    return {**library().share_info(pid, playlist_id), "sync": sync().status()}
+
+
+@router.post("/me/shares/{playlist_id}/remove")
+def share_remove(playlist_id: str, body: RemovePerson, pid: str = Depends(me)):
+    return library().share_remove_person(pid, playlist_id, body.person)
 
 
 # --------------------------------------------------------------------------- import

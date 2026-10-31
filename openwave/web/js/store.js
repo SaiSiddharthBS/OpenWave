@@ -62,7 +62,9 @@ async function call(path, { method = 'GET', body, keepalive = false } = {}) {
   if (res.status === 401) throw new AuthError(json?.error || 'Please pick your profile again');
   if (!res.ok) {
     const detail = Array.isArray(json?.detail) ? json.detail.map((d) => d.msg).join('; ') : json?.detail;
-    throw new Error(json?.error || detail || `HTTP ${res.status}`);
+    const err = new Error(json?.error || detail || `HTTP ${res.status}`);
+    err.status = res.status;
+    throw err;
   }
   return json;
 }
@@ -124,6 +126,9 @@ function applyLocal(op) {
       break;
     case 'settings':
       data.settings = { ...data.settings, ...op.patch };
+      break;
+    case 'notices.clear':
+      data.notices = [];
       break;
     case 'reset':
       Object.assign(data, { liked: [], playlists: [], albums: [], artists: [], ytPlaylists: [], history: [], searches: [], settings: {} });
@@ -231,7 +236,9 @@ export const store = {
         persist();
       } catch (e) {
         if (e instanceof AuthError) { emit('auth'); return; }
-        if (/malformed|unknown op|invalid/.test(e.message)) { outbox = outbox.slice(batch.length); persist(); }  // drop poison ops
+        // The server will never accept a batch it refused (bad or forbidden ops): drop it rather than retry forever.
+        const refused = e.status >= 400 && e.status < 500 && ![408, 429].includes(e.status);
+        if (refused || /malformed|unknown op|invalid/.test(e.message)) { outbox = outbox.slice(batch.length); persist(); store.pull(); }
         else setTimeout(() => scheduleFlush(0), 15000);
       } finally {
         flushing = null;
@@ -314,6 +321,10 @@ export const store = {
   reorderPlaylist(id, videoIds) { commit({ op: 'playlist.reorder', id, videoIds }, 'playlists'); },
   renamePlaylist(id, name) { if (name.trim()) commit({ op: 'playlist.update', id, name: name.trim() }, 'playlists'); },
   deletePlaylist(id) { commit({ op: 'playlist.delete', id }, 'playlists'); },
+
+  // messages from the engine (e.g. a shared playlist stopped being shared)
+  get notices() { return data.notices || []; },
+  clearNotices() { if (data.notices?.length) commit({ op: 'notices.clear' }, 'notices'); },
 
   // saved albums / artists / youtube playlists
   savedList: (kind) => data[SAVED[kind]],

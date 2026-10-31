@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Join a shared playlist · OpenWave</title>
+  <meta name="description" content="You've been invited to a shared playlist on OpenWave. Open it in OpenWave to listen and add songs together.">
+  <meta name="theme-color" content="#0a0b14">
+  <meta name="referrer" content="no-referrer">
+  <link rel="icon" href="../favicon-64.png">
+  <style>
+    :root {
+      --bg: #0a0b14; --surface: rgba(255,255,255,.05); --text: #f3f3f6; --muted: #a4a4b2; --faint: #6e6e7c;
+      --line: rgba(255,255,255,.1); --grad: linear-gradient(135deg, #2fc8ff, #4f6bff 45%, #c45cff);
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; overflow-wrap: break-word; }
+    a { color: inherit; }
+    .glow { position: fixed; inset: 0; pointer-events: none; z-index: -1;
+      background: radial-gradient(60% 45% at 15% 0%, rgba(47,200,255,.14), transparent 70%), radial-gradient(50% 45% at 90% 30%, rgba(196,92,255,.12), transparent 70%); }
+    .wrap { max-width: 620px; margin: 0 auto; padding: 0 16px 60px; }
+    nav { display: flex; align-items: center; padding: 22px 0; }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 850; font-size: 20px; letter-spacing: -.03em; text-decoration: none; }
+    .brand img { height: 30px; }
+    .brand b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+    .card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 26px 22px; margin-top: 18px; }
+    .kicker { color: var(--muted); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
+    h1 { font-size: clamp(28px, 7vw, 40px); letter-spacing: -.035em; line-height: 1.12; margin: 6px 0 10px; overflow-wrap: anywhere; }
+    p { color: var(--muted); margin: 0 0 12px; }
+    ol { padding-left: 22px; margin: 14px 0 0; color: var(--muted); }
+    ol li { margin-bottom: 10px; }
+    ol b { color: var(--text); }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 999px; border: 1px solid var(--line); background: none; color: var(--text); font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; }
+    .btn.primary { background: var(--text); color: var(--bg); border-color: transparent; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    .row .btn { flex: 1 1 200px; }
+    .note { font-size: 13px; color: var(--faint); margin-top: 18px; }
+    .bad h1 { font-size: 26px; }
+    [hidden] { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+  <div class="wrap">
+    <nav><a class="brand" href="../"><img src="../logo.png" alt=""><span>Open<b>Wave</b></span></a></nav>
+
+    <div class="card" id="ok" hidden>
+      <div class="kicker">Shared playlist invite</div>
+      <h1 id="name">A shared playlist</h1>
+      <p>You've been invited to listen and add songs together. Everyone in it can add, remove and reorder songs from their own OpenWave, and sees everyone else's changes.</p>
+      <div class="row">
+        <button class="btn primary" id="copy">Copy invite link</button>
+        <a class="btn" href="../#install">Get OpenWave</a>
+      </div>
+      <ol>
+        <li>Copy this invite link (the button above).</li>
+        <li>Open <b>OpenWave</b> and go to <b>Library → Join</b>.</li>
+        <li>Paste the link and tap <b>Join</b>. The songs appear in a few seconds.</li>
+      </ol>
+      <p class="note">The playlist's key is in this link after the “#”. It never leaves your device: this page doesn't send it anywhere, and only people with the link can read the playlist. Only share it with people you trust.</p>
+    </div>
+
+    <div class="card bad" id="bad" hidden>
+      <div class="kicker">Shared playlist invite</div>
+      <h1>This invite link is incomplete</h1>
+      <p>Part of the link seems to be missing. Ask the person who invited you to send it again, and open the whole link.</p>
+      <div class="row"><a class="btn" href="../">About OpenWave</a></div>
+    </div>
+  </div>
+  <script>
+    // Everything happens on this device: the invite stays in the address after "#", which browsers never send to the server.
+    (function () {
+      var code = location.hash.slice(1), name = null;
+      try {
+        var b64 = code.replace(/-/g, '+').replace(/_/g, '/');
+        var bytes = Uint8Array.from(atob(b64 + '==='.slice((b64.length + 3) % 4)), function (c) { return c.charCodeAt(0); });
+        var d = JSON.parse(new TextDecoder().decode(bytes));
+        if (d && d.s && d.k && d.o) name = String(d.n || 'A shared playlist');
+      } catch (e) { name = null; }
+      if (!name) { document.getElementById('bad').hidden = false; return; }
+      document.getElementById('ok').hidden = false;
+      document.getElementById('name').textContent = name;
+      document.title = name + ' · Join on OpenWave';
+      var btn = document.getElementById('copy');
+      btn.onclick = function () {
+        var done = function () { btn.textContent = 'Copied. Now open OpenWave'; };
+        if (navigator.clipboard && window.isSecureContext) {
+          navigator.clipboard.writeText(location.href).then(done, function () { prompt('Copy this invite link:', location.href); });
+        } else {
+          prompt('Copy this invite link:', location.href);
+        }
+      };
+    })();
+  </script>
+</body>
+</html>
