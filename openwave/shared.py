@@ -35,10 +35,13 @@ log = logging.getLogger("openwave.shared")
 
 KIND = 30078                      # Nostr "application data" (replaceable per author and room)
 JOIN_URL = "https://saisiddharthbs.github.io/OpenWave/join/#"
-DEFAULT_RELAYS = ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net", "wss://nostr.mom"]
+# Chosen by testing on 2026-10-31: these store and return OpenWave's messages (up to 60 KB). Six of
+# them, because public relays do go down now and then; one storing a change is enough.
+DEFAULT_RELAYS = ["wss://nos.lol", "wss://relay.primal.net", "wss://nostr.mom", "wss://relay.snort.social",
+                  "wss://nostr.oxtr.dev", "wss://relay.damus.io"]
 MAX_TRACKS = 2000
-MAX_MESSAGE = 90_000              # public relays commonly refuse messages over 128 KB
-MAX_CHUNKS = 16                   # a big playlist is split by song across up to this many messages
+MAX_MESSAGE = 50_000              # some public relays refuse events over about 64 KB
+MAX_CHUNKS = 32                   # a big playlist is split by song across up to this many messages
 REPUBLISH_EVERY = 24 * 3600       # refresh our copy on the relays now and then, even with no changes
 
 
@@ -430,8 +433,11 @@ class Sync:
                 raise
             except Exception:  # noqa: BLE001 - one bad playlist must never stop syncing the others
                 log.exception("shared playlist sync failed")
+            # Sleep until something changes, a retry is due, or 30 s pass (for the daily refresh).
+            due = [t for k, t in self.retry_at.items() if not k.endswith(":n")]
+            timeout = min([30.0] + [max(0.5, t - time.time()) for t in due])
             with contextlib.suppress(asyncio.TimeoutError):
-                await asyncio.wait_for(self.wake.wait(), timeout=30)
+                await asyncio.wait_for(self.wake.wait(), timeout=timeout)
             await asyncio.sleep(0.8)    # gather bursts of edits into one publish
 
     async def _publish_due(self) -> None:
@@ -476,7 +482,12 @@ class Sync:
                                 created_at=self._stamp(s["room"] + ":k"))
 
     async def _on_caught_up(self, _url: str) -> None:
+        """A relay is connected and has sent everything it holds: publish anything still waiting now,
+        instead of at the next scheduled retry (this is what makes offline edits go out on reconnect)."""
         self.library.share_synced_now()
+        if any(not k.endswith(":n") for k in self.retry_at):
+            self.retry_at = {k: v for k, v in self.retry_at.items() if k.endswith(":n")}
+            self.kick()
 
     async def _on_event(self, ev: dict, _url: str) -> None:
         d = nostr.tag(ev, "d") or ""

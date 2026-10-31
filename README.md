@@ -312,7 +312,7 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 | `OPENWAVE_LANGUAGE` | Metadata language, for example `en`, `hi` or `es`. |
 | `OPENWAVE_LINK` | `1` makes the device visible to other OpenWave devices on the network from the start. The Mac and Android apps set this; it can also be changed in Settings → Devices. |
 | `OPENWAVE_DEVICE_NAME` | The name other devices see. Defaults to the computer's name. |
-| `OPENWAVE_RELAYS` | Comma-separated `wss://` Nostr relays that shared playlists sync through, or `off` to keep shared playlists on this server only. Defaults to four public relays. |
+| `OPENWAVE_RELAYS` | Comma-separated `wss://` Nostr relays that shared playlists sync through, or `off` to keep shared playlists on this server only. Defaults to six public relays. |
 
 </details>
 
