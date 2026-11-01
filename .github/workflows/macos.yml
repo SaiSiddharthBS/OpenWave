@@ -6,6 +6,9 @@ on:
   workflow_call:
   pull_request:
     paths: ["macos/**", "openwave/**"]
+  push:
+    branches: [main]
+    paths: ["macos/**", "openwave/**"]
   workflow_dispatch:
 
 permissions:
