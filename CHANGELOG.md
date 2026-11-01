@@ -34,6 +34,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - Settings → About → **Copy the playback log**, to include in a report when playback misbehaves.
 
 ### Development
+- The Linux build uses fixed, checksum-verified versions of appimagetool and its runtime, so an upstream re-upload can't break a release.
 - `tests/test_connect.py`: pairing, offers from strangers, replays, expired codes, and real WebRTC connections through a test relay.
 - `tests/ui/connect_e2e.mjs` (run in CI): the whole flow in a browser, from Add a phone on the computer to playing, reconnecting, Forget and Remove on the phone, with a layout check of every new screen. `E2E_ENGINE` runs it against a packaged app.
 - The layout audit covers Settings → Phones and Add a phone (20 screens at eight sizes).
