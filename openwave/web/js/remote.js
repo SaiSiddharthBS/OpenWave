@@ -25,6 +25,8 @@ const realFetch = window.fetch.bind(window);
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const RETRY_AFTER = 20000;        // ms before a request may try to connect again after a failure
+let failed = null;                // the last failed try: { at, error }
 
 function load() {
   try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { return null; }
@@ -67,20 +69,26 @@ export async function forget() {
 
 // ------------------------------------------------------------------ connection
 
-function ensure() {
+/** The open connection, or a new one. After a failed try, requests fail at once for a while
+ * instead of each starting another try, or "didn't answer" and Try again would never stay on
+ * screen. `now` tries regardless: someone asked, or something changed. */
+function ensure({ now = false } = {}) {
   if (link?.open) return Promise.resolve(link);
-  opening ??= open().finally(() => { opening = null; });
+  if (!now && !opening && failed && Date.now() - failed.at < RETRY_AFTER) return Promise.reject(failed.error);
+  if (opening && now) setStatus('connecting');
+  opening ??= open(now).finally(() => { opening = null; });
   return opening;
 }
 
-async function open() {
-  setStatus('connecting');
+async function open(now) {
+  if (now || state.status !== 'offline') setStatus('connecting');   // trying again by itself leaves the message up
   let last;
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const l = await mod.connect(device, { onPaired: save, log: (m) => console.debug('[connect]', m) });
       save(device);
       link = l;
+      failed = null;
       l.onclose = lost;
       if (l.api < 1) {
         setStatus('outdated', `Update OpenWave on ${device.name} to use it from this phone.`);
@@ -94,6 +102,7 @@ async function open() {
       await sleep(1500 * attempt);
     }
   }
+  failed = { at: Date.now(), error: last };
   setStatus('offline', last?.message || 'Couldn’t connect.');
   throw last;
 }
@@ -102,7 +111,7 @@ function lost() {
   link = null;
   if (document.visibilityState === 'visible') {
     setStatus('connecting');
-    setTimeout(() => ensure().catch(() => {}), 300);
+    setTimeout(() => ensure({ now: true }).catch(() => {}), 300);
   }
 }
 
@@ -113,7 +122,7 @@ async function revive() {
   if (link?.open && (await link.ping(2500))) return;
   link?.close();
   link = null;
-  ensure().catch(() => {});
+  ensure({ now: true }).catch(() => {});
 }
 
 function apiPath(url) {
@@ -271,7 +280,7 @@ function renderStatus() {
   el.innerHTML = state.status === 'connecting'
     ? `<span class="connect-spin" aria-hidden="true"></span><span class="ellipsis">Connecting to ${name}…</span>`
     : `<span class="connect-msg">${esc(state.message)}</span>${state.status === 'offline' ? '<button class="btn" data-retry>Try again</button>' : ''}`;
-  el.querySelector('[data-retry]')?.addEventListener('click', () => ensure().catch(() => {}));
+  el.querySelector('[data-retry]')?.addEventListener('click', () => ensure({ now: true }).catch(() => {}));
 }
 
 // ------------------------------------------------------------------ service worker bridge
@@ -352,5 +361,5 @@ export async function boot() {
     else if (Date.now() - hiddenAt > 15000 || !link?.open) revive();
   });
   window.addEventListener('online', () => revive());
-  ensure().catch(() => {});
+  ensure({ now: true }).catch(() => {});
 }

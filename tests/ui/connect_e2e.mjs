@@ -316,6 +316,8 @@ async function main() {
       if (process.env.GITHUB_ACTIONS) console.log(`::warning title=connect_e2e removed phone::${why}`);
     }
     ok(removedSaysSo, 'the removed phone says the computer didn’t answer, with Try again');
+    await sleep(4000);
+    ok(await phone.ev(`document.querySelector('#connect-status')?.dataset.state === 'offline'`), '…and it stays on screen instead of going back to Connecting');
     ok(await phone.ev(`(() => { const b = document.querySelector('#connect-status [data-retry]'); if (!b) return false; const r = b.getBoundingClientRect();
       return document.querySelector('#connect-status').contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`), '…on top of everything else, where it can be tapped');
     await layout(phone, out, 'status-offline', PHONE);

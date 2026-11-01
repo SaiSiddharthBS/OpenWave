@@ -23,6 +23,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - **The Android app plays from your computer, anywhere:** share an Add a phone link to OpenWave (or paste it in Settings → Library → Connect to computer) and the app plays from the computer with its notification, lock-screen controls and artwork, on Wi-Fi or mobile data. **Use this phone** switches back to the app's own library, and **Play from your computer** returns to the computer later. The pairing screen in the app offers Use this phone too.
 
 ### Fixed
+- When the computer can't be reached, the phone now keeps showing the message and **Try again**, and keeps trying quietly in the background. It used to fall straight back to "Connecting…", over and over.
 - **A removed phone is cut off at once.** Settings → Phones → Remove now closes the phone's channel before its connection, so the phone is told straight away, and every request is checked against the paired phones, so a removed phone gets nothing even if its connection hasn't closed yet.
 - A pairing link opened while the phone app is already open (shared to the Android app, or in a browser tab that has OpenWave) now pairs; it used to be ignored.
 - The Android app playing from a computer checked for app updates against the computer's version instead of its own; it now compares with its own.
