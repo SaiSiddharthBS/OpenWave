@@ -298,6 +298,7 @@ def test_a_paired_phone_uses_the_engine_through_a_relay(tmp_path):
 
             refused = await phone.request("/api/connect/pair", "POST")
             assert refused["status"] == 403                                         # phones can't pair more phones
+            assert (await phone.request("/api/connect/tailscale", "POST", {"content-type": "application/json"}, {"on": True}))["status"] == 403
             assert (await phone.request("/index.html"))["status"] == 404            # only the API
 
             # Later connections use the phone's own key, not the pairing code.

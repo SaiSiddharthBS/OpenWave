@@ -246,7 +246,7 @@ It works at home, at work and on mobile data, with no port forwarding, VPN or si
 
 A few networks (some workplaces, and some mobile carriers) block direct connections between devices; there the phone says it couldn't connect. These options work everywhere:
 
-- **With Tailscale.** Install [Tailscale](https://tailscale.com/download) on the computer and the iPhone, signed in to the same account. In the Mac app, open **Settings → Phone → Anywhere, with Tailscale → Turn On** and scan the code. On a PC or home server, `tailscale serve 8787` gives the same private HTTPS address.
+- **With Tailscale.** Install [Tailscale](https://tailscale.com/download) (free) on the computer and the iPhone, signed in to the same account. In OpenWave on the computer, open **Settings → Phones → With Tailscale → Turn on** and scan the code, then **Share → Add to Home Screen** on the iPhone. The computer gets a private HTTPS address that only your own devices can open; downloads play offline. On a Docker server, run `tailscale serve --bg --https=8443 http://127.0.0.1:8787` on the server itself.
 - **At home only.** In the Mac app, Settings → Phone → **At home**, then scan the code on the same Wi-Fi. Offline downloads need one of the options above, because browsers only allow them over HTTPS.
 
 <p align="center">

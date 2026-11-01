@@ -14,7 +14,7 @@ import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import { initLink, openDevices, linkLabel, linkEvents, setVisible, rename, forget } from './link.js';
 import { startSharing, openSharing, openJoin, showNotices, isInvite } from './sharing.js';
 import { REMOTE } from './remote.js';
-import { openPairing, removePhone, forgetComputer } from './phones.js';
+import { openPairing, removePhone, forgetComputer, switchTailscale, showTailscaleCode } from './phones.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
   confirmDialog, sampleTint, artistLinks, errorBox, skeleton, empty, avatar,
@@ -439,6 +439,19 @@ const ACTIONS = {
     if (await removePhone(el.dataset.id, el.dataset.label)) render({ keepScroll: true });
   },
   'connect-forget': () => forgetComputer(),
+  'tailscale-check': () => render({ keepScroll: true }),
+  'tailscale-on': async (el) => {
+    el.disabled = true;
+    el.textContent = 'Turning on…';
+    await switchTailscale(true);
+    render({ keepScroll: true });
+  },
+  'tailscale-off': async () => {
+    if (!await confirmDialog('Turn off Tailscale sharing?', 'Phones that open OpenWave through Tailscale stop working until you turn it on again. Phones added with a code keep working.', 'Turn off')) return;
+    await switchTailscale(false);
+    render({ keepScroll: true });
+  },
+  'tailscale-code': () => showTailscaleCode(),
   'np-queue': () => toggleNP('queue'),
   'np-lyrics': () => toggleNP('lyrics'),
   'sheet-queue': () => toggleSheet('queue'),

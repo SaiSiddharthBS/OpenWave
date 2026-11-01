@@ -18,7 +18,27 @@ async function call(path, method = 'GET') {
 /** What Settings needs to know, or null where there's nothing to show (e.g. the Android app). */
 export async function phonesStatus() {
   if (REMOTE || window.OpenWaveAndroid) return null;
-  try { return await call('/api/connect'); } catch { return null; }
+  const [connect, tailscale] = await Promise.all([
+    call('/api/connect').catch(() => null),
+    Promise.race([call('/api/connect/tailscale'), new Promise((r) => setTimeout(r, 5000))]).catch(() => null),
+  ]);
+  return connect && { ...connect, tailscale: tailscale || null };
+}
+
+/** The Tailscale row: private HTTPS for your own devices, for networks that block direct connections. */
+function tailscaleSetting(ts) {
+  if (!ts) return '';
+  const what = 'A private address for this computer that only devices signed in to your own Tailscale account can open. Works on every network, including ones that block direct connections.';
+  const rows = {
+    missing: [`${what} Tailscale is free: install it on this computer and on the phone.`,
+      `<a class="btn" href="${esc(ts.download || 'https://tailscale.com/download')}" target="_blank" rel="noopener">Get Tailscale</a><button class="btn" data-act="tailscale-check">Check again</button>`],
+    signedOut: ['Open Tailscale on this computer and sign in, then check again.', '<button class="btn" data-act="tailscale-check">Check again</button>'],
+    ready: [what, '<button class="btn" data-act="tailscale-on">Turn on</button>'],
+    sharing: [`On at <b>${esc(ts.url)}</b>. Phones signed in to your Tailscale account can open it from anywhere, and downloads play offline.`,
+      `<button class="btn" data-act="tailscale-code">${icon('phone')} Show code</button><button class="btn" data-act="tailscale-off">Turn off</button>`],
+  }[ts.state];
+  if (!rows) return '';
+  return `<div class="setting"><div><b>With Tailscale</b><p>${rows[0]}</p></div><div class="btn-row">${rows[1]}</div></div>`;
 }
 
 function when(seconds) {
@@ -40,12 +60,58 @@ export function phonesSetting(st) {
   }
   if (!st) return '';
   const intro = '<b>Use OpenWave on your phone, anywhere</b><p>Your iPhone (or any phone) plays from this computer at home, at work or on mobile data, with the same profiles and playlists. No accounts, nothing to install.</p>';
-  if (!st.available) return `<h2>Phones</h2><div class="setting"><div>${intro}<p>${esc(st.reason)}</p></div></div>`;
+  if (!st.available) return `<h2>Phones</h2><div class="setting"><div>${intro}<p>${esc(st.reason)}</p></div></div>${tailscaleSetting(st.tailscale)}`;
   const rows = st.devices.map((d) => `<div class="setting sub"><div><b>${esc(d.label)}</b><p>${d.online ? 'Connected now' : d.seen ? `Last used ${esc(when(d.seen))}` : 'Paired'}</p></div>
       <button class="btn" data-act="connect-remove" data-id="${esc(d.id)}" data-label="${esc(d.label)}">Remove</button></div>`).join('');
   return `<h2>Phones</h2>
     <div class="setting"><div>${intro}</div><button class="btn primary" data-act="connect-pair">${icon('phone')} Add a phone</button></div>
-    ${rows}`;
+    ${rows}
+    ${tailscaleSetting(st.tailscale)}`;
+}
+
+/** Turn Tailscale sharing on or off; on success, show the code for the phone. */
+export async function switchTailscale(on) {
+  try {
+    const r = await fetch('/api/connect/tailscale', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ on }) });
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(body.error || body.detail || `Request failed (${r.status})`);
+    if (on && body.url) await showTailscaleCode(body.url);
+    else toast(on ? 'Tailscale is on' : 'Tailscale sharing is off');
+  } catch (e) {
+    toast(e.message, 6000);
+  }
+}
+
+/** The QR code for the Tailscale address, with what to do on the phone. */
+export async function showTailscaleCode(url) {
+  if (!url) {
+    try { url = (await call('/api/connect/tailscale')).url; } catch (e) { toast(e.message, 4000); return; }
+    if (!url) return;
+  }
+  const qr = qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  await openDialog(`<form method="dialog" class="pair-dialog">
+      <h3>Open OpenWave through Tailscale</h3>
+      <div class="pair-body">
+        <div class="pair-qr">${qr.createSvgTag({ cellSize: 4, margin: 2, scalable: true, alt: 'QR code for OpenWave’s Tailscale address' })}</div>
+        <ol class="pair-steps">
+          <li>On the phone, install <b>Tailscale</b> from the App Store and sign in with the same account as this computer.</li>
+          <li>Open the <b>Camera</b>, point it at this code and tap the link.</li>
+          <li>In Safari, tap <b>Share → Add to Home Screen</b>.</li>
+        </ol>
+      </div>
+      <div class="share-link"><input type="text" readonly value="${esc(url)}" aria-label="Tailscale address">
+        <button type="button" class="btn" data-copy>${icon('link')} Copy</button></div>
+      <p class="pair-note">Only devices signed in to your Tailscale account can open this address. Keep this computer on, with OpenWave open, while you listen.</p>
+      <div class="row-btns"><span class="spacer"></span><button class="btn primary" value="ok" data-done>Done</button></div>
+    </form>`, {
+    wide: true,
+    onMount: (d) => {
+      d.querySelector('[data-done]').focus({ preventScroll: true });
+      d.querySelector('[data-copy]').onclick = () => copy(url, d.querySelector('.share-link input'));
+    },
+  });
 }
 
 function copy(text, input) {

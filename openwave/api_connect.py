@@ -1,11 +1,14 @@
-"""Settings → Phones: pair phones with this engine through OpenWave Connect (see connect.py)."""
+"""Settings → Phones: pair phones with this engine through OpenWave Connect (see connect.py), or
+share it privately through Tailscale (tailscale.py)."""
 
 from __future__ import annotations
+
+import asyncio
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from . import connect, shared
+from . import connect, shared, tailscale
 from .config import data_dir
 
 router = APIRouter(prefix="/api/connect")
@@ -74,3 +77,34 @@ async def forget_me(request: Request):
     h.state["devices"].pop(dev, None)
     h._save()
     return {"ok": True}
+
+
+# --------------------------------------------------------------------------- Tailscale (the other way)
+
+
+def _port(request: Request) -> int:
+    server = request.scope.get("server") or ("", 0)
+    return int(server[1] or 0)
+
+
+@router.get("/tailscale")
+async def tailscale_state(request: Request):
+    _from_this_computer(request)
+    return await asyncio.to_thread(tailscale.state, _port(request))
+
+
+@router.post("/tailscale")
+async def tailscale_switch(request: Request):
+    _from_this_computer(request)
+    try:
+        on = bool((await request.json()).get("on"))
+    except ValueError:
+        raise HTTPException(400, "Send {\"on\": true} or {\"on\": false}.") from None
+    port = _port(request)
+    if on:
+        problem = await asyncio.to_thread(tailscale.share, port)
+        if problem:
+            raise HTTPException(409, problem)
+    else:
+        await asyncio.to_thread(tailscale.stop)
+    return await asyncio.to_thread(tailscale.state, port)

@@ -110,6 +110,7 @@ function fake(cat, url) {
   if (p === '/api/app-update') return json({});
   // OpenWave Connect (Settings → Phones), with as many paired phones as names allow.
   if (p === '/api/connect') return json(cat.phones);
+  if (p === '/api/connect/tailscale') return json({ state: 'sharing', url: 'https://the-living-room-mac-mini-of-the-family.tail1234abcd.ts.net:8443/' });
   if (p === '/api/connect/pair') return json({ id: 'audit', link: `https://saisiddharthbs.github.io/OpenWave/app/#connect=${'eyJ2IjoxLCJoIjoi'.repeat(14)}`, expires: 0 });
   return null;
 }
@@ -213,6 +214,7 @@ const SCREENS = [
   { name: 'on-repeat', hash: '#/smart/on-repeat', route: 'library', expect: '.view .row' },
   { name: 'insights', hash: '#/insights', route: 'insights', expect: '.view h1' },
   { name: 'settings', hash: '#/settings', route: 'settings', expect: '.view [data-act=connect-remove]' },
+  { name: 'tailscale-code', hash: '#/settings', route: 'settings', steps: [`document.querySelector('[data-act=tailscale-code]').click()`], expect: '#dialog .pair-qr svg' },
   { name: 'add-a-phone', hash: '#/settings', route: 'settings', steps: [`document.querySelector('[data-act=connect-pair]').click()`, `document.querySelector('#dialog details').open = true`], expect: '#dialog .pair-qr svg' },
   { name: 'track-menu', hash: '#/album/MPREb_audit', route: 'album', steps: [`document.querySelector('.view .row [data-menu]').click()`], expect: '#menu .menu-head' },
   { name: 'shared-playlist', hash: '#/my/auditshared', route: 'library', expect: '.view .row .added-by' },
