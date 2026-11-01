@@ -301,8 +301,9 @@ async function main() {
     await desk.ev(`document.querySelector('#dialog [value=ok]').click(); true`);
     ok(await until(desk, `!document.querySelector('[data-act=connect-remove]')`, 10000), 'Remove takes it off the list');
     await phone.send('Page.bringToFront');
-    ok(await until(phone, `document.querySelector('#connect-status')?.dataset.state === 'offline'`, 60000), 'the removed phone says the computer didn’t answer, with Try again');
-    ok(await phone.ev(`(() => { const r = document.querySelector('#connect-status [data-retry]').getBoundingClientRect();
+    // The phone notices only when its connection times out (about half a minute), then tries again.
+    ok(await until(phone, `document.querySelector('#connect-status')?.dataset.state === 'offline'`, 120000), 'the removed phone says the computer didn’t answer, with Try again');
+    ok(await phone.ev(`(() => { const b = document.querySelector('#connect-status [data-retry]'); if (!b) return false; const r = b.getBoundingClientRect();
       return document.querySelector('#connect-status').contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`), '…on top of everything else, where it can be tapped');
     await layout(phone, out, 'status-offline', PHONE);
     await shot(phone, out, 'status-offline');
