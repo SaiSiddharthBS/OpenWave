@@ -197,6 +197,9 @@ async function main() {
     await phone.send('Network.setUserAgentOverride', { userAgent: IPHONE, platform: 'iPhone' });
     await phone.send('Emulation.setDeviceMetricsOverride', PHONE);
     await phone.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 });
+    // Keep the phone app's connection log, to show if a check about the connection fails.
+    await phone.send('Page.addScriptToEvaluateOnNewDocument', { source: `{ const d = console.debug; window.__connectLog = [];
+      console.debug = (...a) => { if (a[0] === '[connect]') window.__connectLog.push(new Date().toISOString().slice(14, 23) + ' ' + a.slice(1).join(' ')); d.apply(console, a); }; }` });
     await phone.send('Page.bringToFront');
     await phone.send('Page.navigate', { url: link });
     ok(await until(phone, `document.querySelector('#connect-screen h1')?.textContent.includes('Home Screen')`), 'opened in Safari, it suggests adding OpenWave to the Home Screen');
@@ -302,7 +305,15 @@ async function main() {
     ok(await until(desk, `!document.querySelector('[data-act=connect-remove]')`, 10000), 'Remove takes it off the list');
     await phone.send('Page.bringToFront');
     // The phone notices only when its connection times out (about half a minute), then tries again.
-    ok(await until(phone, `document.querySelector('#connect-status')?.dataset.state === 'offline'`, 120000), 'the removed phone says the computer didn’t answer, with Try again');
+    const removedSaysSo = await until(phone, `document.querySelector('#connect-status')?.dataset.state === 'offline'`, 120000);
+    if (!removedSaysSo) {
+      const why = await phone.ev(`JSON.stringify({ status: document.querySelector('#connect-status')?.dataset.state || null, hidden: document.querySelector('#connect-status')?.hidden,
+        text: document.querySelector('#connect-status')?.textContent?.trim().slice(0, 120), visibility: document.visibilityState, screen: !!document.getElementById('connect-screen'),
+        device: (({ paired, ticket }) => ({ paired, ticket: !!ticket }))(JSON.parse(localStorage.getItem('openwave:connect') || '{}')), log: (window.__connectLog || []).slice(-12) })`).catch((e) => e.message);
+      console.log(`      phone: ${why}`);
+      if (process.env.GITHUB_ACTIONS) console.log(`::warning title=connect_e2e removed phone::${why}`);
+    }
+    ok(removedSaysSo, 'the removed phone says the computer didn’t answer, with Try again');
     ok(await phone.ev(`(() => { const b = document.querySelector('#connect-status [data-retry]'); if (!b) return false; const r = b.getBoundingClientRect();
       return document.querySelector('#connect-status').contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`), '…on top of everything else, where it can be tapped');
     await layout(phone, out, 'status-offline', PHONE);

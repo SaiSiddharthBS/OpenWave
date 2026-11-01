@@ -47,6 +47,7 @@ export function onStatus(fn) {
 }
 
 function setStatus(status, message = '') {
+  if (status !== state?.status) console.debug('[connect]', status, message);
   state = { status, message };
   for (const fn of listeners) fn(state);
   renderStatus();
