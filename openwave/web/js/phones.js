@@ -6,6 +6,7 @@ import { esc, icon, toast, confirmDialog, openDialog } from './ui.js';
 import { shareText } from './native.js';
 import qrcode from './vendor/qrcode.js';
 import { REMOTE, computer, forget } from './remote.js';
+import { store } from './store.js';
 
 async function call(path, method = 'GET') {
   const r = await fetch(path, { method });
@@ -63,11 +64,12 @@ function tailscaleSetting(ts) {
   return `<div class="setting"><div><b>With Tailscale</b><p>${rows[0]}</p></div><div class="btn-row">${rows[1]}</div></div>`;
 }
 
-/** The Windows app: start in the background at sign-in, for a computer that's always on. */
+/** The Windows and Linux apps: start in the background at sign-in, for a computer that's always on. */
 function startupSetting(st) {
   if (!st?.available) return '';
-  const about = 'OpenWave opens in the background when you sign in to Windows, so phones can play from this computer without anyone opening it.';
-  return `<div class="setting"><div><b>Start with Windows</b><p>${st.on ? `On. ${about} Closing the OpenWave window leaves it running.` : `${about} Good for a computer that’s always on.`}</p></div>
+  const windows = st.system === 'Windows';
+  const about = `OpenWave opens in the background when you ${windows ? 'sign in to Windows' : 'log in'}, so phones can play from this computer without anyone opening it.`;
+  return `<div class="setting"><div><b>${windows ? 'Start with Windows' : 'Start when you log in'}</b><p>${st.on ? `On. ${about} Closing the OpenWave window leaves it running.` : `${about} Good for a computer that’s always on.`}</p></div>
     <button class="btn" data-act="startup-switch" data-on="${st.on ? '' : '1'}">${st.on ? 'Turn off' : 'Turn on'}</button></div>`;
 }
 
@@ -77,7 +79,7 @@ export async function switchStartup(on) {
     const r = await fetch('/api/connect/startup', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ on }) });
     const body = await r.json().catch(() => ({}));
     if (!r.ok) throw new Error(body.error || body.detail || `Request failed (${r.status})`);
-    toast(on ? 'OpenWave starts with Windows' : 'OpenWave no longer starts with Windows');
+    toast(on ? 'OpenWave will start when you sign in' : 'OpenWave won’t start when you sign in');
   } catch (e) {
     toast(e.message, 6000);
   }
@@ -99,13 +101,15 @@ export function phonesSetting(st) {
     const name = esc(c?.name || 'your computer');
     return `<h2>Connection</h2>
       <div class="setting"><div><b>Playing from ${name}</b><p>This phone uses OpenWave on ${name}, at home or away. Keep it on, with OpenWave open, while you listen.</p></div>
-        <button class="btn" data-act="connect-forget">Forget</button></div>`;
+        <button class="btn" data-act="connect-forget">Forget</button></div>
+      ${window.OpenWaveAndroid ? `<div class="setting"><div><b>Use this phone instead</b><p>Play from the OpenWave app’s own library on this phone. ${name} stays paired, so you can come back.</p></div>
+        <button class="btn" data-act="android-use-phone">Use this phone</button></div>` : ''}`;
   }
   if (!st) return '';
   const intro = '<b>Use OpenWave on your phone, anywhere</b><p>Your iPhone (or any phone) plays from this computer at home, at work or on mobile data, with the same profiles and playlists. No accounts, nothing to install.</p>';
   if (!st.available) return `<h2>Phones</h2><div class="setting"><div>${intro}<p>${esc(st.reason)}</p></div></div>${startupSetting(st.startup)}${tailscaleSetting(st.tailscale)}`;
-  const rows = st.devices.map((d) => `<div class="setting sub"><div><b>${esc(d.label)}</b><p>${d.online ? 'Connected now' : d.seen ? `Last used ${esc(when(d.seen))}` : 'Paired'}</p></div>
-      <button class="btn" data-act="connect-remove" data-id="${esc(d.id)}" data-label="${esc(d.label)}">Remove</button></div>`).join('');
+  const rows = st.devices.map((d) => `<div class="setting sub"><div><b>${esc(d.label)}</b><p>${d.online ? 'Connected now' : d.seen ? `Last used ${esc(when(d.seen))}` : 'Paired'}${d.profiles?.length ? ` · Keeps ${esc(d.profiles.join(', '))}’s profile to itself` : ''}</p></div>
+      <button class="btn" data-act="connect-remove" data-id="${esc(d.id)}" data-label="${esc(d.label)}" data-kept="${esc((d.profiles || []).join(', '))}">Remove</button></div>`).join('');
   return `<h2>Phones</h2>
     <div class="setting"><div>${intro}</div><button class="btn primary" data-act="connect-pair">${icon('phone')} Add a phone</button></div>
     ${rows}
@@ -232,8 +236,9 @@ export async function openPairing() {
   clearTimeout(timer);
 }
 
-export async function removePhone(id, label) {
-  if (!await confirmDialog(`Remove this ${label}?`, `It won’t be able to use OpenWave on this computer any more. To use it again, add it again.`, 'Remove')) return false;
+export async function removePhone(id, label, kept = '') {
+  const note = kept ? ` ${kept}’s profile is kept on this phone; once it’s removed, the profile can be opened on this computer and other phones again.` : '';
+  if (!await confirmDialog(`Remove this ${label}?`, `It won’t be able to use OpenWave on this computer any more. To use it again, add it again.${note}`, 'Remove')) return false;
   try {
     await call(`/api/connect/devices/${encodeURIComponent(id)}/remove`, 'POST');
     toast(`Removed the ${label}`);
@@ -246,6 +251,7 @@ export async function removePhone(id, label) {
 
 export async function forgetComputer() {
   const name = computer()?.name || 'your computer';
-  if (!await confirmDialog(`Forget ${name}?`, `This phone stops playing from ${name}. Songs you downloaded stay on this phone. To use it again, scan a new code from ${name}.`, 'Forget')) return;
+  const note = store.profile?.private ? ` Your profile stops being kept on this phone: it can be opened on ${name} and other phones again.` : '';
+  if (!await confirmDialog(`Forget ${name}?`, `This phone stops playing from ${name}. Songs you downloaded stay on this phone. To use it again, scan a new code from ${name}.${note}`, 'Forget')) return;
   await forget();
 }

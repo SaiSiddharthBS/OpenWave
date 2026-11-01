@@ -191,6 +191,10 @@ def test_app_update_offers_the_right_download(monkeypatch):
 
     phone = asyncio.run(releases.check(None, "android"))
     assert phone["available"] and phone["download"].endswith("OpenWave-Android.apk") and phone["latest"] == "99.0.0"
+    # The Android app playing from a computer: compared with the app's version, not the computer's.
+    assert not asyncio.run(releases.check(None, "android", "99.0.0"))["available"]
+    assert asyncio.run(releases.check(None, "android", "98.1"))["available"]
+    assert asyncio.run(releases.check(None, "android", "<script>"))["current"] == releases.__version__
 
     monkeypatch.setattr(releases, "FROZEN", False)  # Docker / source install: never offered a download
     assert not asyncio.run(releases.check(None))["available"]

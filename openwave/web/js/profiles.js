@@ -2,6 +2,7 @@
 
 import { store } from './store.js';
 import { $, esc, icon, toast, avatar } from './ui.js';
+import { REMOTE, computer } from './remote.js';
 
 const COLORS = ['#7b7bff', '#2fc8ff', '#c45cff', '#ff6fae', '#ffb648', '#3ddc97', '#ff6b6b', '#8f7cff'];
 
@@ -47,7 +48,7 @@ function show(message, done) {
     if (!list.length) return create(true);
     frame(`<h1>Who’s listening?</h1>${message ? `<p class="profiles-msg">${esc(message)}</p>` : ''}
       <div class="profile-grid">
-        ${list.map((p) => `<button class="profile-tile" data-pid="${esc(p.id)}">${avatar(p, 96)}<b>${esc(p.name)}</b>${p.hasPin ? `<small>${icon('lock')} PIN</small>` : '<small>&nbsp;</small>'}</button>`).join('')}
+        ${list.map((p) => `<button class="profile-tile" data-pid="${esc(p.id)}">${avatar(p, 96)}<b>${esc(p.name)}</b>${p.private ? `<small>${icon('lock')} This phone only</small>` : p.hasPin ? `<small>${icon('lock')} PIN</small>` : '<small>&nbsp;</small>'}</button>`).join('')}
         <button class="profile-tile add" data-p="add"><span class="avatar add">${icon('plus')}</span><b>Add profile</b><small>&nbsp;</small></button>
       </div>
       <p class="profiles-hint">Each profile has its own likes, playlists, history and insights. They sync to every device using this OpenWave server.</p>`);
@@ -86,6 +87,8 @@ function show(message, done) {
         <div class="avatar-preview">${avatar({ name: '?', color }, 96)}</div>
         <input name="name" type="text" placeholder="Your name" maxlength="40" required autocomplete="off">
         <div class="swatches">${COLORS.map((c) => `<button type="button" class="swatch ${c === color ? 'on' : ''}" data-c="${c}" style="background:${c}" aria-label="Colour"></button>`).join('')}</div>
+        ${REMOTE ? `<label class="pin-toggle"><input type="checkbox" name="onlyhere"> Only on this phone</label>
+        <p class="profiles-hint only-here-hint" hidden>Your profile won’t appear on ${esc(computer()?.name || 'the computer')} or anyone else’s phone, and can’t be opened there.</p>` : ''}
         <label class="pin-toggle"><input type="checkbox" name="usepin"> Protect with a PIN</label>
         <input name="pin" class="pin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" maxlength="8" placeholder="4–8 digits" hidden>
         <div class="row-btns">${first ? '' : '<button type="button" class="btn" data-p="back">Back</button>'}<button class="btn primary">Start listening</button></div>
@@ -96,13 +99,14 @@ function show(message, done) {
     name.oninput = preview;
     name.focus();
     form.querySelectorAll('.swatch').forEach((s) => { s.onclick = () => { color = s.dataset.c; form.querySelectorAll('.swatch').forEach((x) => x.classList.toggle('on', x === s)); preview(); }; });
+    if (form.elements.onlyhere) form.elements.onlyhere.onchange = () => { form.querySelector('.only-here-hint').hidden = !form.elements.onlyhere.checked; };
     form.elements.usepin.onchange = () => { form.elements.pin.hidden = !form.elements.usepin.checked; form.elements.pin.required = form.elements.usepin.checked; };
     el.querySelector('[data-p=back]')?.addEventListener('click', pick);
     form.onsubmit = async (e) => {
       e.preventDefault();
       try {
         const pin = form.elements.usepin.checked ? form.elements.pin.value : null;
-        const r = await store.createProfile(name.value.trim(), pin, color);
+        const r = await store.createProfile(name.value.trim(), pin, color, !!form.elements.onlyhere?.checked);
         finish(store.profile, r.migrated);
       } catch (err) {
         toast(err.message);

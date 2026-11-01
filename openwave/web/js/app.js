@@ -14,7 +14,7 @@ import { initGestures } from './gestures.js';
 import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import { initLink, openDevices, linkLabel, linkEvents, setVisible, rename, forget } from './link.js';
 import { startSharing, openSharing, openJoin, showNotices, isInvite } from './sharing.js';
-import { REMOTE } from './remote.js';
+import { REMOTE, computer } from './remote.js';
 import { openPairing, removePhone, forgetComputer, switchTailscale, showTailscaleCode, switchStartup } from './phones.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
@@ -437,7 +437,7 @@ const ACTIONS = {
     if (location.hash.startsWith('#/settings')) render({ keepScroll: true });
   },
   'connect-remove': async (el) => {
-    if (await removePhone(el.dataset.id, el.dataset.label)) render({ keepScroll: true });
+    if (await removePhone(el.dataset.id, el.dataset.label, el.dataset.kept)) render({ keepScroll: true });
   },
   'connect-forget': () => forgetComputer(),
   'tailscale-check': () => render({ keepScroll: true }),
@@ -502,13 +502,17 @@ const ACTIONS = {
     if (!window.OpenWaveAndroid.addWidget()) toast('Long-press your home screen, tap Widgets and find OpenWave', 5000);
   },
   'android-set-server': async () => {
-    const url = await askText('OpenWave on your computer', { value: window.OpenWaveAndroid.getServer() || 'http://', placeholder: 'http://192.168.1.20:47878', ok: 'Connect' });
+    const url = await askText('Pairing link or address', { value: window.OpenWaveAndroid.getServer() || '', placeholder: 'https://…/OpenWave/app/#connect=…', ok: 'Connect' });
     if (!url) return;
     toast('Connecting…');
     const error = window.OpenWaveAndroid.setServer(url);
     if (error) toast(error, 5000);
   },
   'android-use-phone': () => window.OpenWaveAndroid.setServer(''),
+  'android-use-computer': () => {
+    const error = window.OpenWaveAndroid.useComputer();
+    if (error) toast(error, 5000);
+  },
   'import-playlists': () => openImport(),
   'join-shared': () => openJoin(),
   'share-playlist': () => { const p = store.playlist(page.collection?.localId); if (p) startSharing(p); },
@@ -527,6 +531,21 @@ const ACTIONS = {
     try { await store.updateProfile({ pin }); toast('PIN set'); } catch (e) { toast(e.message); }
   },
   'remove-pin': async () => { await store.updateProfile({ removePin: true }); toast('PIN removed'); },
+  'profile-private': async (el) => {
+    const on = !!el.dataset.on;
+    const pc = computer()?.name || 'the computer';
+    if (on && !await confirmDialog('Keep your profile on this phone only?',
+      `It disappears from ${pc} and everyone else’s phones, and anywhere else it’s open is signed out. If this phone is ever removed from ${pc}, your profile can be opened there again.`,
+      'Keep it here', { danger: false })) return;
+    el.disabled = true;
+    try {
+      await store.updateProfile({ private: on });
+      toast(on ? 'Your profile is only on this phone now' : 'Your profile can be opened on every device again');
+    } catch (e) {
+      toast(e.message, 5000);
+    }
+    render({ keepScroll: true });
+  },
   'switch-profile': async () => { await switchProfile(); renderProfileChip(); render(); },
   'delete-profile': async () => {
     if (await confirmDialog('Delete this profile?', `“${store.profile.name}” and all its likes, playlists and history will be permanently deleted from the server.`, 'Delete profile')) {

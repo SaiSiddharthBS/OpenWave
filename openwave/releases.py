@@ -8,6 +8,7 @@ update their own way and are never offered a download.
 from __future__ import annotations
 
 import platform
+import re
 import sys
 import time
 
@@ -81,14 +82,17 @@ async def latest_release(client: httpx.AsyncClient) -> dict | None:
     return release
 
 
-async def check(client: httpx.AsyncClient, client_hint: str | None = None) -> dict:
+async def check(client: httpx.AsyncClient, client_hint: str | None = None, current: str | None = None) -> dict:
+    """`current`: the asking app's own version, when that isn't this engine's (the Android app
+    playing from a computer)."""
     release = await latest_release(client)
     target = device(client_hint)
-    result = {"current": __version__, "latest": None, "newer": False, "available": False,
+    current = current if current and re.fullmatch(r"v?\d+(\.\d+){0,3}", current) else __version__
+    result = {"current": current, "latest": None, "newer": False, "available": False,
               "device": target, "download": None, "page": None}
     if not release or not release["version"]:
         return result
-    result.update(latest=release["version"], page=release["page"], newer=is_newer(release["version"], __version__))
+    result.update(latest=release["version"], page=release["page"], newer=is_newer(release["version"], current))
     if target and result["newer"]:
         result["download"] = release["assets"].get(DOWNLOADS[target])
         result["available"] = result["download"] is not None

@@ -19,6 +19,10 @@ from pathlib import Path
 
 from . import nostr, shared
 
+ONLY_PAIRED_PHONES = "Only a phone added with Settings → Phones → Add a phone can keep a profile to itself."
+RELEASED = ("Your profile isn’t kept on one phone any more: that phone no longer uses OpenWave on this computer, "
+            "so other devices can open it again. To keep it on your phone, open Settings → Profile there.")
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS profiles (
   id TEXT PRIMARY KEY, name TEXT NOT NULL, color TEXT, pin_hash TEXT,
@@ -56,6 +60,12 @@ CREATE TABLE IF NOT EXISTS searches (
 );
 CREATE TABLE IF NOT EXISTS settings (
   profile_id TEXT PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE, data TEXT NOT NULL
+);
+-- A profile kept on one phone (Settings → Profile → Only on this phone): it isn't listed on, and
+-- can't be opened from, any other device. `device` is the phone's OpenWave Connect id (connect.py),
+-- which only a request over that phone's own encrypted connection carries.
+CREATE TABLE IF NOT EXISTS private_profiles (
+  profile_id TEXT PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE, device TEXT NOT NULL, since REAL NOT NULL
 );
 CREATE TABLE IF NOT EXISTS identities (
   profile_id TEXT PRIMARY KEY REFERENCES profiles(id) ON DELETE CASCADE, secret TEXT NOT NULL
@@ -173,18 +183,38 @@ class Library:
             raise LibraryError("not your playlist", 403)
 
     # ------------------------------------------------------------------ profiles & sessions
-    def profiles(self) -> list[dict]:
-        with self.lock:
-            rows = self._q("SELECT id, name, color, pin_hash IS NOT NULL AS has_pin FROM profiles ORDER BY created_at").fetchall()
-        return [{"id": r["id"], "name": r["name"], "color": r["color"], "hasPin": bool(r["has_pin"])} for r in rows]
+    # `viewer` is the paired phone a request came from (its OpenWave Connect id), or None for
+    # everything else: the computer itself, the home Wi-Fi, Tailscale. A profile kept on one phone
+    # exists only for that phone.
+    _PROFILE_ROWS = ("SELECT p.id, p.name, p.color, p.pin_hash IS NOT NULL AS has_pin, pp.device AS kept_on "
+                     "FROM profiles p LEFT JOIN private_profiles pp ON pp.profile_id = p.id")
 
-    def create_profile(self, name: str, color: str | None = None, pin: str | None = None, device: str = "") -> dict:
+    @staticmethod
+    def _profile(r) -> dict:
+        return {"id": r["id"], "name": r["name"], "color": r["color"], "hasPin": bool(r["has_pin"]), "private": r["kept_on"] is not None}
+
+    @staticmethod
+    def _shows(r, viewer: str | None) -> bool:
+        return r["kept_on"] is None or (viewer is not None and r["kept_on"] == viewer)
+
+    def profiles(self, viewer: str | None = None) -> list[dict]:
+        with self.lock:
+            rows = self._q(self._PROFILE_ROWS + " ORDER BY p.created_at").fetchall()
+        return [self._profile(r) for r in rows if self._shows(r, viewer)]
+
+    def _profile_row(self, profile_id: str):
+        return self._q(self._PROFILE_ROWS + " WHERE p.id = ?", (profile_id,)).fetchone()
+
+    def create_profile(self, name: str, color: str | None = None, pin: str | None = None, device: str = "",
+                       viewer: str | None = None, private: bool = False) -> dict:
         name = (name or "").strip()[:40]
         if not name:
             raise LibraryError("name required")
         if pin is not None and not (pin.isdigit() and 4 <= len(pin) <= 8):
             raise LibraryError("PIN must be 4–8 digits")
-        with self.lock:
+        if private and viewer is None:
+            raise LibraryError(ONLY_PAIRED_PHONES)
+        with self._tx():
             count = self._q("SELECT COUNT(*) FROM profiles").fetchone()[0]
             if count >= 50:
                 raise LibraryError("too many profiles on this server")
@@ -192,7 +222,9 @@ class Library:
             color = color if color in COLORS else COLORS[count % len(COLORS)]
             self._q("INSERT INTO profiles (id, name, color, pin_hash, created_at) VALUES (?, ?, ?, ?, ?)",
                     (pid, name, color, _hash_pin(pin) if pin else None, time.time()))
-            return {"profile": {"id": pid, "name": name, "color": color, "hasPin": bool(pin)}, "token": self._new_session(pid, device)}
+            if private:
+                self._q("INSERT INTO private_profiles (profile_id, device, since) VALUES (?, ?, ?)", (pid, viewer, time.time()))
+            return {"profile": self._profile(self._profile_row(pid)), "token": self._new_session(pid, device)}
 
     def _new_session(self, profile_id: str, device: str) -> str:
         token = secrets.token_urlsafe(32)
@@ -201,11 +233,11 @@ class Library:
                 (_token_hash(token), profile_id, device[:120], now, now))
         return token
 
-    def login(self, profile_id: str, pin: str | None = None, device: str = "") -> dict:
+    def login(self, profile_id: str, pin: str | None = None, device: str = "", viewer: str | None = None) -> dict:
         with self.lock:
             row = self._q("SELECT * FROM profiles WHERE id = ?", (profile_id,)).fetchone()
-            if not row:
-                raise LibraryError("profile not found", 404)
+            if not row or not self._shows(self._profile_row(profile_id), viewer):
+                raise LibraryError("profile not found", 404)   # a profile kept on another phone doesn't exist here
             if row["pin_hash"]:
                 recent = [t for t in self.failed_pins[profile_id] if t > time.time() - 600]
                 self.failed_pins[profile_id] = recent
@@ -214,15 +246,20 @@ class Library:
                 if not pin or not _check_pin(pin, row["pin_hash"]):
                     recent.append(time.time())
                     raise LibraryError("wrong PIN", 401)
-            profile = {"id": row["id"], "name": row["name"], "color": row["color"], "hasPin": bool(row["pin_hash"])}
-            return {"profile": profile, "token": self._new_session(profile_id, device)}
+            return {"profile": self._profile(self._profile_row(profile_id)), "token": self._new_session(profile_id, device)}
 
-    def authenticate(self, token: str | None) -> str:
+    def authenticate(self, token: str | None, viewer: str | None = None) -> str:
         if not token:
             raise LibraryError("sign in to a profile first", 401)
         with self.lock:
-            row = self._q("SELECT profile_id FROM sessions WHERE token_hash = ?", (_token_hash(token),)).fetchone()
+            row = self._q("SELECT s.profile_id, pp.device AS kept_on FROM sessions s "
+                          "LEFT JOIN private_profiles pp ON pp.profile_id = s.profile_id WHERE s.token_hash = ?",
+                          (_token_hash(token),)).fetchone()
             if not row:
+                raise LibraryError("session expired, pick your profile again", 401)
+            if not self._shows(row, viewer):
+                # Signed in before the profile was kept on one phone, or a copied token: never valid here.
+                self._q("DELETE FROM sessions WHERE token_hash = ?", (_token_hash(token),))
                 raise LibraryError("session expired, pick your profile again", 401)
             self._q("UPDATE sessions SET last_seen = ? WHERE token_hash = ?", (time.time(), _token_hash(token)))
             return row["profile_id"]
@@ -231,8 +268,20 @@ class Library:
         with self.lock:
             self._q("DELETE FROM sessions WHERE token_hash = ?", (_token_hash(token),))
 
-    def update_profile(self, profile_id: str, name: str | None = None, color: str | None = None, pin: str | None = None, remove_pin: bool = False) -> dict:
-        with self.lock:
+    def update_profile(self, profile_id: str, name: str | None = None, color: str | None = None, pin: str | None = None,
+                       remove_pin: bool = False, private: bool | None = None, viewer: str | None = None, token: str | None = None) -> dict:
+        """`private`: keep the profile on the phone asking (`viewer`), or open it to every device again.
+        The caller has authenticated `token` as `viewer`, so only that phone can change it back."""
+        if private and viewer is None:
+            raise LibraryError(ONLY_PAIRED_PHONES)
+        with self._tx():
+            if private:
+                self._q("INSERT INTO private_profiles (profile_id, device, since) VALUES (?, ?, ?) "
+                        "ON CONFLICT(profile_id) DO UPDATE SET device = excluded.device", (profile_id, viewer, time.time()))
+                # Everywhere else it was open is signed out now, not just on its next request.
+                self._q("DELETE FROM sessions WHERE profile_id = ? AND token_hash != ?", (profile_id, _token_hash(token or "")))
+            elif private is False:
+                self._q("DELETE FROM private_profiles WHERE profile_id = ?", (profile_id,))
             if name is not None and name.strip():
                 self._q("UPDATE profiles SET name = ? WHERE id = ?", (name.strip()[:40], profile_id))
                 me = nostr.public_key(self.identity(profile_id))
@@ -247,11 +296,32 @@ class Library:
                 self._q("UPDATE profiles SET pin_hash = ? WHERE id = ?", (_hash_pin(pin), profile_id))
             elif remove_pin:
                 self._q("UPDATE profiles SET pin_hash = NULL WHERE id = ?", (profile_id,))
-        return next(p for p in self.profiles() if p["id"] == profile_id)
+            return self._profile(self._profile_row(profile_id))
 
     def delete_profile(self, profile_id: str) -> None:
         with self.lock:
             self._q("DELETE FROM profiles WHERE id = ?", (profile_id,))
+
+    # A profile is never locked away: when the phone it's kept on stops using this computer
+    # (removed in Settings → Phones, Forget on the phone, or a reset pairing file), it's open again,
+    # with a note saying why.
+    def private_devices(self) -> dict[str, list[str]]:
+        """Paired phone → names of the profiles kept on it (for Settings → Phones on the computer)."""
+        out: dict[str, list[str]] = defaultdict(list)
+        with self.lock:
+            for r in self._q("SELECT pp.device, p.name FROM private_profiles pp JOIN profiles p ON p.id = pp.profile_id ORDER BY p.created_at"):
+                out[r["device"]].append(r["name"])
+        return dict(out)
+
+    def release_phones(self, gone=None, keep: set[str] | None = None) -> list[str]:
+        """Open the profiles kept on the phone `gone`, or on any phone not in `keep`; returns their names."""
+        with self._tx():
+            rows = [r for r in self._q("SELECT pp.profile_id, pp.device, p.name FROM private_profiles pp JOIN profiles p ON p.id = pp.profile_id")
+                    if (gone is not None and r["device"] == gone) or (keep is not None and r["device"] not in keep)]
+            for r in rows:
+                self._q("DELETE FROM private_profiles WHERE profile_id = ?", (r["profile_id"],))
+                self._q("INSERT INTO notices (profile_id, text, at) VALUES (?, ?, ?)", (r["profile_id"], RELEASED, time.time()))
+        return [r["name"] for r in rows]
 
     # ------------------------------------------------------------------ reading
     def version(self, profile_id: str) -> int:
@@ -292,7 +362,7 @@ class Library:
             searches = [r["query"] for r in self._q("SELECT query FROM searches WHERE profile_id = ? ORDER BY at DESC LIMIT 12", (profile_id,))]
             srow = self._q("SELECT data FROM settings WHERE profile_id = ?", (profile_id,)).fetchone()
         return {
-            "profile": {"id": prof["id"], "name": prof["name"], "color": prof["color"], "hasPin": bool(prof["pin_hash"])},
+            "profile": self._profile(self._profile_row(profile_id)),
             "version": prof["version"],
             "liked": liked,
             "playlists": playlists,

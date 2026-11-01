@@ -164,9 +164,12 @@ private struct PhonesView: View {
                     VStack(alignment: .leading) {
                         Text(d["label"] as? String ?? "Phone")
                         Text(seen(d)).font(.caption).foregroundStyle(.secondary)
+                        if let kept = keeps(d) {
+                            Text("Keeps \(kept)’s profile to itself").font(.caption).foregroundStyle(.secondary)
+                        }
                     }
                     Spacer()
-                    Button("Remove") { Task { await remove(d["id"] as? String ?? "") } }
+                    Button("Remove") { Task { await remove(d["id"] as? String ?? "", keeping: keeps(d)) } }
                 }
             }
             if let problem { Text(problem).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
@@ -186,6 +189,12 @@ private struct PhonesView: View {
               let ids = ticket["devices"] as? [String], !ids.isEmpty else { return nil }
         let names = devices.filter { ids.contains($0["id"] as? String ?? "") }.compactMap { $0["label"] as? String }
         return names.isEmpty ? nil : "✓ \(names.joined(separator: ", ")) \(names.count == 1 ? "is" : "are") connected."
+    }
+
+    /// Whose profile this phone keeps (Settings → Profile → Only on this phone, on the phone).
+    private func keeps(_ d: [String: Any]) -> String? {
+        let names = d["profiles"] as? [String] ?? []
+        return names.isEmpty ? nil : names.joined(separator: ", ")
     }
 
     private func seen(_ d: [String: Any]) -> String {
@@ -221,10 +230,11 @@ private struct PhonesView: View {
         } catch { problem = error.localizedDescription }
     }
 
-    private func remove(_ id: String) async {
+    private func remove(_ id: String, keeping kept: String?) async {
         let alert = NSAlert()
         alert.messageText = "Remove this phone?"
         alert.informativeText = "It won’t be able to use OpenWave on this Mac any more. To use it again, add it again."
+            + (kept.map { " \($0)’s profile is kept on this phone; once it’s removed, the profile can be opened on this Mac and other phones again." } ?? "")
         alert.addButton(withTitle: "Remove")
         alert.addButton(withTitle: "Cancel")
         guard alert.runModal() == .alertFirstButtonReturn else { return }

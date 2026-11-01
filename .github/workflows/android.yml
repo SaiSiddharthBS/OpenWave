@@ -8,6 +8,9 @@ on:
   workflow_call:
   pull_request:
     paths: ["android/**", "openwave/**"]
+  push:
+    branches: [main]
+    paths: ["android/**", "openwave/**"]
   workflow_dispatch:
 
 permissions:

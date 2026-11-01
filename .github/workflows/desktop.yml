@@ -117,6 +117,20 @@ jobs:
           OPENWAVE_DATA=$(mktemp -d) PATH=/usr/bin:/bin dist/OpenWave/OpenWave --server-only --port 47999 &
           for i in $(seq 1 60); do curl -sf localhost:47999/api/health > health.json && break; sleep 1; done
           cat health.json && grep -q '"deno"' health.json && grep -q '"connect":true' health.json
+      - name: Smoke test Start when you log in
+        run: |
+          export OPENWAVE_DATA=$(mktemp -d) XDG_CONFIG_HOME=$(mktemp -d) APPIMAGE=$PWD/dist/OpenWave/OpenWave
+          dist/OpenWave/OpenWave --background & engine=$!
+          for i in $(seq 1 60); do curl -sf localhost:47878/api/health > /dev/null && break; sleep 1; done
+          curl -sf localhost:47878/api/health > /dev/null || { echo "--background did not start the engine"; exit 1; }
+          timeout 30 dist/OpenWave/OpenWave --background || { echo "a second --background did not leave"; exit 1; }
+          curl -sf localhost:47878/api/connect/startup | tee st.json && grep -q '"available":true,"on":false,"system":"Linux"' st.json
+          curl -sf -X POST -H 'content-type: application/json' -d '{"on":true}' localhost:47878/api/connect/startup | grep -q '"on":true'
+          cat "$XDG_CONFIG_HOME/autostart/openwave.desktop"
+          grep -qx "Exec=\"$APPIMAGE\" --background" "$XDG_CONFIG_HOME/autostart/openwave.desktop"
+          curl -sf -X POST -H 'content-type: application/json' -d '{"on":false}' localhost:47878/api/connect/startup | grep -q '"on":false'
+          test ! -e "$XDG_CONFIG_HOME/autostart/openwave.desktop"
+          kill $engine
       - name: AppImage
         run: |
           ./packaging/linux/build-appimage.sh

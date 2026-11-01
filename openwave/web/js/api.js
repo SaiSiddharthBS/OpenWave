@@ -48,10 +48,14 @@ export const get = {
 
 // Thumbnails are proxied so viewers never contact Google directly, and so the UI can sample colours.
 // The address is relative: the website copy of the app (remote.js) lives below the site's root.
+/** The artwork itself, at `size` pixels where the image host can resize. */
+export function sized(url, size) {
+  return size && /googleusercontent\.com|ggpht\.com/.test(url) ? url.replace(/=w\d+-h\d+/, `=w${size}-h${size}`) : url;
+}
+
 export function img(url, size) {
   if (!url) return PLACEHOLDER;
-  if (size && /googleusercontent\.com|ggpht\.com/.test(url)) url = url.replace(/=w\d+-h\d+/, `=w${size}-h${size}`);
-  return `api/img?u=${enc(url)}`;
+  return `api/img?u=${enc(sized(url, size))}`;
 }
 
 export const PLACEHOLDER = 'data:image/svg+xml,' + enc(

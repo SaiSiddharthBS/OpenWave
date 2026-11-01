@@ -36,6 +36,13 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="openwave" />
             </intent-filter>
+            <!-- A pairing link from a computer's Settings → Phones → Add a phone -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="saisiddharthbs.github.io" android:pathPrefix="/OpenWave/app" />
+            </intent-filter>
             <!-- Share a YouTube / YouTube Music / Spotify link to OpenWave -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />

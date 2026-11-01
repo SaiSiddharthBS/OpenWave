@@ -11,7 +11,7 @@ import {
   esc, icon, fmtTotal, trackList, trackCards, cards, section, registerList, trackRow, artistLinks, empty, avatar,
 } from './ui.js';
 import { phonesSetting, phonesStatus, onTheComputer } from './phones.js';
-import { REMOTE } from './remote.js';
+import { REMOTE, computer } from './remote.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -373,13 +373,18 @@ export function library({ tab = 'playlists' }) {
 }
 
 // ------------------------------------------------------------------ settings
+/** A computer this phone paired with before (an app older than that can't tell). */
+function pairedComputer() {
+  try { return window.OpenWaveAndroid.pairedComputer?.() === true; } catch { return false; }
+}
+
 function androidServerSetting() {
   const current = window.OpenWaveAndroid.getServer();
   return `<h2>Library</h2>
     <div class="setting"><div><b>Where your library lives</b><p>${current
       ? `Using OpenWave on your computer at <b>${esc(current)}</b>, so you get the same profiles and playlists everywhere.`
-      : 'On this phone. To share one library with your computer, open OpenWave on the computer, turn on Settings → Phone, and enter its address here.'}</p></div>
-      <div class="btn-row">${current ? '<button class="btn" data-act="android-use-phone">Use this phone</button>' : ''}<button class="btn" data-act="android-set-server">${current ? 'Change' : 'Connect to computer'}</button></div></div>`;
+      : 'On this phone. To use the library on your computer instead, from anywhere: on the computer, open Settings → Phones → Add a phone, then scan the code with this phone’s camera and share the link to OpenWave, or copy the link and paste it here.'}</p></div>
+      <div class="btn-row">${current ? '<button class="btn" data-act="android-use-phone">Use this phone</button>' : ''}${!current && pairedComputer() ? '<button class="btn primary" data-act="android-use-computer">Play from your computer</button>' : ''}<button class="btn" data-act="android-set-server">${current ? 'Change' : 'Connect to computer'}</button></div></div>`;
 }
 
 function devicesSetting(l) {
@@ -408,6 +413,7 @@ const PROFILE_COLORS = ['#7b7bff', '#2fc8ff', '#c45cff', '#ff6fae', '#ffb648', '
 export async function settings() {
   const s = store.settings;
   const p = store.profile;
+  const pcName = esc(computer()?.name || 'the computer');
   let health = null;
   try { health = await (await fetch('/api/health')).json(); } catch { /* offline */ }
   const [update, link, phones] = await Promise.all([checkForUpdate(3000), REMOTE || !onTheComputer() ? null : linkSettings(), phonesStatus()]);
@@ -417,11 +423,15 @@ export async function settings() {
   return {
     html: `<div class="settings"><h1>Settings</h1>
       ${p ? `<h2>Profile</h2>
-      <div class="setting profile-setting"><div class="profile-row">${avatar(p, 56)}<div><b>${esc(p.name)}</b><p>Your likes, playlists, history and insights sync to every device using this server.</p></div></div>
+      <div class="setting profile-setting"><div class="profile-row">${avatar(p, 56)}<div><b>${esc(p.name)}</b><p>${p.private ? `Your likes, playlists, history and insights are kept on ${pcName}, and open only on this phone.` : 'Your likes, playlists, history and insights sync to every device using this server.'}</p></div></div>
         <div class="btn-row"><button class="btn" data-act="edit-profile">${icon('edit')} Rename</button><button class="btn" data-act="switch-profile">Switch profile</button></div></div>
       <div class="setting"><div><b>Colour</b></div><div class="swatches">${PROFILE_COLORS.map((c) => `<button class="swatch ${c === p.color ? 'on' : ''}" data-act="profile-color" data-color="${c}" style="background:${c}" aria-label="Colour"></button>`).join('')}</div></div>
       <div class="setting"><div><b>PIN</b><p>${p.hasPin ? 'This profile is protected with a PIN.' : 'Stop others on your server from opening your profile.'}</p></div>
-        ${p.hasPin ? '<div class="btn-row"><button class="btn" data-act="set-pin">Change PIN</button><button class="btn" data-act="remove-pin">Remove</button></div>' : '<button class="btn" data-act="set-pin">Set a PIN</button>'}</div>` : ''}
+        ${p.hasPin ? '<div class="btn-row"><button class="btn" data-act="set-pin">Change PIN</button><button class="btn" data-act="remove-pin">Remove</button></div>' : '<button class="btn" data-act="set-pin">Set a PIN</button>'}</div>
+      ${REMOTE ? `<div class="setting"><div><b>Only on this phone</b><p>${p.private
+    ? `On. Your profile doesn’t appear on ${pcName} or anyone else’s phone, and can’t be opened there.`
+    : `Hide your profile from ${pcName} and everyone else’s phones, so it opens only here. No PIN needed.`}</p></div>
+        <button class="btn" data-act="profile-private" data-on="${p.private ? '' : '1'}">${p.private ? 'Turn off' : 'Turn on'}</button></div>` : ''}` : ''}
       <h2>Playback</h2>
       <div class="setting"><div><b>Audio quality</b><p>OpenWave picks the best format your device plays (Opus or AAC, up to ~160 kbps). Data saver uses about a third of the data.</p></div>
         ${select('quality', [['high', 'High'], ['normal', 'Normal'], ['low', 'Data saver']])}</div>
@@ -430,7 +440,7 @@ export async function settings() {
       <div class="setting"><div><b>Gapless playback</b><p>The next song is buffered ahead of time, so albums play without silence between tracks.</p></div>${sw('gapless')}</div>
       <div class="setting"><div><b>Autoplay</b><p>When your queue ends, keep playing similar songs, skipping ones you heard recently.</p></div>${sw('autoplay')}</div>
       ${document.documentElement.classList.contains('native-mac-app') ? `<div class="setting"><div><b>Song notifications</b><p>Show a notification when the song changes while OpenWave is in the background.</p></div>${sw('notifications')}</div>` : ''}
-      ${window.OpenWaveAndroid ? androidServerSetting() : ''}
+      ${window.OpenWaveAndroid && !REMOTE ? androidServerSetting() : ''}
       ${window.OpenWaveAndroid?.addWidget ? '<div class="setting"><div><b>Home-screen widget</b><p>See what’s playing and skip songs right from your home screen.</p></div><button class="btn" data-act="android-add-widget">Add widget</button></div>' : ''}
       ${phonesSetting(phones)}
       ${link ? devicesSetting(link) : ''}

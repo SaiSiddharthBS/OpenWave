@@ -176,8 +176,8 @@ export const store = {
   get session() { return session; },
   get profile() { return session?.profile || null; },
   listProfiles: () => call('/api/profiles'),
-  async createProfile(name, pin, color) {
-    return store.adopt(await call('/api/profiles', { method: 'POST', body: { name, pin: pin || null, color } }), true);
+  async createProfile(name, pin, color, onlyHere = false) {
+    return store.adopt(await call('/api/profiles', { method: 'POST', body: { name, pin: pin || null, color, private: onlyHere } }), true);
   },
   async signIn(profileId, pin) {
     return store.adopt(await call(`/api/profiles/${profileId}/login`, { method: 'POST', body: { pin: pin || null } }), false);

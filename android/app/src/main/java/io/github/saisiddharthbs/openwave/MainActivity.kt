@@ -52,10 +52,25 @@ class MainActivity : ComponentActivity() {
 
     private val prefs by lazy { getSharedPreferences("openwave", MODE_PRIVATE) }
 
-    /** "" = the engine on this phone; otherwise OpenWave on the user's computer/server. */
+    /** "" = the engine on this phone; otherwise OpenWave on the user's computer/server: its address
+     * (same Wi-Fi, Tailscale), or the OpenWave phone app that reaches it from anywhere (connect). */
     private var serverUrl: String
         get() = prefs.getString("server", "") ?: ""
         set(value) = prefs.edit().putString("server", value).apply()
+
+    /** serverUrl is the phone app paired with a computer through Settings → Phones → Add a phone
+     * there (openwave/connect.py): its API arrives over an encrypted WebRTC connection, not HTTP. */
+    private var connectMode: Boolean
+        get() = prefs.getBoolean("connect", false)
+        set(value) = prefs.edit().putBoolean("connect", value).apply()
+
+    /** A pairing link to open once, with its code (the part after #connect=). */
+    private var pendingPairing: String? = null
+
+    /** The phone app of the last computer this phone paired with, to go back to after "Use this phone". */
+    private var lastComputer: String
+        get() = prefs.getString("lastConnect", "") ?: ""
+        set(value) = prefs.edit().putString("lastConnect", value).apply()
 
     private val pickFiles = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         fileCallback?.onReceiveValue(uris.toTypedArray())
@@ -127,6 +142,7 @@ class MainActivity : ComponentActivity() {
         }
         PlaybackService.start(this)
         pendingLink = linkFrom(intent)
+        pendingLink?.let { link -> pairingBase(link)?.let { usePairing(link, it, boot = false); pendingLink = null } }
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
         boot()
     }
@@ -138,13 +154,51 @@ class MainActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        linkFrom(intent)?.let { openLink(it) }
+        val link = linkFrom(intent) ?: return
+        val base = pairingBase(link)
+        if (base != null) usePairing(link, base) else openLink(link)
+    }
+
+    // ------------------------------------------------------------------ pairing with a computer
+
+    /** The phone app's address, if `link` is a pairing link from a computer's Add a phone:
+     * https://…/OpenWave/app/#connect=… (http only for a computer's own private address, in tests). */
+    private fun pairingBase(link: String): String? {
+        val uri = runCatching { Uri.parse(link.trim()) }.getOrNull() ?: return null
+        if (uri.fragment?.startsWith("connect=") != true || uri.host.isNullOrEmpty()) return null
+        val secure = uri.scheme == "https" || (uri.scheme == "http" && privateHost(uri.host!!))
+        if (!secure) return null
+        val path = (uri.path ?: "/").let { if (it.endsWith("/")) it else it.substringBeforeLast('/') + "/" }
+        return uri.buildUpon().path(path).clearQuery().fragment(null).build().toString()
+    }
+
+    private fun privateHost(host: String): Boolean =
+        Regex("""^(10\.\d+|192\.168|172\.(1[6-9]|2\d|3[01])|127\.\d+)\.\d+\.\d+$""").matches(host)
+
+    /** Play from the computer that made this pairing link, from anywhere, instead of this phone. */
+    private fun usePairing(link: String, base: String, boot: Boolean = true) {
+        serverUrl = base
+        connectMode = true
+        lastComputer = base
+        pendingPairing = link.trim()
+        if (boot) boot()
     }
 
     // ------------------------------------------------------------------ startup
 
     private fun boot() {
         val remote = serverUrl
+        if (remote.isNotEmpty() && connectMode) {
+            // The phone app works offline too (downloads), and reaches the computer itself.
+            Log.i(Engine.TAG, "loading the phone app for a computer")
+            Bridge.pageWillLoad()
+            val pairing = pendingPairing
+            val link = pendingLink
+            pendingPairing = null
+            pendingLink = null
+            web.loadUrl(pairing ?: (remote + (link?.let { route(it) } ?: "")))
+            return
+        }
         if (remote.isNotEmpty()) {
             splash("Connecting to OpenWave on your computer…")
             io.execute {
@@ -207,7 +261,7 @@ class MainActivity : ComponentActivity() {
         Intent.ACTION_VIEW -> intent.dataString
         Intent.ACTION_SEND -> intent.getStringExtra(Intent.EXTRA_TEXT)?.let { Regex("https?://\\S+").find(it)?.value ?: it }
         else -> null
-    }
+    }?.takeUnless { "/OpenWave/app" in it && "#connect=" !in it }   // the phone app itself, without a code: just open OpenWave
 
     /** openwave://play/ID → #/play/ID; a YouTube or Spotify link → search / import. */
     private fun route(link: String): String {
@@ -225,8 +279,10 @@ class MainActivity : ComponentActivity() {
 
     private fun isAppPage(url: Uri): Boolean {
         val base = Uri.parse(serverUrl.ifEmpty { Engine.localUrl })
-        return url.scheme == "file" || url.scheme == "blob" || url.scheme == "data" ||
-            (url.host == base.host && url.port == base.port)
+        if (url.scheme == "file" || url.scheme == "blob" || url.scheme == "data") return true
+        if (url.host != base.host || url.port != base.port) return false
+        // The phone app sits on a shared website: trust only its own folder of it.
+        return !connectMode || serverUrl.isEmpty() || (url.scheme == base.scheme && (url.path ?: "/").startsWith(base.path ?: "/"))
     }
 
     private inner class Client : WebViewClient() {
@@ -238,7 +294,7 @@ class MainActivity : ComponentActivity() {
             val url = request.url
             when {
                 url.scheme == "openwave-app" && url.host == "retry" -> boot()
-                url.scheme == "openwave-app" && url.host == "local" -> { serverUrl = ""; boot() }
+                url.scheme == "openwave-app" && url.host == "local" -> { serverUrl = ""; connectMode = false; boot() }
                 url.scheme == "openwave" -> openLink(url.toString())
                 isAppPage(url) -> return false
                 else -> try {
@@ -254,8 +310,9 @@ class MainActivity : ComponentActivity() {
 
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
             Log.w(Engine.TAG, "load error ${error.errorCode} ${error.description} for ${request.url}")
-            if (request.isForMainFrame && request.url.scheme == "http") {
-                splash("Lost connection to OpenWave.", retry = true, offerLocal = serverUrl.isNotEmpty())
+            if (request.isForMainFrame && (request.url.scheme == "http" || request.url.scheme == "https")) {
+                splash(if (connectMode && serverUrl.isNotEmpty()) "Can’t open OpenWave. Check this phone’s internet connection." else "Lost connection to OpenWave.",
+                    retry = true, offerLocal = serverUrl.isNotEmpty())
             }
         }
     }
@@ -293,15 +350,40 @@ class MainActivity : ComponentActivity() {
         }
 
         @JavascriptInterface
-        fun getServer(): String = if (trusted()) serverUrl else ""
+        fun getServer(): String = if (trusted() && !connectMode) serverUrl else ""
 
-        /** Point the app at OpenWave on a computer ("" = use this phone). Returns an error message or "". */
+        /** Is there a computer this phone paired with before (Settings → "Play from your computer")? */
+        @JavascriptInterface
+        fun pairedComputer(): Boolean = trusted() && lastComputer.isNotEmpty()
+
+        /** Go back to playing from that computer; its phone app reconnects with the key it kept. */
+        @JavascriptInterface
+        fun useComputer(): String {
+            if (!trusted()) return "not allowed"
+            val base = lastComputer
+            if (base.isEmpty()) return "Pair with a computer first."
+            runOnUiThread {
+                serverUrl = base
+                connectMode = true
+                boot()
+            }
+            return ""
+        }
+
+        /** Point the app at OpenWave on a computer ("" = use this phone): its address, or a pairing
+         * link from its Settings → Phones → Add a phone. Returns an error message or "". */
         @JavascriptInterface
         fun setServer(url: String): String {
             if (!trusted()) return "not allowed"
+            pairingBase(url)?.let { base ->
+                runOnUiThread { usePairing(url, base) }
+                return ""
+            }
+            if (url.contains("#connect=")) return "That pairing link isn’t one OpenWave can use. Copy it again from the computer."
             val clean = url.trim().let { if (it.isEmpty() || it.startsWith("http")) it else "http://$it" }
                 .let { if (it.isEmpty() || it.endsWith("/")) it else "$it/" }
             if (clean.isNotEmpty() && !reachable(clean)) return "Couldn’t reach OpenWave at $clean"
+            connectMode = false
             serverUrl = clean
             runOnUiThread { boot() }
             return ""

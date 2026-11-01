@@ -1,7 +1,8 @@
 // Bridge to the native apps. The macOS app (WKWebView) exposes window.webkit.messageHandlers.openwave;
 // the Android app exposes window.OpenWaveAndroid. Both call back into window.openwaveNative.
 
-import { img } from './api.js';
+import { img, sized } from './api.js';
+import { REMOTE } from './remote.js';
 import { store } from './store.js';
 import { player } from './player.js';
 
@@ -55,7 +56,8 @@ export function initNative(commands) {
       title: t.title,
       artist: t.artists.map((a) => a.name).join(', '),
       album: t.album?.name || '',
-      artwork: new URL(img(t.thumbnail, 600), location.href).href,
+      // A paired phone's api/img lives inside the page (remote.js), so the app fetches the picture itself.
+      artwork: REMOTE ? (t.thumbnail ? sized(t.thumbnail, 600) : '') : new URL(img(t.thumbnail, 600), location.href).href,
       duration: player.duration || 0,
       position: player.time || 0,
       playing: player.loaded && !player.paused,

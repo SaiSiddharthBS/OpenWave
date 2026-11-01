@@ -18,7 +18,7 @@ from starlette.background import BackgroundTask
 
 from . import __version__, connect, link, music, releases, updater, youtube
 from .api_connect import error_response as connect_error, host as connect_host, router as connect_router
-from .api_library import error_response, router as library_router, sync as shared_sync
+from .api_library import error_response, library, router as library_router, sync as shared_sync
 from .config import FROZEN, data_dir
 from .library import LibraryError
 
@@ -37,6 +37,8 @@ async def lifespan(this: FastAPI):
     await shared_sync().start()
     phones = connect_host(this)
     if phones:
+        # Profiles kept on a phone that's no longer paired (e.g. a reset connect.json) open up again.
+        library().release_phones(keep=set(phones.state["devices"]))
         try:
             await phones.start()
         except Exception:  # noqa: BLE001 - phones away from home can't connect, everything else works
@@ -106,9 +108,9 @@ async def health():
 
 
 @app.get("/api/app-update")
-async def app_update(client_hint: str | None = Query(None, alias="client")):
+async def app_update(client_hint: str | None = Query(None, alias="client"), current: str | None = Query(None, max_length=20)):
     """Is a newer OpenWave out, and which file should this device download?"""
-    return await releases.check(client, client_hint)
+    return await releases.check(client, client_hint, current)
 
 
 @app.get("/api/search")

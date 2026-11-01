@@ -9,6 +9,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
 from . import connect, shared, startup, tailscale
+from .api_library import library
 from .config import data_dir
 
 router = APIRouter(prefix="/api/connect")
@@ -43,9 +44,16 @@ def _from_this_computer(request: Request) -> None:
 @router.get("")
 async def status(request: Request):
     h = host()
+    via = bool(request.scope.get("openwave.connect"))
     if h is None:
-        return {"available": False, "reason": connect.unavailable() or "Starting…", "via": bool(request.scope.get("openwave.connect"))}
-    return {"available": True, "via": bool(request.scope.get("openwave.connect")), **h.status()}
+        return {"available": False, "reason": connect.unavailable() or "Starting…", "via": via}
+    st = h.status()
+    if via:   # a phone doesn't get to see the other phones, or whose profiles they keep
+        return {"available": True, "via": True, "name": st["name"]}
+    kept = await asyncio.to_thread(library().private_devices)
+    for d in st["devices"]:
+        d["profiles"] = kept.get(d["id"], [])
+    return {"available": True, "via": False, **st}
 
 
 @router.post("/pair")
@@ -64,6 +72,7 @@ async def remove(device: str, request: Request):
     if h is None:
         raise HTTPException(409, connect.unavailable() or "OpenWave Connect is still starting.")
     await h.remove(device)
+    await asyncio.to_thread(library().release_phones, device)
     return {"ok": True}
 
 
@@ -76,6 +85,7 @@ async def forget_me(request: Request):
         raise HTTPException(400, "Only a paired phone can do this.")
     h.state["devices"].pop(dev, None)
     h._save()
+    await asyncio.to_thread(library().release_phones, dev)
     return {"ok": True}
 
 
@@ -110,11 +120,11 @@ async def tailscale_switch(request: Request):
     return await asyncio.to_thread(tailscale.state, port)
 
 
-# --------------------------------------------------------------------------- Start with Windows
+# --------------------------------------------------------------------------- Start with Windows (or Linux)
 
 
 def _startup_state() -> dict:
-    return {"available": startup.available(), "on": startup.enabled()}
+    return {"available": startup.available(), "on": startup.enabled(), "system": startup.system()}
 
 
 @router.get("/startup")
@@ -131,9 +141,9 @@ async def startup_switch(request: Request):
     except ValueError:
         raise HTTPException(400, "Send {\"on\": true} or {\"on\": false}.") from None
     if not startup.available():
-        raise HTTPException(409, "Only the Windows app can start with Windows.")
+        raise HTTPException(409, "Only the Windows and Linux apps can start when you sign in.")
     try:
         await asyncio.to_thread(startup.set_enabled, on)
     except OSError as e:
-        raise HTTPException(500, f"Windows didn’t allow it: {e}") from None
+        raise HTTPException(500, f"{startup.system()} didn’t allow it: {e}") from None
     return await asyncio.to_thread(_startup_state)

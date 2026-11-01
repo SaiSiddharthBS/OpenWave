@@ -40,8 +40,14 @@ def _token(authorization: str | None = Header(default=None)) -> str | None:
     return None
 
 
-def me(token: str | None = Depends(_token)) -> str:
-    return library().authenticate(token)
+def _viewer(request: Request) -> str | None:
+    """The paired phone this request came over (OpenWave Connect sets it; plain HTTP can't), or None."""
+    dev = request.scope.get("openwave.connect")
+    return dev if isinstance(dev, str) and dev else None
+
+
+def me(request: Request, token: str | None = Depends(_token)) -> str:
+    return library().authenticate(token, _viewer(request))
 
 
 def _device(request: Request) -> str:
@@ -55,6 +61,7 @@ class NewProfile(BaseModel):
     name: str
     color: str | None = None
     pin: str | None = None
+    private: bool = False       # keep it on this phone only
 
 
 class Login(BaseModel):
@@ -66,21 +73,22 @@ class ProfilePatch(BaseModel):
     color: str | None = None
     pin: str | None = None
     removePin: bool = False
+    private: bool | None = None
 
 
 @router.get("/profiles")
-def list_profiles():
-    return library().profiles()
+def list_profiles(request: Request):
+    return library().profiles(_viewer(request))
 
 
 @router.post("/profiles")
 def create_profile(body: NewProfile, request: Request):
-    return library().create_profile(body.name, body.color, body.pin or None, _device(request))
+    return library().create_profile(body.name, body.color, body.pin or None, _device(request), _viewer(request), body.private)
 
 
 @router.post("/profiles/{profile_id}/login")
 def login(profile_id: str, body: Login, request: Request):
-    return library().login(profile_id, body.pin or None, _device(request))
+    return library().login(profile_id, body.pin or None, _device(request), _viewer(request))
 
 
 @router.post("/me/logout")
@@ -91,8 +99,9 @@ def logout(token: str | None = Depends(_token)):
 
 
 @router.patch("/me")
-def update_me(body: ProfilePatch, pid: str = Depends(me)):
-    return library().update_profile(pid, body.name, body.color, body.pin or None, body.removePin)
+def update_me(body: ProfilePatch, request: Request, pid: str = Depends(me), token: str | None = Depends(_token)):
+    return library().update_profile(pid, body.name, body.color, body.pin or None, body.removePin,
+                                    body.private, _viewer(request), token)
 
 
 @router.delete("/me")

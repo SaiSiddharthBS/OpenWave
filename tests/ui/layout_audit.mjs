@@ -76,7 +76,7 @@ function catalogue(d) {
     next: { tracks: songs(1, 30), lyricsId: 'MPLYaudit', relatedId: 'MPTRaudit' },
     lyrics: { found: true, synced: true, lines, source: 'Source: LRCLIB' },
     phones: { available: true, via: false, name: d.artist, relays: 6, tickets: [{ id: 'audit', expires: 0, devices: [] }],
-      devices: [{ id: 'a1', label: 'iPhone', added: 1, seen: Math.floor(Date.now() / 1000), online: true },
+      devices: [{ id: 'a1', label: 'iPhone', added: 1, seen: Math.floor(Date.now() / 1000), online: true, profiles: [d.artist] },
         { id: 'a2', label: 'Android phone', added: 2, seen: 1700000000, online: false }, { id: 'a3', label: 'iPad', added: 3, seen: null, online: false }] },
   };
 }
@@ -111,7 +111,7 @@ function fake(cat, url) {
   // OpenWave Connect (Settings → Phones), with as many paired phones as names allow.
   if (p === '/api/connect') return json(cat.phones);
   if (p === '/api/connect/tailscale') return json({ state: 'sharing', url: 'https://the-living-room-mac-mini-of-the-family.tail1234abcd.ts.net:8443/' });
-  if (p === '/api/connect/startup') return json({ available: true, on: true });
+  if (p === '/api/connect/startup') return json({ available: true, on: true, system: 'Windows' });
   if (p === '/api/connect/pair') return json({ id: 'audit', link: `https://saisiddharthbs.github.io/OpenWave/app/#connect=${'eyJ2IjoxLCJoIjoi'.repeat(14)}`, expires: 0 });
   return null;
 }

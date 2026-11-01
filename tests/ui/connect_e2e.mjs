@@ -27,6 +27,7 @@ import { CHECK } from './overflow.mjs';
 const ROOT = resolve(import.meta.dirname, '../..');
 const PY = process.env.OPENWAVE_PYTHON || (existsSync(join(ROOT, '.venv/bin/python')) ? join(ROOT, '.venv/bin/python') : 'python3');
 const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.7 Mobile/15E148 Safari/604.1';
+const ANDROID = 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/130.0.0.0 Mobile Safari/537.36 OpenWaveAndroid/0.0.1';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const procs = [];
 let failures = 0;
@@ -242,22 +243,51 @@ async function main() {
     st = await api('/api/connect');
     ok(st.devices.length === 1, '…as the same paired phone');
 
+    // Only on this phone: Maya keeps her profile to herself; the computer can't list or open it.
+    await phone.ev(`location.hash = '#/settings'; true`);
+    ok(await until(phone, `!!document.querySelector('[data-act=profile-private][data-on]')`), 'Settings on the phone offers Only on this phone');
+    await phone.ev(`document.querySelector('[data-act=profile-private]').click(); true`);
+    await until(phone, `!!document.querySelector('#dialog [value=ok]')`);
+    await phone.ev(`document.querySelector('#dialog [value=ok]').click(); true`);
+    ok(await until(phone, `document.querySelector('[data-act=profile-private]')?.dataset.on === ''`, 10000), '…and turns it on');
+    await layout(phone, out, 'phone-settings-private', PHONE);
+    ok((await api('/api/profiles')).length === 0, 'the computer no longer lists Maya');
+    ok((await fetch(`${engine}/api/me/library`, { headers: { authorization: `Bearer ${maya.token}` } })).status === 401, '…and its sign-in there stops working');
+    st = await api('/api/connect');
+    ok(JSON.stringify(st.devices[0].profiles) === '["Maya"]', 'Settings → Phones on the computer says the iPhone keeps Maya’s profile');
+    await phone.send('Page.reload');
+    ok(await until(phone, `!!document.querySelector('#view') && document.querySelector('.profiles-screen')?.hidden !== false && !document.querySelector('#connect-screen')`, 30000), 'the phone stays signed in to Maya');
+    await phone.ev(`location.hash = '#/liked'; true`);
+    ok(await until(phone, `document.querySelectorAll('#view .row').length === 1`, 15000), '…with her library');
+
     // Forget: the phone unpairs itself, everywhere.
     await phone.ev(`location.hash = '#/settings'; true`);
     await until(phone, `!!document.querySelector('[data-act=connect-forget]')`);
     await phone.ev(`document.querySelector('[data-act=connect-forget]').click(); true`);
     await until(phone, `!!document.querySelector('#dialog [value=ok]')`);
+    ok((await phone.ev(`document.querySelector('#dialog p').textContent`)).includes('stops being kept on this phone'), 'Forget warns that Maya’s profile opens up again');
     await phone.ev(`document.querySelector('#dialog [value=ok]').click(); true`);
     ok(await until(phone, `document.querySelector('#connect-screen h1')?.textContent.includes('Play from your computer')`, 15000), 'Forget returns the phone to the pairing screen');
     await layout(phone, out, 'pair-screen', PHONE);
     await shot(phone, out, 'pair-screen');
     st = await api('/api/connect');
     ok(st.devices.length === 0, 'and the computer no longer lists it');
+    ok((await api('/api/profiles')).some((p) => p.name === 'Maya' && !p.private), 'Maya’s profile can be opened on the computer again');
+    const back = await api(`/api/profiles/${maya.profile.id}/login`, 'POST', {});
+    await desk.send('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('openwave:session:v2', ${JSON.stringify(JSON.stringify({ token: back.token, profile: back.profile }))});` });
 
     // Pairing again by pasting a link, then the computer removes it.
     const fresh = (await api('/api/connect/pair', 'POST')).link;
     await phone.ev(`document.querySelector('#connect-link').value = ${JSON.stringify(fresh)}; document.querySelector('.connect-paste button').click(); true`);
     ok(await until(phone, `!!document.querySelector('.profile-tile[data-pid]')`, 30000), 'a pasted link pairs it again');
+    await phone.ev(`document.querySelector('.profile-tile.add').click(); true`);
+    ok(await until(phone, `!!document.querySelector('.new-profile [name=onlyhere]')`), 'a new profile made on the phone can be kept on it');
+    await phone.ev(`document.querySelector('.new-profile [name=onlyhere]').click(); true`);
+    ok(await phone.ev(`!document.querySelector('.only-here-hint').hidden`), '…explaining what that means');
+    await layout(phone, out, 'new-profile-on-phone', PHONE);
+    await shot(phone, out, 'new-profile-on-phone');
+    await phone.ev(`document.querySelector('.new-profile [data-p=back]').click(); true`);
+    await until(phone, `!!document.querySelector('.profile-tile[data-pid]')`);
     await phone.ev(`document.querySelector('.profile-tile[data-pid]').click(); true`);
     ok(await until(phone, `document.querySelector('.profiles-screen')?.hidden !== false && !!document.querySelector('#view')`, 15000), '…and Maya signs in again');
     st = await api('/api/connect');
@@ -282,6 +312,40 @@ async function main() {
       await phone.ev(`document.querySelector('#view .row').click(); true`);
       ok(await until(phone, `(() => { const a = [...document.querySelectorAll('audio')].find((x) => !x.paused); return a && a.currentTime > 1; })()`, 20000), '…and it plays');
     }
+
+    // ---------------------------------------------------------------- the Android app
+    // The app loads the same phone app in its WebView, with window.OpenWaveAndroid (a stand-in here).
+    console.log('In the Android app');
+    // Its own storage, like the app's WebView (not the iPhone tab's, which is still open and retrying).
+    const browser = await cdp((await (await fetch(`http://127.0.0.1:${chromePort}/json/version`)).json()).webSocketDebuggerUrl);
+    const { browserContextId } = await browser.send('Target.createBrowserContext');
+    const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank', browserContextId });
+    const droid = await cdp(`ws://127.0.0.1:${chromePort}/devtools/page/${targetId}`);
+    await droid.send('Page.enable');
+    await droid.send('Network.setUserAgentOverride', { userAgent: ANDROID, platform: 'Linux armv8l' });
+    await droid.send('Emulation.setDeviceMetricsOverride', PHONE);
+    await droid.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.OpenWaveAndroid = {
+      calls: [], postMessage(j) { this.calls.push(['post', j]); }, getServer() { return ''; }, setServer(u) { this.calls.push(['setServer', u]); return ''; },
+      appVersion() { return '0.0.1'; }, pairedComputer() { return true; }, useComputer() { this.calls.push(['useComputer']); return ''; },
+      deviceName() { return 'Pixel'; }, haptic() {}, shareText() {}, shareFile() {}, addWidget() { return false; } };` });
+    await droid.send('Page.bringToFront');
+    await droid.send('Page.navigate', { url: (await api('/api/connect/pair', 'POST')).link });
+    ok(await until(droid, `!!document.querySelector('.profile-tile[data-pid]')`, 30000), 'a pairing link pairs it straight away (no Home Screen step)');
+    await droid.ev(`document.querySelector('.profile-tile[data-pid]').click(); true`);
+    ok(await until(droid, `document.querySelector('.profiles-screen')?.hidden !== false && !!document.querySelector('#view')`, 15000), '…and Maya signs in');
+    await droid.ev(`location.hash = '#/settings'; true`);
+    ok(await until(droid, `!!document.querySelector('[data-act=connect-forget]')`), 'Settings shows which computer it plays from');
+    ok(await droid.ev(`!!document.querySelector('[data-act=android-use-phone]') && !document.querySelector('[data-act=android-set-server]')`), '…with Use this phone, instead of the address setting');
+    await layout(droid, out, 'android-settings', PHONE);
+    await droid.ev(`document.querySelector('[data-act=android-use-phone]').click(); true`);
+    ok(await droid.ev(`JSON.stringify(window.OpenWaveAndroid.calls.filter((c) => c[0] === 'setServer'))`) === '[["setServer",""]]', 'Use this phone hands back to the app’s own library');
+    await droid.ev(`document.querySelector('[data-act=connect-forget]').click(); true`);
+    await until(droid, `!!document.querySelector('#dialog [value=ok]')`);
+    await droid.ev(`document.querySelector('#dialog [value=ok]').click(); true`);
+    ok(await until(droid, `!!document.querySelector('#connect-screen [data-local]')`, 15000), 'the pairing screen offers Use this phone instead, so nobody gets stuck there');
+    await layout(droid, out, 'android-pair-screen', PHONE);
+    await shot(droid, out, 'android-pair-screen');
+    ok((await api('/api/connect')).devices.length === 0, 'Forget unpaired it on the computer too');
 
     site.close();
   } finally {

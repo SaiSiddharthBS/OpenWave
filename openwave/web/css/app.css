@@ -885,6 +885,7 @@ body.linked .pb-artist { display: none; }
 .connect-paste textarea { width: 100%; background: var(--surface-3); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; outline: none; resize: vertical;
   font: 16px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); overflow-wrap: anywhere; }
 .connect-paste textarea:focus { border-color: var(--accent); }
+.connect-screen .connect-local { margin-top: 14px; }
 .connect-paste .btn { align-self: flex-start; }
 .connect-error { color: var(--danger) !important; margin: 0 !important; }
 .connect-card .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }

@@ -16,11 +16,17 @@ const HOW = {
 };
 
 export async function checkForUpdate(timeout = 8000) {
-  if (!onTheComputer()) return null;   // a phone using a computer's OpenWave: updates are for the computer
+  const android = window.OpenWaveAndroid;
+  // A phone using a computer's OpenWave: updates are for the computer, except the Android app's own,
+  // compared with the app's version rather than the computer's.
+  if (!onTheComputer() && !android) return null;
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeout);
   try {
-    const r = await fetch(`/api/app-update${window.OpenWaveAndroid ? '?client=android' : ''}`, { signal: ctl.signal });
+    let version = '';
+    try { version = android?.appVersion?.() || ''; } catch { /* an older app */ }
+    const query = android ? `?client=android${version ? `&current=${encodeURIComponent(version)}` : ''}` : '';
+    const r = await fetch(`/api/app-update${query}`, { signal: ctl.signal });
     return r.ok ? await r.json() : null;
   } catch {
     return null;

@@ -91,7 +91,7 @@ Every app is self-contained, with nothing else to install. Installers are attach
 
 ### Your library, personalised
 
-- **Profiles** for everyone in the household, each with its own likes, playlists, history and settings, and an optional PIN.
+- **Profiles** for everyone in the household, each with its own likes, playlists, history and settings, and an optional PIN. On a paired phone, a profile can be kept **only on that phone**: it isn't listed on, and can't be opened from, the computer or anyone else's phone, with no PIN to remember.
 - **Sync** across every device that uses the same OpenWave. Changes apply instantly where you make them, queue up while offline, and reach your other devices within seconds.
 - **Liked songs, playlists you can reorder by dragging, saved albums and followed artists.**
 - **Made for you.** Personal mixes built from what you actually play, plus two smart playlists: **On Repeat** (your most-played songs this month) and **Rediscover** (favourites you haven't played in a while).
@@ -214,7 +214,7 @@ A native Kotlin app that runs the complete engine on the phone through [Chaquopy
 - **Home-screen widget** with artwork and playback controls.
 - Native-feeling navigation: page transitions, swipe the player down to close, swipe the artwork to change songs, long-press for a song's menu, haptic feedback and a back button that behaves as expected.
 - Open YouTube and YouTube Music links shared from other apps.
-- **Library location:** keep the library on the phone, or connect to OpenWave on your computer to share one library everywhere.
+- **Library location:** keep the library on the phone, or play from OpenWave on your computer with the same profiles and playlists. From anywhere: on the computer choose **Settings → Phones → Add a phone**, scan the code with the phone's camera and share the link to OpenWave (or paste it in the app's **Settings → Library → Connect to computer**). On the same Wi-Fi or through Tailscale, the computer's address works too. **Use this phone** switches back at any time, and **Play from your computer** returns to the computer it paired with.
 
 <p align="center">
   <img src="docs/screenshots/mobile-home.png" width="200" alt="Home on a phone">
@@ -240,7 +240,7 @@ Apple does not allow apps like OpenWave on the App Store, so the iPhone plays fr
   <img src="docs/screenshots/mobile-connect-add.png" width="200" alt="The iPhone suggesting Add to Home Screen">
 </p>
 
-It works at home, at work and on mobile data, with no port forwarding, VPN or sign-in. OpenWave Connect finds a direct, encrypted path from the phone to the computer ([how it works](#privacy-and-security)). Songs keep playing with the screen locked, the Lock Screen shows controls and artwork, and downloaded songs play even when the computer is off. The computer needs to be on, with OpenWave open, for everything else. Paired phones are listed in Settings → Phones, where each can be removed. For a Windows PC that's always on, Settings → Phones → **Start with Windows** opens OpenWave in the background whenever you sign in, so the phone can reach it without anyone opening the app.
+It works at home, at work and on mobile data, with no port forwarding, VPN or sign-in. OpenWave Connect finds a direct, encrypted path from the phone to the computer ([how it works](#privacy-and-security)). Songs keep playing with the screen locked, the Lock Screen shows controls and artwork, and downloaded songs play even when the computer is off. The computer needs to be on, with OpenWave open, for everything else. Paired phones are listed in Settings → Phones, where each can be removed. For a family, each person can open their own phone's **Settings → Profile → Only on this phone** (or tick it when creating their profile there), so their profile opens only on their phone. If that phone is ever removed from the computer, the profile can be opened elsewhere again, with a note telling its owner why, so nothing is ever locked away. For a Windows PC that's always on, Settings → Phones → **Start with Windows** opens OpenWave in the background whenever you sign in, so the phone can reach it without anyone opening the app.
 
 <p align="center"><img src="docs/screenshots/connect-phones.png" width="560" alt="Settings → Phones listing a paired iPhone"></p>
 

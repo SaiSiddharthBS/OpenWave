@@ -210,14 +210,16 @@ function pairScreen(error = '') {
       <p>OpenWave on this phone plays from OpenWave on a computer at home, with the same profiles and playlists, wherever you are.</p>
       <ol class="connect-steps">
         <li>On the computer, open <b>OpenWave → Settings → Phones</b> and choose <b>Add a phone</b>.</li>
-        <li>Point this phone’s camera at the code and open the link.</li>
+        <li>${window.OpenWaveAndroid ? 'Point this phone’s camera at the code, then share the link to OpenWave, or copy it.' : 'Point this phone’s camera at the code and open the link.'}</li>
       </ol>
       <form class="connect-paste">
         <label for="connect-link">Or paste the link here</label>
         <textarea id="connect-link" rows="3" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="https://…#connect=…"></textarea>
         <p class="connect-error" ${error ? '' : 'hidden'}>${esc(error)}</p>
         <button class="btn primary" type="submit">Connect</button>
-      </form>`);
+      </form>
+      ${window.OpenWaveAndroid ? '<button class="btn connect-local" type="button" data-local>Use this phone instead</button>' : ''}`);
+    el.querySelector('[data-local]')?.addEventListener('click', () => window.OpenWaveAndroid.setServer(''));
     el.querySelector('form').onsubmit = (e) => {
       e.preventDefault();
       const err = el.querySelector('.connect-error');
