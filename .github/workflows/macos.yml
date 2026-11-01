@@ -8,7 +8,7 @@ on:
     paths: ["macos/**", "openwave/**"]
   push:
     branches: [main]
-    paths: ["macos/**", "openwave/**"]
+    paths: ["macos/**", "openwave/**", ".github/workflows/macos.yml"]
   workflow_dispatch:
 
 permissions:

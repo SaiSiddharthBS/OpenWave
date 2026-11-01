@@ -10,7 +10,7 @@ on:
     paths: ["android/**", "openwave/**"]
   push:
     branches: [main]
-    paths: ["android/**", "openwave/**"]
+    paths: ["android/**", "openwave/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 
 permissions:
