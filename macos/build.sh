@@ -28,7 +28,9 @@ mkdir -p "$WORK" "$DIST"
 
 echo "▸ Freezing the engine (PyInstaller)"
 rm -rf "$ROOT/build"  # setuptools reuses stale copies from here
-pip_install --upgrade "$ROOT" pyinstaller "yt-dlp[default]" ytmusicapi
+# cryptography only as a ready-made wheel (OpenSSL built in): from 49 on there are none for Intel
+# Macs, and one compiled here links Homebrew's libssl, which PyInstaller confuses with Python's own.
+pip_install --upgrade "$ROOT" pyinstaller "yt-dlp[default]" ytmusicapi "cryptography<49" --only-binary cryptography
 "$PY" -m PyInstaller --noconfirm --clean --log-level WARN \
   --name openwave-server --onedir \
   --distpath "$WORK/pyi-dist" --workpath "$WORK/pyi-work" --specpath "$WORK" \
