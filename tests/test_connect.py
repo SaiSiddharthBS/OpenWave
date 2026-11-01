@@ -340,6 +340,37 @@ def test_large_answers_arrive_intact_and_removal_disconnects(tmp_path):
     asyncio.run(scenario())
 
 
+def test_a_removed_phone_gets_nothing_even_on_an_open_connection():
+    """Remove closes the phone's connection; if that close doesn't get through, the channel still
+    answers nothing and closes itself."""
+    class Ch:
+        bufferedAmountLowThreshold = 0
+        readyState = "open"
+        def __init__(self):
+            self.sent, self.closed = [], False
+        def on(self, *_):
+            pass
+        def send(self, data):
+            self.sent.append(data)
+        def close(self):
+            self.closed = True
+
+    class FakeHost:
+        state = {"devices": {"phone1": {}}}
+        def _spawn(self, coro):
+            coro.close()
+
+    host, ch = FakeHost(), Ch()
+    channel = connect.Channel(host, None, ch, "phone1")
+    channel._on_message(json.dumps({"i": 1, "ping": 1}))
+    assert ch.sent and not ch.closed                                  # paired: answered
+    del host.state["devices"]["phone1"]
+    ch.sent.clear()
+    channel._on_message(json.dumps({"i": 2, "ping": 1}))
+    channel._on_message(json.dumps({"i": 3, "m": "GET", "p": "/api/me/library"}))
+    assert ch.sent == [] and ch.closed and channel.tasks == {}
+
+
 @needs_relay
 def test_an_unused_pairing_code_stops_working(tmp_path, monkeypatch):
     async def scenario():

@@ -205,6 +205,7 @@ class Host:
         self.room = room_of(self.pub)
         self.pool: nostr.RelayPool | None = None
         self.peers: dict = {}             # RTCPeerConnection -> (device id, started)
+        self.channels: dict = {}          # RTCPeerConnection -> its data channel, once the phone opens it
         self.seen: dict[str, float] = {}  # offer sessions already answered
         self.offers: dict[str, list[float]] = {}   # device or ticket id -> recent offer times
         self.tasks: set[asyncio.Task] = set()
@@ -314,6 +315,13 @@ class Host:
 
     async def _drop(self, pc) -> None:
         self.peers.pop(pc, None)
+        ch = self.channels.pop(pc, None)
+        if ch is not None and ch.readyState == "open":
+            # Closing the channel first tells the phone at once; closing only the connection can
+            # leave it waiting for a timeout (or, on some networks, not notice at all).
+            with contextlib.suppress(Exception):
+                ch.close()
+                await asyncio.sleep(0.2)
         with contextlib.suppress(Exception):
             await pc.close()
 
@@ -387,6 +395,7 @@ class Host:
 
         @pc.on("datachannel")
         def on_channel(ch):
+            self.channels[pc] = ch
             Channel(self, pc, ch, dev)
 
         @pc.on("connectionstatechange")
@@ -432,6 +441,11 @@ class Channel:
         self.host._spawn(self.host._drop(self.pc))
 
     def _on_message(self, data) -> None:
+        if self.dev not in self.host.state["devices"]:
+            # Removed from Settings → Phones: nothing more, whatever state the connection is in.
+            with contextlib.suppress(Exception):
+                self.ch.close()
+            return
         if not isinstance(data, str) or len(data) > MAX_BODY + 4096:
             return
         try:
