@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-11-01
+
 ### Added
 - **iPhone, anywhere, with a QR code.** On the computer, Settings → Phones → **Add a phone** shows a code; scan it with the iPhone, add OpenWave to the Home Screen, and it plays from your computer at home, at work or on mobile data. No accounts, no Tailscale, no port forwarding and nothing to install. The phone and the computer find each other through public relays (end-to-end encrypted) and then talk directly over an encrypted WebRTC connection (OpenWave Connect). Songs keep playing with the screen locked, downloads play even when the computer is off, and the computer lists paired phones with a Remove button. The Mac app's Settings → Phone offers it first, with Tailscale as an alternative. Works with the Mac, Windows, Linux and Docker versions.
 - Each QR code works for 15 minutes; a phone that uses it makes its own key, which never leaves the phone, so a photo of the code is useless later. A phone can't pair other phones, and "Forget" on the phone unpairs it on the computer too.
