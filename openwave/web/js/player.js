@@ -58,6 +58,9 @@ class Player extends EventTarget {
   listened = 0;
   lastPos = null;
   remote = null; // {mode: 'remote' | 'follow', send(cmd), state, position()} while linked to another device
+  heldAt = -1e9; // when this app last paused the music itself
+  navAt = -1e9;  // when the app last changed screens
+  events = [];   // recent playback events, for Settings → About → Copy the playback log
 
   get current() { return this.queue[this.index] || null; }
   get audioEl() { return decks[this.deck]; }
@@ -94,6 +97,11 @@ class Player extends EventTarget {
   init() {
     for (const el of decks) {
       const mine = (fn) => (e) => { if (el === this.el) fn(e); };
+      for (const type of ['play', 'playing', 'pause', 'waiting', 'stalled', 'ended', 'emptied', 'abort']) {
+        el.addEventListener(type, () => this.note(`${el === this.el ? '' : 'spare '}${type} at ${el.currentTime.toFixed(1)}s`));
+      }
+      el.addEventListener('error', () => this.note(`error ${el.error?.code || ''} ${el.error?.message || ''}`));
+      el.addEventListener('pause', mine(() => this.unexpectedPause()));
       el.addEventListener('timeupdate', mine(() => this.onTime()));
       el.addEventListener('play', mine(() => this.emit('state')));
       el.addEventListener('pause', mine(() => { this.emit('state'); this.saveQueue(); }));
@@ -109,6 +117,8 @@ class Player extends EventTarget {
     this.restore();
     this.mediaSession();
     window.addEventListener('pagehide', () => { this.saveQueue(true); this.commitListen(true); });
+    window.addEventListener('hashchange', () => { this.navAt = performance.now(); this.note(`screen ${location.hash}`); });
+    document.addEventListener('visibilitychange', () => this.note(`app ${document.visibilityState}`));
   }
 
   setLoading(on) {
@@ -143,6 +153,7 @@ class Player extends EventTarget {
   }
 
   stopMedia() {
+    this.heldAt = performance.now();
     decks.forEach((d) => d.pause());
   }
 
@@ -452,7 +463,7 @@ class Player extends EventTarget {
     if (!this.current) return;
     if (!this.loaded) return this.load({ at: this.resumeAt, fresh: true });
     if (this.el.paused) this.el.play().catch(() => {});
-    else this.el.pause();
+    else { this.heldAt = performance.now(); this.el.pause(); }
   }
 
   play() {
@@ -463,11 +474,37 @@ class Player extends EventTarget {
 
   pause() {
     if (this.remote) return this.remote.send({ cmd: 'pause' });
-    if (this.loaded && !this.el.paused) this.el.pause();
+    if (this.loaded && !this.el.paused) { this.heldAt = performance.now(); this.el.pause(); }
+  }
+
+  /**
+   * Safari can pause the music when a Home Screen app changes screens (see nav.js). A pause that
+   * neither the person nor this app asked for, right after a screen change, is undone at once.
+   */
+  unexpectedPause() {
+    const now = performance.now();
+    if (this.remote || this.el.ended || !this.loaded || now - this.heldAt < 1500 || now - this.navAt > 3000) return;
+    this.note('resuming: paused right after a screen change');
+    this.el.play().catch((e) => this.note(`resume refused: ${e.name}`));
+  }
+
+  /** One line in the playback log (the last 300 are kept). */
+  note(what) {
+    this.events.push(`${new Date().toISOString().slice(11, 23)} ${what}`);
+    if (this.events.length > 300) this.events.splice(0, this.events.length - 300);
+  }
+
+  /** The playback log, with what's needed to make sense of it. */
+  playbackLog() {
+    const t = this.current;
+    return [`OpenWave playback log · ${navigator.userAgent}`,
+      `standalone: ${navigator.standalone === true || matchMedia('(display-mode: standalone)').matches} · track: ${t ? `${t.videoId} ${t.title}` : 'none'} · src: ${(this.el.currentSrc || '').slice(0, 80)}`,
+      ...this.events].join('\n');
   }
 
   skipToPreloaded() {
     const incoming = this.spare;
+    this.heldAt = performance.now();
     this.audioEl.pause();
     if (incoming.currentTime > 0) incoming.currentTime = 0;
     incoming.volume = this.vol;
@@ -559,7 +596,7 @@ class Player extends EventTarget {
     const t = setInterval(() => {
       n++;
       el.volume = Math.max(0, start * (1 - n / 60));
-      if (n >= 60) { clearInterval(t); el.pause(); el.volume = this.vol; this.emit('slept'); }
+      if (n >= 60) { clearInterval(t); this.heldAt = performance.now(); el.pause(); el.volume = this.vol; this.emit('slept'); }
     }, 100);
   }
 
@@ -644,7 +681,7 @@ class Player extends EventTarget {
     if (!same) return this.load({ at: position, autoplay: playing });
     if (Math.abs(this.el.currentTime - position) > 1.5) this.el.currentTime = position;
     if (playing && this.el.paused) this.el.play().catch(() => {});
-    if (!playing && !this.el.paused) this.el.pause();
+    if (!playing && !this.el.paused) { this.heldAt = performance.now(); this.el.pause(); }
   }
 
   /** Start or stop mirroring another device (remote.mode 'remote') or following it ('follow'). */

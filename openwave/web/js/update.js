@@ -2,6 +2,7 @@
 // device (Windows, Linux, Mac app or Android); Docker and source installs update their own way.
 // The Mac app also asks natively, so it gets no banner, only the line in Settings → About.
 import { REMOTE } from './remote.js';
+import { onTheComputer } from './phones.js';
 import { esc } from './ui.js';
 
 const DISMISSED = 'openwave.updateDismissed';
@@ -15,7 +16,7 @@ const HOW = {
 };
 
 export async function checkForUpdate(timeout = 8000) {
-  if (REMOTE) return null;      // a phone away from home: updates are for the computer to install
+  if (!onTheComputer()) return null;   // a phone using a computer's OpenWave: updates are for the computer
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeout);
   try {

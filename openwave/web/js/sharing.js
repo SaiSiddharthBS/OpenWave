@@ -1,6 +1,7 @@
 // Shared playlists: invite friends and family to one playlist that everyone edits from their own
 // OpenWave, wherever they are. The engine does the syncing (see openwave/shared.py); this is the UI.
 
+import { go } from './nav.js';
 import { store } from './store.js';
 import { shareText } from './native.js';
 import { esc, icon, toast, avatar, confirmDialog, openDialog } from './ui.js';
@@ -120,7 +121,7 @@ async function leave(playlistId, name, owner) {
     : await confirmDialog(`Leave “${name}”?`, 'It’s removed from your library. Everyone else keeps it.', 'Leave');
   if (!ok) return;
   store.deletePlaylist(playlistId);
-  location.hash = '#/library';
+  go('#/library');
   toast(owner ? 'Deleted for everyone' : `You left “${name}”`);
 }
 
@@ -158,7 +159,7 @@ export function openJoin(prefill = '') {
           const { playlistId } = await store.api('/api/me/shares/join', { method: 'POST', body: { invite: area.value } });
           await store.pull();
           await closeDialog(d);
-          location.hash = `#/my/${encodeURIComponent(playlistId)}`;
+          go(`#/my/${encodeURIComponent(playlistId)}`);
           toast('Joined. The songs appear as soon as they sync.', 3500);
         } catch (e) {
           err.textContent = e.message;

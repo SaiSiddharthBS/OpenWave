@@ -15,9 +15,30 @@ async function call(path, method = 'GET') {
   return body;
 }
 
+const MOBILE = /iPhone|iPad|iPod|Android/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+/** Is this a computer, rather than a phone or tablet that opened OpenWave on a computer by its
+ * address (through Tailscale or the home Wi-Fi)? A laptop browser using a home server counts as a
+ * computer: that's where people manage it. */
+export function onTheComputer() {
+  return !REMOTE && (!MOBILE || ['127.0.0.1', 'localhost', '[::1]', '::1'].includes(location.hostname) || !!window.OpenWaveAndroid);
+}
+
+/** A phone using OpenWave on a computer by its address: how it's connected, and where it works. */
+function viaAddressSetting() {
+  const host = location.hostname;
+  if (host.endsWith('.ts.net')) {
+    const name = esc(host.split('.')[0]);
+    return `<h2>Connection</h2>
+      <div class="setting"><div><b>Playing from ${name} through Tailscale</b><p>Works anywhere, at home, at work or on mobile data, while Tailscale is on on this phone. Keep ${name} on, with OpenWave open, while you listen.</p></div></div>`;
+  }
+  return `<h2>Connection</h2>
+    <div class="setting"><div><b>Playing from your computer over your Wi-Fi</b><p>This address works at home only. To listen anywhere, including on mobile data, open OpenWave on the computer, go to Settings → Phones and choose Add a phone.</p></div></div>`;
+}
+
 /** What Settings needs to know, or null where there's nothing to show (e.g. the Android app). */
 export async function phonesStatus() {
-  if (REMOTE || window.OpenWaveAndroid) return null;
+  if (REMOTE || window.OpenWaveAndroid || !onTheComputer()) return null;
   const [connect, tailscale] = await Promise.all([
     call('/api/connect').catch(() => null),
     Promise.race([call('/api/connect/tailscale'), new Promise((r) => setTimeout(r, 5000))]).catch(() => null),
@@ -51,6 +72,7 @@ function when(seconds) {
 
 /** The Settings section: on a computer, its paired phones; on a paired phone, its computer. */
 export function phonesSetting(st) {
+  if (!REMOTE && !onTheComputer()) return viaAddressSetting();
   if (REMOTE) {
     const c = computer();
     const name = esc(c?.name || 'your computer');

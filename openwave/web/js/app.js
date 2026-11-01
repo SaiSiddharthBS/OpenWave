@@ -1,5 +1,6 @@
 // App shell: routing, event delegation, player UI bindings, now-playing panel.
 
+import { go } from './nav.js';
 import { api, get, img, enc } from './api.js';
 import { store } from './store.js';
 import { player } from './player.js';
@@ -55,7 +56,7 @@ async function playLink(videoId) {
   } catch (e) {
     toast(`Couldn’t open that song — ${e.message}`);
   }
-  setTimeout(() => location.replace('#/home'));
+  setTimeout(() => go('#/home', { replace: true }));
   return { html: '' };
 }
 
@@ -66,7 +67,7 @@ async function render({ keepScroll = false } = {}) {
   const params = new URLSearchParams(qs || '');
   let match = null;
   const route = ROUTES.find((r) => (match = path.match(r[0])));
-  if (!route) { location.replace('#/home'); return; }
+  if (!route) { go('#/home', { replace: true }); return; }
   const token = ++renderToken;
   const [, name, load, sk] = route;
 
@@ -155,9 +156,9 @@ function goBack() {
   while (trail.length > 1) {
     trail.pop();
     const prev = trail[trail.length - 1];
-    if (prev !== here) { navBack = true; goingBack = true; location.replace(prev); return true; }
+    if (prev !== here) { navBack = true; goingBack = true; go(prev, { replace: true }); return true; }
   }
-  if (!document.body.classList.contains('route-home')) { trail[0] = '#/home'; navBack = true; goingBack = true; location.replace('#/home'); return true; }
+  if (!document.body.classList.contains('route-home')) { trail[0] = '#/home'; navBack = true; goingBack = true; go('#/home', { replace: true }); return true; }
   return false;
 }
 
@@ -188,9 +189,9 @@ function renderProfileChip() {
 function profileMenu(anchor) {
   const p = store.profile;
   openMenu(anchor, [
-    { icon: 'chart', label: 'Your insights', run: () => { location.hash = '#/insights'; } },
+    { icon: 'chart', label: 'Your insights', run: () => go('#/insights') },
     { icon: 'download', label: 'Import playlists…', run: () => openImport() },
-    { icon: 'settings', label: 'Settings', run: () => { location.hash = '#/settings'; } },
+    { icon: 'settings', label: 'Settings', run: () => go('#/settings') },
     'sep',
     { icon: 'person', label: 'Switch profile', run: async () => { await switchProfile(); renderProfileChip(); render(); } },
   ], p ? `<div class="menu-head">${avatar(p, 40)}<div class="ellipsis"><b class="ellipsis">${esc(p.name)}</b><small>${store.pending ? 'Syncing…' : 'Synced'}</small></div></div>` : '');
@@ -227,7 +228,7 @@ function submitSearch(q) {
   hideSuggest();
   store.pushSearch(q);
   const target = `#/search?q=${enc(q)}`;
-  if (location.hash === target) render(); else location.hash = target;
+  if (location.hash === target) render(); else go(target);
   if (matchMedia('(max-width: 860px)').matches) searchInput.blur();
 }
 
@@ -249,7 +250,7 @@ searchInput.addEventListener('input', () => {
   }, 160);
   // Live results while typing on the search page.
   if (document.body.classList.contains('route-search') && q.length > 1 && !/^https?:/.test(q)) {
-    liveTimer = setTimeout(() => location.replace(`#/search?q=${enc(q)}`), 650);
+    liveTimer = setTimeout(() => go(`#/search?q=${enc(q)}`, { replace: true }), 650);
   }
 });
 
@@ -266,7 +267,7 @@ searchInput.addEventListener('keydown', (e) => {
   }
 });
 
-searchInput.addEventListener('focus', () => { if (!document.body.classList.contains('route-search')) location.hash = '#/search'; });
+searchInput.addEventListener('focus', () => { if (!document.body.classList.contains('route-search')) go('#/search'); });
 searchInput.addEventListener('blur', () => setTimeout(hideSuggest, 150));
 $('#search-form').addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(liveTimer); submitSearch(searchInput.value); });
 
@@ -330,8 +331,8 @@ function trackMenu(anchor, track, { list, i } = {}) {
   if (list?.localId) items.push({ icon: 'trash', label: 'Remove from this playlist', run: () => store.removeFromPlaylist(list.localId, track.videoId) });
   if (list?.queue) items.push({ icon: 'trash', label: 'Remove from queue', run: () => player.removeAt(i) });
   items.push('sep');
-  if (artist) items.push({ icon: 'person', label: 'Go to artist', run: () => { location.hash = `#/artist/${enc(artist.id)}`; } });
-  if (track.album?.id) items.push({ icon: 'album', label: 'Go to album', run: () => { location.hash = `#/album/${enc(track.album.id)}`; } });
+  if (artist) items.push({ icon: 'person', label: 'Go to artist', run: () => go(`#/artist/${enc(artist.id)}`) });
+  if (track.album?.id) items.push({ icon: 'album', label: 'Go to album', run: () => go(`#/album/${enc(track.album.id)}`) });
   items.push({ icon: 'share', label: 'Share', run: () => share(track.title, trackLine(track), watchUrl(track)) });
   items.push({ icon: 'link', label: 'Copy link', run: () => copyText(watchUrl(track)) });
   const head = `<div class="menu-head"><img src="${img(track.thumbnail, 120)}" alt=""><div class="ellipsis"><b class="ellipsis">${esc(track.title)}</b><small class="ellipsis">${esc(track.artists.map((a) => a.name).join(', '))}</small></div></div>`;
@@ -452,6 +453,10 @@ const ACTIONS = {
     render({ keepScroll: true });
   },
   'tailscale-code': () => showTailscaleCode(),
+  'copy-playback-log': async () => {
+    const text = player.playbackLog();
+    try { await navigator.clipboard.writeText(text); toast('Playback log copied'); } catch { await askText('Playback log', { value: text, ok: 'Done' }); }
+  },
   'np-queue': () => toggleNP('queue'),
   'np-lyrics': () => toggleNP('lyrics'),
   'sheet-queue': () => toggleSheet('queue'),
@@ -468,7 +473,7 @@ const ACTIONS = {
   },
   'new-playlist': async () => {
     const name = await askText('New playlist', { placeholder: 'My playlist', ok: 'Create' });
-    if (name) location.hash = `#/my/${store.createPlaylist(name).id}`;
+    if (name) go(`#/my/${store.createPlaylist(name).id}`);
   },
   'rename-playlist': async () => {
     const p = store.playlist(page.collection.localId);
@@ -479,7 +484,7 @@ const ACTIONS = {
     const p = store.playlist(page.collection.localId);
     if (await confirmDialog('Delete playlist?', `“${p.name}” will be deleted from your library on every device.`)) {
       store.deletePlaylist(p.id);
-      location.hash = '#/library';
+      go('#/library');
     }
   },
   'clear-history': () => store.clearHistory(),
@@ -1002,7 +1007,7 @@ initNative({
   repeat: () => player.cycleRepeat(),
   volumeUp: () => player.setVolume(player.volume + 0.1),
   volumeDown: () => player.setVolume(player.volume - 0.1),
-  navigate: (hash) => { location.hash = hash; },
+  navigate: (hash) => go(hash),
   search: () => { searchInput.focus(); },
   nowPlaying: () => openNP(),
   importPlaylists: () => openImport(),

@@ -10,6 +10,12 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - Each QR code works for 15 minutes; a phone that uses it makes its own key, which never leaves the phone, so a photo of the code is useless later. A phone can't pair other phones, and "Forget" on the phone unpairs it on the computer too.
 - **Tailscale in Settings → Phones** on every computer (it was only in the Mac app's own settings window): Turn on, then scan the code. Shows what's missing first: installing Tailscale, signing in, or switching on HTTPS for your account.
 
+### Fixed
+- **iPhone Home Screen app:** switching between Home, Search, Library and Downloads no longer stops the music. Safari treated each switch as leaving the page; on iPhone and iPad the app now changes screens without that, and if Safari still pauses right after a screen change, the music resumes at once.
+- **iPhone Home Screen app uses the whole screen:** pages scroll behind the player and the tab bar instead of stopping above them, the empty band at the bottom is gone, and the top bar sits below the clock.
+- A phone using OpenWave through Tailscale or the home Wi-Fi no longer shows the computer's own settings (Wi-Fi visibility, Phones, app updates). It shows how it's connected instead, and that Tailscale works anywhere, including on mobile data.
+- Settings → About → **Copy the playback log**, to include in a report when playback misbehaves.
+
 ### Development
 - `tests/test_connect.py`: pairing, offers from strangers, replays, expired codes, and real WebRTC connections through a test relay.
 - `tests/ui/connect_e2e.mjs` (run in CI): the whole flow in a browser, from Add a phone on the computer to playing, reconnecting, Forget and Remove on the phone, with a layout check of every new screen. `E2E_ENGINE` runs it against a packaged app.

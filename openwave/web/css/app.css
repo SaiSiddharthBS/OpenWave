@@ -449,16 +449,19 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
   .desktop-only { display: none !important; }
   .mobile-only { display: flex !important; }
   /* minmax(0, …) on every one-column phone grid: long text must never make a column wider than the screen. */
-  .app { grid-template-columns: minmax(0, 1fr); height: calc(100dvh - var(--player-h) - var(--tabbar-h) - var(--safe-b)); }
+  /* The whole screen, as in a native app: pages scroll behind the floating player and the tab bar
+     (they end with enough room to reach the last song), and the top bar sits below the clock and
+     battery in a Home Screen app (safe-area-inset-top is 0 elsewhere). */
+  .app { grid-template-columns: minmax(0, 1fr); height: 100dvh; }
   .sidebar { display: none; }
-  .topbar { padding: 10px 16px; gap: 10px; }
+  .topbar { padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; gap: 10px; }
   .topbar .nav-arrows { display: none; }
   .topbar .brand { padding: 0; font-size: 18px; }
   .topbar .logo { width: 28px; height: 28px; }
   body:not(.route-search) .searchbar { display: none; }
   body.route-search .topbar .brand { display: none !important; }
   .searchbar { max-width: none; height: 42px; }
-  .view { padding: 4px 16px 32px; }
+  .view { padding: 4px 16px calc(var(--player-h) + var(--tabbar-h) + var(--safe-b) + 32px); }
   .shelf, .quick { margin: 0 -16px; padding-left: 16px; padding-right: 16px; scroll-padding: 0 16px; }
   .shelf { grid-auto-columns: 142px; gap: 14px; }
   .shelf.wide { grid-auto-columns: 240px; }
@@ -473,7 +476,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
   .row .more { opacity: 1; }
   .row .d { display: none; }
   .list-head { display: none; }
-  .hero { margin: -62px -16px 0; padding: 76px 16px 16px; flex-direction: column; align-items: center; text-align: center; gap: 18px; }
+  .hero { margin: calc(-62px - env(safe-area-inset-top, 0px)) -16px 0; padding: calc(76px + env(safe-area-inset-top, 0px)) 16px 16px; flex-direction: column; align-items: center; text-align: center; gap: 18px; }
   .hero .cover, .mosaic { width: 64vw; height: 64vw; max-width: 280px; max-height: 280px; }
   .hero h1 { font-size: 28px; margin: 4px 0 8px; }
   .hero.artist { min-height: 340px; align-items: flex-start; text-align: left; }

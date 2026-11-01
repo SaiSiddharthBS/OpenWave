@@ -295,7 +295,7 @@ class Link {
   apply() {
     const s = this.state;
     if (this.mode === 'remote') return player.mirrorState(s);
-    if (!s) { player.el.pause(); return; }
+    if (!s) { player.heldAt = performance.now(); player.el.pause(); return; }
     const fresh = player.current?.videoId !== s.track.videoId || !player.loaded;
     player.adopt(s, { position: this.position() + (fresh && s.playing ? LOAD_LEAD : 0), playing: s.playing });
   }
@@ -343,7 +343,7 @@ function stop(reason) {
   clearInterval(l.timer);
   if (l.mode === 'follow') call('leave', { player: ID, target: l.dev.key }).catch(() => {});
   player.link(null);
-  if (l.mode === 'follow' && reason !== 'left' && reason !== 'replaced') player.el.pause();
+  if (l.mode === 'follow' && reason !== 'left' && reason !== 'replaced') { player.heldAt = performance.now(); player.el.pause(); }
   const name = l.dev.name;
   const why = {
     ended: `${name} ended the listening session`,

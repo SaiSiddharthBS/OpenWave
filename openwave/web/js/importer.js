@@ -2,6 +2,7 @@
 // JioSaavn), export files (Exportify, TuneMyMusic for Amazon Music & co., Soundiiz, Spotify's data
 // download, the Apple Music app, Google Takeout), plain lists or OpenWave backups.
 
+import { go as goTo } from './nav.js';
 import { store } from './store.js';
 import { esc, icon, toast, openDialog } from './ui.js';
 
@@ -117,7 +118,7 @@ function mount(d) {
       go.textContent = made.length > 1 ? 'Open library' : 'Open playlist';
       go.disabled = false;
       d.querySelector('[data-cancel]').textContent = 'Done';
-      go.onclick = () => { d.close('ok'); location.hash = made.length > 1 ? '#/library' : `#/my/${made[0].pl.id}`; };
+      go.onclick = () => { d.close('ok'); goTo(made.length > 1 ? '#/library' : `#/my/${made[0].pl.id}`); };
     } catch (e) {
       go.disabled = false;
       progress.hidden = true;

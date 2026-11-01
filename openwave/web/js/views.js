@@ -1,5 +1,6 @@
 // Page views. Each returns {html, tint?, mount?} for the router in app.js.
 
+import { go } from './nav.js';
 import { get, img, enc } from './api.js';
 import { store } from './store.js';
 import { offline, fmtBytes } from './offline.js';
@@ -9,7 +10,7 @@ import { peopleLine, syncLine } from './sharing.js';
 import {
   esc, icon, fmtTotal, trackList, trackCards, cards, section, registerList, trackRow, artistLinks, empty, avatar,
 } from './ui.js';
-import { phonesSetting, phonesStatus } from './phones.js';
+import { phonesSetting, phonesStatus, onTheComputer } from './phones.js';
 import { REMOTE } from './remote.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -144,7 +145,7 @@ export async function search({ q = '', type = 'all' }) {
   }
 
   const data = await get.search(q, type);
-  if (data.redirect) { location.replace(data.redirect); return { html: '' }; }
+  if (data.redirect) { go(data.redirect, { replace: true }); return { html: '' }; }
   const first = data.top?.videoId ? data.top : (data.results || []).find((r) => r.videoId);
   if (first) get.prefetch(first.videoId, first.type === 'video', first.title, first.artists?.[0]?.name || ''); // the top hit is the most likely click
 
@@ -409,7 +410,7 @@ export async function settings() {
   const p = store.profile;
   let health = null;
   try { health = await (await fetch('/api/health')).json(); } catch { /* offline */ }
-  const [update, link, phones] = await Promise.all([checkForUpdate(3000), REMOTE ? null : linkSettings(), phonesStatus()]);
+  const [update, link, phones] = await Promise.all([checkForUpdate(3000), REMOTE || !onTheComputer() ? null : linkSettings(), phonesStatus()]);
   const sw = (key) => `<button class="switch ${s[key] ? 'on' : ''}" data-setting-toggle="${key}" role="switch" aria-checked="${!!s[key]}" aria-label="${key}"></button>`;
   const select = (key, options, type = '') => `<select class="select" data-setting="${key}" ${type ? `data-type="${type}"` : ''}>
     ${options.map(([v, l]) => `<option value="${v}" ${String(s[key]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
@@ -448,6 +449,7 @@ export async function settings() {
         ${updateLine(update)}
         <p>Catalog and streams come from YouTube's public endpoints via <a href="https://github.com/sigma67/ytmusicapi" target="_blank" rel="noopener">ytmusicapi</a> and <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener">yt-dlp</a>. OpenWave is not affiliated with or endorsed by YouTube or Google.</p>
         <p>Server: ${health ? `online • yt-dlp ${esc(health.ytDlp)} • JS runtime: ${esc(health.jsRuntimes.join(', ') || 'none found (install Deno or Node)')}${Object.keys(health.extractorUpdates || {}).length ? ' • update downloaded, restart OpenWave to apply' : ''}` : 'unreachable'}</p>
+        <p>Something wrong with playback? <a href="#" data-act="copy-playback-log">Copy the playback log</a> and paste it into your report.</p>
         <p>Keyboard: <b>Space</b> play/pause • <b>←/→</b> seek • <b>Shift+←/→</b> previous/next • <b>L</b> like • <b>M</b> mute • <b>S</b> shuffle • <b>R</b> repeat • <b>/</b> search</p>
         <p><a href="https://github.com/SaiSiddharthBS/OpenWave" target="_blank" rel="noopener">Source code on GitHub</a> · <a href="https://github.com/SaiSiddharthBS/OpenWave/issues" target="_blank" rel="noopener">Report a problem</a></p>
       </div></div>`,
