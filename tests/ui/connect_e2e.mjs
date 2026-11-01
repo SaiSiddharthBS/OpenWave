@@ -346,6 +346,11 @@ async function main() {
     await layout(droid, out, 'android-pair-screen', PHONE);
     await shot(droid, out, 'android-pair-screen');
     ok((await api('/api/connect')).devices.length === 0, 'Forget unpaired it on the computer too');
+    // A link shared to the app while it's open changes only the part after the #: it still pairs.
+    const shared = (await api('/api/connect/pair', 'POST')).link;
+    await droid.ev(`location.hash = ${JSON.stringify(new URL(shared).hash)}; true`);
+    ok(await until(droid, `!!document.querySelector('.profile-tile[data-pid]')`, 30000), 'a link that arrives while the app is open pairs it too');
+    ok((await api('/api/connect')).devices.length === 1, '…and the computer lists it');
 
     site.close();
   } finally {

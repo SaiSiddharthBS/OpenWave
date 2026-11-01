@@ -14,6 +14,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - **The Android app plays from your computer, anywhere:** share an Add a phone link to OpenWave (or paste it in Settings → Library → Connect to computer) and the app plays from the computer with its notification, lock-screen controls and artwork, on Wi-Fi or mobile data. **Use this phone** switches back to the app's own library, and **Play from your computer** returns to the computer later. The pairing screen in the app offers Use this phone too.
 
 ### Fixed
+- A pairing link opened while the phone app is already open (shared to the Android app, or in a browser tab that has OpenWave) now pairs; it used to be ignored.
 - The Android app playing from a computer checked for app updates against the computer's version instead of its own; it now compares with its own.
 - Settings buttons such as Tailscale's "Turn on" no longer wrap onto two lines.
 - **iPhone Home Screen app:** switching between Home, Search, Library and Downloads no longer stops the music. Safari treated each switch as leaving the page; on iPhone and iPad the app now changes screens without that, and if Safari still pauses right after a screen change, the music resumes at once.

@@ -303,21 +303,36 @@ async function serviceWorker() {
 
 // ------------------------------------------------------------------ start
 
+/** Use the pairing code in a link's #connect=…; throws if the link is incomplete. */
+function adopt(hash) {
+  const p = mod.parsePairing(hash);
+  if (device?.host === p.host && device.paired) {
+    Object.assign(device, { ticket: p.ticket, relays: p.relays });   // re-pair if this phone was removed
+  } else {
+    device = mod.newDevice(p);
+  }
+  save(device);
+}
+
 export async function boot() {
   document.documentElement.classList.add('remote-mode');
   mod = await import('./connect.js');
+  // A pairing link opened while OpenWave is already open (shared to the Android app, or a browser
+  // tab that has it) only changes the part after the #, which doesn't load the page again: take
+  // the code from it, then start over with it.
+  window.addEventListener('hashchange', (e) => {
+    const next = new URL(e.newURL).hash;
+    if (!next.includes('connect=')) return;
+    try { adopt(next); } catch { return; }
+    history.replaceState(null, '', location.pathname + location.search);
+    location.reload();
+  });
   device = load();
   const hash = location.hash;
   let fresh = false;
   if (hash.includes('connect=')) {
     try {
-      const p = mod.parsePairing(hash);
-      if (device?.host === p.host && device.paired) {
-        Object.assign(device, { ticket: p.ticket, relays: p.relays });   // re-pair if this phone was removed
-      } else {
-        device = mod.newDevice(p);
-      }
-      save(device);
+      adopt(hash);
       fresh = true;
     } catch {
       await pairScreen('That link isn’t complete. Scan the code again, or paste the whole link.');
