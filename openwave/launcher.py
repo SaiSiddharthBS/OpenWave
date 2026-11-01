@@ -2,8 +2,10 @@
 
 Starts the bundled server on 127.0.0.1, then opens it in a Chromium "app mode" window (Microsoft
 Edge ships with every Windows 10/11 PC; Chrome/Chromium/Brave/Edge on Linux). Media keys and the
-system media overlay work through the browser. Closing the window quits OpenWave. Without a
-Chromium browser it falls back to the default browser and keeps running in the background.
+system media overlay work through the browser. Closing the window quits OpenWave, unless it starts
+with Windows (startup.py): then it keeps running for your phones, and --background (how Windows
+starts it at sign-in) runs it with no window at all. Without a Chromium browser it falls back to
+the default browser and keeps running in the background.
 """
 
 from __future__ import annotations
@@ -79,8 +81,16 @@ def app_window_command(browser: list[str], url: str, profile_dir: Path) -> list[
     ]
 
 
+def _keep_running() -> None:
+    try:
+        while True:
+            time.sleep(3600)
+    except KeyboardInterrupt:
+        pass
+
+
 def main() -> None:
-    from . import updater
+    from . import startup, updater
 
     updater.activate()
     from .config import FROZEN, data_dir
@@ -100,6 +110,9 @@ def main() -> None:
         uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning", loop="asyncio", http="h11", ws="none")
         return
 
+    background = startup.BACKGROUND in sys.argv
+    if background and _already_running(PREFERRED_PORT):
+        return
     port = _free_port()
     url = f"http://127.0.0.1:{port}/"
     if not _already_running(PREFERRED_PORT):
@@ -127,17 +140,17 @@ def main() -> None:
         return
 
     browser = find_app_browser()
-    if browser:
+    if background:
+        _keep_running()  # signed in to Windows: ready for phones; the Start menu opens a window onto it
+    elif browser:
         proc = subprocess.Popen(app_window_command(browser, url, data_dir() / "window"))
-        proc.wait()  # the window closed: quit
+        proc.wait()  # the window closed: quit, unless phones should keep reaching this computer
+        if startup.enabled():
+            _keep_running()
     else:
         webbrowser.open(url)
         print(f"OpenWave is running at {url} — close this window to quit.")
-        try:
-            while True:
-                time.sleep(3600)
-        except KeyboardInterrupt:
-            pass
+        _keep_running()
     server.should_exit = True
 
 

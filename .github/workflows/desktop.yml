@@ -1,10 +1,18 @@
 # Builds the Windows installer and the Linux AppImage. Version tags run it through publish.yml,
-# which puts them on the GitHub Release next to the macOS DMGs.
+# which puts them on the GitHub Release next to the macOS DMGs. Changes to the launcher or the
+# packaging build them on main too, so a broken Windows app shows up before a release.
 name: Windows & Linux apps
 
 on:
   workflow_call:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - openwave/launcher.py
+      - openwave/startup.py
+      - packaging/**
+      - .github/workflows/desktop.yml
 
 permissions:
   contents: read
@@ -49,6 +57,28 @@ jobs:
           $h | ConvertTo-Json
           if ($h.jsRuntimes -notcontains "deno") { throw "bundled Deno not found" }
           if (-not $h.connect) { throw "OpenWave Connect is missing from the build" }
+      - name: Smoke test Start with Windows
+        shell: pwsh
+        run: |
+          $env:OPENWAVE_DATA = "$env:RUNNER_TEMP\owdata2"
+          $p = Start-Process dist/OpenWave/OpenWave.exe -ArgumentList "--background" -PassThru
+          $ok = $false
+          for ($i = 0; $i -lt 60; $i++) { try { Invoke-RestMethod http://127.0.0.1:47878/api/health | Out-Null; $ok = $true; break } catch { Start-Sleep 1 } }
+          if (-not $ok) { Stop-Process $p -Force; throw "--background did not start the engine" }
+          $again = Start-Process dist/OpenWave/OpenWave.exe -ArgumentList "--background" -PassThru
+          if (-not $again.WaitForExit(30000)) { Stop-Process $again -Force; Stop-Process $p -Force; throw "a second --background did not leave" }
+          $run = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Run"
+          $json = @{ "content-type" = "application/json" }
+          try {
+            $st = Invoke-RestMethod http://127.0.0.1:47878/api/connect/startup
+            if (-not $st.available -or $st.on) { throw "unexpected startup state: $($st | ConvertTo-Json -Compress)" }
+            $st = Invoke-RestMethod -Method Post http://127.0.0.1:47878/api/connect/startup -Headers $json -Body '{"on":true}'
+            $value = (Get-ItemProperty $run -Name OpenWave).OpenWave
+            "Run entry: $value"
+            if (-not $st.on -or $value -notlike '*OpenWave.exe" --background') { throw "Start with Windows did not turn on" }
+            $st = Invoke-RestMethod -Method Post http://127.0.0.1:47878/api/connect/startup -Headers $json -Body '{"on":false}'
+            if ($st.on -or (Get-ItemProperty $run -Name OpenWave -ErrorAction SilentlyContinue)) { throw "Start with Windows did not turn off" }
+          } finally { Stop-Process $p -Force }
       - name: Installer
         shell: pwsh
         run: |

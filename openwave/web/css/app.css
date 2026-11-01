@@ -347,7 +347,8 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
 .setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .setting p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 .setting b { font-weight: 650; }
-.setting > .btn { flex: none; white-space: nowrap; }
+.setting > .btn, .setting > .btn-row .btn { flex: none; white-space: nowrap; }
+.setting > .btn-row { flex: none; justify-content: flex-end; }
 .select { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; color: var(--text); }
 .switch { position: relative; width: 44px; height: 26px; border-radius: 999px; background: var(--surface-3); transition: background .2s; flex: none; }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s var(--ease); }

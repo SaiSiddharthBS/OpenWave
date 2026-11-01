@@ -9,6 +9,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - **iPhone, anywhere, with a QR code.** On the computer, Settings → Phones → **Add a phone** shows a code; scan it with the iPhone, add OpenWave to the Home Screen, and it plays from your computer at home, at work or on mobile data. No accounts, no Tailscale, no port forwarding and nothing to install. The phone and the computer find each other through public relays (end-to-end encrypted) and then talk directly over an encrypted WebRTC connection (OpenWave Connect). Songs keep playing with the screen locked, downloads play even when the computer is off, and the computer lists paired phones with a Remove button. The Mac app's Settings → Phone offers it first, with Tailscale as an alternative. Works with the Mac, Windows, Linux and Docker versions.
 - Each QR code works for 15 minutes; a phone that uses it makes its own key, which never leaves the phone, so a photo of the code is useless later. A phone can't pair other phones, and "Forget" on the phone unpairs it on the computer too.
 - **Tailscale in Settings → Phones** on every computer (it was only in the Mac app's own settings window): Turn on, then scan the code. Shows what's missing first: installing Tailscale, signing in, or switching on HTTPS for your account.
+- **Start with Windows** (Settings → Phones, in the Windows app), for a PC that's always on: OpenWave opens in the background when you sign in, so phones can play from it without anyone opening the app, and closing the OpenWave window leaves it running. Windows' own Settings → Apps → Startup lists it too, and uninstalling removes it.
 
 ### Fixed
 - **iPhone Home Screen app:** switching between Home, Search, Library and Downloads no longer stops the music. Safari treated each switch as leaving the page; on iPhone and iPad the app now changes screens without that, and if Safari still pauses right after a screen change, the music resumes at once.
@@ -21,6 +22,7 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 - `tests/ui/connect_e2e.mjs` (run in CI): the whole flow in a browser, from Add a phone on the computer to playing, reconnecting, Forget and Remove on the phone, with a layout check of every new screen. `E2E_ENGINE` runs it against a packaged app.
 - The layout audit covers Settings → Phones and Add a phone (20 screens at eight sizes).
 - Every app build checks that the packaged engine starts OpenWave Connect.
+- `tests/test_startup.py` covers Start with Windows against a stand-in registry; the Windows build checks it against the real one, and changes to the launcher or packaging now build the Windows and Linux apps on every push to main.
 - The website build (`scripts/build-site.py`) publishes the phone app: `/app/` from the latest release, `/app-next/` from main for testing.
 
 ## [0.3.2] — 2026-10-31

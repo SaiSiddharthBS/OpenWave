@@ -33,3 +33,14 @@ Name: "{autodesktop}\OpenWave"; Filename: "{app}\OpenWave.exe"; Tasks: desktopic
 
 [Run]
 Filename: "{app}\OpenWave.exe"; Description: "Start OpenWave"; Flags: nowait postinstall skipifsilent
+
+[UninstallRun]
+; "Start with Windows" may have it running in the background: stop it so its files can go.
+Filename: "{sys}\taskkill.exe"; Parameters: "/f /im OpenWave.exe"; Flags: runhidden; RunOnceId: "StopOpenWave"
+
+[Code]
+procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
+begin
+  if CurUninstallStep = usUninstall then
+    RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'OpenWave');
+end;

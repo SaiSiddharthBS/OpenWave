@@ -1,5 +1,5 @@
 """Settings → Phones: pair phones with this engine through OpenWave Connect (see connect.py), or
-share it privately through Tailscale (tailscale.py)."""
+share it privately through Tailscale (tailscale.py); on Windows, start with Windows (startup.py)."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import asyncio
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
 
-from . import connect, shared, tailscale
+from . import connect, shared, startup, tailscale
 from .config import data_dir
 
 router = APIRouter(prefix="/api/connect")
@@ -108,3 +108,32 @@ async def tailscale_switch(request: Request):
     else:
         await asyncio.to_thread(tailscale.stop)
     return await asyncio.to_thread(tailscale.state, port)
+
+
+# --------------------------------------------------------------------------- Start with Windows
+
+
+def _startup_state() -> dict:
+    return {"available": startup.available(), "on": startup.enabled()}
+
+
+@router.get("/startup")
+async def startup_state(request: Request):
+    _from_this_computer(request)
+    return await asyncio.to_thread(_startup_state)
+
+
+@router.post("/startup")
+async def startup_switch(request: Request):
+    _from_this_computer(request)
+    try:
+        on = bool((await request.json()).get("on"))
+    except ValueError:
+        raise HTTPException(400, "Send {\"on\": true} or {\"on\": false}.") from None
+    if not startup.available():
+        raise HTTPException(409, "Only the Windows app can start with Windows.")
+    try:
+        await asyncio.to_thread(startup.set_enabled, on)
+    except OSError as e:
+        raise HTTPException(500, f"Windows didn’t allow it: {e}") from None
+    return await asyncio.to_thread(_startup_state)

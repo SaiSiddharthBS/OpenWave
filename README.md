@@ -240,7 +240,7 @@ Apple does not allow apps like OpenWave on the App Store, so the iPhone plays fr
   <img src="docs/screenshots/mobile-connect-add.png" width="200" alt="The iPhone suggesting Add to Home Screen">
 </p>
 
-It works at home, at work and on mobile data, with no port forwarding, VPN or sign-in. OpenWave Connect finds a direct, encrypted path from the phone to the computer ([how it works](#privacy-and-security)). Songs keep playing with the screen locked, the Lock Screen shows controls and artwork, and downloaded songs play even when the computer is off. The computer needs to be on, with OpenWave open, for everything else. Paired phones are listed in Settings → Phones, where each can be removed.
+It works at home, at work and on mobile data, with no port forwarding, VPN or sign-in. OpenWave Connect finds a direct, encrypted path from the phone to the computer ([how it works](#privacy-and-security)). Songs keep playing with the screen locked, the Lock Screen shows controls and artwork, and downloaded songs play even when the computer is off. The computer needs to be on, with OpenWave open, for everything else. Paired phones are listed in Settings → Phones, where each can be removed. For a Windows PC that's always on, Settings → Phones → **Start with Windows** opens OpenWave in the background whenever you sign in, so the phone can reach it without anyone opening the app.
 
 <p align="center"><img src="docs/screenshots/connect-phones.png" width="560" alt="Settings → Phones listing a paired iPhone"></p>
 

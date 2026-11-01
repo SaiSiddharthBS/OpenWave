@@ -39,11 +39,12 @@ function viaAddressSetting() {
 /** What Settings needs to know, or null where there's nothing to show (e.g. the Android app). */
 export async function phonesStatus() {
   if (REMOTE || window.OpenWaveAndroid || !onTheComputer()) return null;
-  const [connect, tailscale] = await Promise.all([
+  const [connect, tailscale, startup] = await Promise.all([
     call('/api/connect').catch(() => null),
     Promise.race([call('/api/connect/tailscale'), new Promise((r) => setTimeout(r, 5000))]).catch(() => null),
+    call('/api/connect/startup').catch(() => null),
   ]);
-  return connect && { ...connect, tailscale: tailscale || null };
+  return connect && { ...connect, tailscale: tailscale || null, startup: startup || null };
 }
 
 /** The Tailscale row: private HTTPS for your own devices, for networks that block direct connections. */
@@ -60,6 +61,26 @@ function tailscaleSetting(ts) {
   }[ts.state];
   if (!rows) return '';
   return `<div class="setting"><div><b>With Tailscale</b><p>${rows[0]}</p></div><div class="btn-row">${rows[1]}</div></div>`;
+}
+
+/** The Windows app: start in the background at sign-in, for a computer that's always on. */
+function startupSetting(st) {
+  if (!st?.available) return '';
+  const about = 'OpenWave opens in the background when you sign in to Windows, so phones can play from this computer without anyone opening it.';
+  return `<div class="setting"><div><b>Start with Windows</b><p>${st.on ? `On. ${about} Closing the OpenWave window leaves it running.` : `${about} Good for a computer that’s always on.`}</p></div>
+    <button class="btn" data-act="startup-switch" data-on="${st.on ? '' : '1'}">${st.on ? 'Turn off' : 'Turn on'}</button></div>`;
+}
+
+/** Start with Windows on or off. */
+export async function switchStartup(on) {
+  try {
+    const r = await fetch('/api/connect/startup', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ on }) });
+    const body = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(body.error || body.detail || `Request failed (${r.status})`);
+    toast(on ? 'OpenWave starts with Windows' : 'OpenWave no longer starts with Windows');
+  } catch (e) {
+    toast(e.message, 6000);
+  }
 }
 
 function when(seconds) {
@@ -82,12 +103,13 @@ export function phonesSetting(st) {
   }
   if (!st) return '';
   const intro = '<b>Use OpenWave on your phone, anywhere</b><p>Your iPhone (or any phone) plays from this computer at home, at work or on mobile data, with the same profiles and playlists. No accounts, nothing to install.</p>';
-  if (!st.available) return `<h2>Phones</h2><div class="setting"><div>${intro}<p>${esc(st.reason)}</p></div></div>${tailscaleSetting(st.tailscale)}`;
+  if (!st.available) return `<h2>Phones</h2><div class="setting"><div>${intro}<p>${esc(st.reason)}</p></div></div>${startupSetting(st.startup)}${tailscaleSetting(st.tailscale)}`;
   const rows = st.devices.map((d) => `<div class="setting sub"><div><b>${esc(d.label)}</b><p>${d.online ? 'Connected now' : d.seen ? `Last used ${esc(when(d.seen))}` : 'Paired'}</p></div>
       <button class="btn" data-act="connect-remove" data-id="${esc(d.id)}" data-label="${esc(d.label)}">Remove</button></div>`).join('');
   return `<h2>Phones</h2>
     <div class="setting"><div>${intro}</div><button class="btn primary" data-act="connect-pair">${icon('phone')} Add a phone</button></div>
     ${rows}
+    ${startupSetting(st.startup)}
     ${tailscaleSetting(st.tailscale)}`;
 }
 

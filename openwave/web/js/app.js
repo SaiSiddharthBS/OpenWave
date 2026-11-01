@@ -15,7 +15,7 @@ import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import { initLink, openDevices, linkLabel, linkEvents, setVisible, rename, forget } from './link.js';
 import { startSharing, openSharing, openJoin, showNotices, isInvite } from './sharing.js';
 import { REMOTE } from './remote.js';
-import { openPairing, removePhone, forgetComputer, switchTailscale, showTailscaleCode } from './phones.js';
+import { openPairing, removePhone, forgetComputer, switchTailscale, showTailscaleCode, switchStartup } from './phones.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
   confirmDialog, sampleTint, artistLinks, errorBox, skeleton, empty, avatar,
@@ -453,6 +453,11 @@ const ACTIONS = {
     render({ keepScroll: true });
   },
   'tailscale-code': () => showTailscaleCode(),
+  'startup-switch': async (el) => {
+    el.disabled = true;
+    await switchStartup(!!el.dataset.on);
+    render({ keepScroll: true });
+  },
   'copy-playback-log': async () => {
     const text = player.playbackLog();
     try { await navigator.clipboard.writeText(text); toast('Playback log copied'); } catch { await askText('Playback log', { value: text, ok: 'Done' }); }

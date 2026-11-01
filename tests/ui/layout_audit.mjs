@@ -111,6 +111,7 @@ function fake(cat, url) {
   // OpenWave Connect (Settings → Phones), with as many paired phones as names allow.
   if (p === '/api/connect') return json(cat.phones);
   if (p === '/api/connect/tailscale') return json({ state: 'sharing', url: 'https://the-living-room-mac-mini-of-the-family.tail1234abcd.ts.net:8443/' });
+  if (p === '/api/connect/startup') return json({ available: true, on: true });
   if (p === '/api/connect/pair') return json({ id: 'audit', link: `https://saisiddharthbs.github.io/OpenWave/app/#connect=${'eyJ2IjoxLCJoIjoi'.repeat(14)}`, expires: 0 });
   return null;
 }
