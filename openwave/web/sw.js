@@ -1,13 +1,23 @@
 // Caches the app shell and artwork so OpenWave opens and shows your library with no connection.
 // Downloaded songs live in IndexedDB (see js/offline.js); live streams are never cached here.
-const VERSION = 'openwave-v16';
-const IMAGES = 'openwave-img-v1';
+// Paths are relative to this file: an engine serves it at /, the OpenWave website below /app/.
+const BASE = new URL('./', self.location.href).pathname;
+// Copies of the app at different paths of one site (the website's /app/ and /app-next/) keep
+// separate caches, so updating one never empties the other's.
+const SCOPE = BASE === '/' ? '' : `@${BASE}`;
+const VERSION = `openwave-v17${SCOPE}`;
+const IMAGES = `openwave-img-v1${SCOPE}`;
 const MAX_IMAGES = 600;
 const SHELL = [
-  '/', '/index.html', '/css/app.css', '/js/app.js', '/js/api.js', '/js/player.js', '/js/store.js', '/js/ui.js',
-  '/js/views.js', '/js/offline.js', '/js/profiles.js', '/js/importer.js', '/js/insights.js', '/js/native.js', '/js/update.js', '/js/gestures.js', '/js/link.js', '/js/sharing.js',
-  '/icons/logo-mark-64.png', '/icons/logo-mark-128.png', '/icons/favicon-64.png', '/icons/icon-192.png', '/manifest.webmanifest',
+  './', 'index.html', 'css/app.css', 'js/boot.js', 'js/remote.js', 'js/app.js', 'js/api.js', 'js/player.js', 'js/store.js', 'js/ui.js',
+  'js/views.js', 'js/offline.js', 'js/profiles.js', 'js/importer.js', 'js/insights.js', 'js/native.js', 'js/update.js', 'js/gestures.js', 'js/link.js', 'js/sharing.js',
+  'js/phones.js', 'js/connect.js', 'js/vendor/secp256k1.js', 'js/vendor/qrcode.js',
+  'icons/logo-mark-64.png', 'icons/logo-mark-128.png', 'icons/favicon-64.png', 'icons/icon-192.png', 'icons/apple-touch-icon.png',
 ];
+const INDEX = new URL('index.html', self.location.href).href;
+// The website copy of the app (?mode=connect) gets artwork through the page's connection to the
+// computer at home (js/remote.js), since there's no engine at this address.
+const REMOTE = new URL(self.location.href).searchParams.get('mode') === 'connect';
 
 self.addEventListener('install', (e) => {
   // cache: 'reload' skips the browser's HTTP cache, so an update never re-caches old files.
@@ -17,7 +27,8 @@ self.addEventListener('install', (e) => {
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== IMAGES).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== IMAGES && (SCOPE ? k.endsWith(SCOPE) : !k.includes('@')))
+        .map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
@@ -38,7 +49,7 @@ async function networkFirst(req) {
     if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
     return res;
   } catch {
-    return (await caches.match(req, { ignoreSearch: true })) || (await caches.match('/index.html')) || Response.error();
+    return (await caches.match(req, { ignoreSearch: true })) || (await caches.match(INDEX)) || Response.error();
   }
 }
 
@@ -60,11 +71,28 @@ async function anySizeOf(req) {
   return null;
 }
 
-async function cacheFirstImage(req) {
+/** Ask the page that wants this to fetch it over its connection to the computer at home. */
+async function viaPage(e, path) {
+  const client = (e.clientId && await self.clients.get(e.clientId)) || (await self.clients.matchAll({ type: 'window' }))[0];
+  if (!client) throw new Error('no page to ask');
+  return new Promise((resolve, reject) => {
+    const ch = new MessageChannel();
+    const t = setTimeout(() => reject(new Error('timeout')), 30000);
+    ch.port1.onmessage = ({ data }) => {
+      clearTimeout(t);
+      if (data.error) reject(new Error(data.error));
+      else resolve(new Response(data.body, { status: data.status, headers: data.headers }));
+    };
+    client.postMessage({ type: 'openwave:fetch', path }, [ch.port2]);
+  });
+}
+
+async function cacheFirstImage(e, path) {
+  const req = e.request;
   const hit = await caches.match(req);
   if (hit) return hit;
   try {
-    const res = await fetch(req);
+    const res = await (REMOTE ? viaPage(e, path) : fetch(req));
     if (res.ok) {
       const copy = res.clone();
       caches.open(IMAGES).then((c) => c.put(req, copy)).then(trimImages);
@@ -77,8 +105,9 @@ async function cacheFirstImage(req) {
 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
-  if (e.request.method !== 'GET' || url.origin !== location.origin) return;
-  if (url.pathname === '/api/img') return e.respondWith(cacheFirstImage(e.request));
-  if (url.pathname.startsWith('/api/')) return;
+  if (e.request.method !== 'GET' || url.origin !== location.origin || !url.pathname.startsWith(BASE)) return;
+  const rel = url.pathname.slice(BASE.length);
+  if (rel === 'api/img') return e.respondWith(cacheFirstImage(e, '/api/img' + url.search));
+  if (rel.startsWith('api/')) return;
   e.respondWith(networkFirst(e.request));
 });

@@ -1,12 +1,17 @@
-# Publishes the download page in site/ to GitHub Pages from main (the github-pages
-# environment only accepts deployments from the default branch).
+# Publishes the website to GitHub Pages from main (the github-pages environment only accepts
+# deployments from the default branch): the download page in site/, plus the web app phones use
+# through OpenWave Connect (scripts/build-site.py: /app/ from the latest release, /app-next/ from
+# main). It runs again when a release is published, so /app/ always matches the newest engines.
 # One-time setup: repo Settings → Pages → Source: "GitHub Actions".
 name: Website
 
 on:
   push:
     branches: [main]
-    paths: ["site/**", "docs/**", "openwave/web/js/connect.js", "openwave/web/js/vendor/**", ".github/workflows/pages.yml"]
+    paths: ["site/**", "docs/**", "openwave/web/**", "scripts/build-site.py", ".github/workflows/pages.yml"]
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
@@ -26,16 +31,13 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0               # tags: /app/ is built from the latest release
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
       - name: Assemble
-        run: |
-          mkdir -p _site
-          cp -R site/. _site/
-          cp -R docs/screenshots _site/screenshots
-          cp docs/logo.png _site/logo.png
-          cp openwave/web/icons/favicon-64.png _site/favicon-64.png
-          mkdir -p _site/connect-test/vendor
-          cp openwave/web/js/connect.js _site/connect-test/
-          cp openwave/web/js/vendor/secp256k1.js _site/connect-test/vendor/
+        run: python scripts/build-site.py _site
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

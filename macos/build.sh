@@ -35,7 +35,20 @@ pip_install --upgrade "$ROOT" pyinstaller "yt-dlp[default]" ytmusicapi
   --add-data "$ROOT/openwave/web:openwave/web" \
   --collect-all yt_dlp_ejs --collect-data ytmusicapi --collect-submodules yt_dlp \
   --collect-submodules uvicorn --hidden-import openwave.desktop \
+  --collect-submodules openwave._vendor.aiortc --collect-submodules aioice --collect-submodules dns --exclude-module av \
   "$HERE/server_entry.py"
+
+echo "▸ Checking the frozen engine starts, with OpenWave Connect"
+SMOKE_PORT=47998
+# An unreachable relay: Connect starts (proving it's packaged) without going online.
+OPENWAVE_DATA="$WORK/smoke" OPENWAVE_RELAYS=ws://127.0.0.1:9 OPENWAVE_LINK=0 \
+  "$WORK/pyi-dist/openwave-server/openwave-server" --host 127.0.0.1 --port "$SMOKE_PORT" >"$WORK/smoke.log" 2>&1 &
+SMOKE_PID=$!
+for _ in $(seq 1 90); do curl -sf "http://127.0.0.1:$SMOKE_PORT/api/health" >"$WORK/health.json" && break; sleep 1; done
+kill "$SMOKE_PID" 2>/dev/null; wait "$SMOKE_PID" 2>/dev/null || true
+if ! grep -q '"connect":true' "$WORK/health.json" 2>/dev/null; then
+  echo "✗ The frozen engine didn't start OpenWave Connect:"; cat "$WORK/health.json" "$WORK/smoke.log" 2>/dev/null | tail -30; exit 1
+fi
 
 echo "▸ Fetching Deno $DENO_VERSION (JavaScript runtime for YouTube's player challenges)"
 DENO_ZIP="$WORK/deno.zip"

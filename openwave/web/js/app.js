@@ -13,6 +13,8 @@ import { initGestures } from './gestures.js';
 import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import { initLink, openDevices, linkLabel, linkEvents, setVisible, rename, forget } from './link.js';
 import { startSharing, openSharing, openJoin, showNotices, isInvite } from './sharing.js';
+import { REMOTE } from './remote.js';
+import { openPairing, removePhone, forgetComputer } from './phones.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
   confirmDialog, sampleTint, artistLinks, errorBox, skeleton, empty, avatar,
@@ -429,6 +431,14 @@ const ACTIONS = {
     try { await forget(el.dataset.engine); } catch (e) { toast(e.message); }
     render({ keepScroll: true });
   },
+  'connect-pair': async () => {
+    await openPairing();
+    if (location.hash.startsWith('#/settings')) render({ keepScroll: true });
+  },
+  'connect-remove': async (el) => {
+    if (await removePhone(el.dataset.id, el.dataset.label)) render({ keepScroll: true });
+  },
+  'connect-forget': () => forgetComputer(),
   'np-queue': () => toggleNP('queue'),
   'np-lyrics': () => toggleNP('lyrics'),
   'sheet-queue': () => toggleSheet('queue'),
@@ -1002,6 +1012,6 @@ Promise.all([offline.init(), ensureProfile()]).finally(() => {
   store.pull();
 });
 
-if ('serviceWorker' in navigator && window.isSecureContext) {
-  navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('service worker', e));
+if ('serviceWorker' in navigator && window.isSecureContext && !REMOTE) {   // remote.js registers its own
+  navigator.serviceWorker.register('sw.js').catch((e) => console.warn('service worker', e));
 }

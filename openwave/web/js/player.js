@@ -12,6 +12,7 @@
 import { get, img } from './api.js';
 import { store, slim } from './store.js';
 import { offline } from './offline.js';
+import { REMOTE, songUrl, preloadSong } from './remote.js';
 
 const decks = [document.getElementById('audio'), Object.assign(document.createElement('audio'), { preload: 'auto' })];
 document.body.appendChild(decks[1]);
@@ -118,7 +119,11 @@ class Player extends EventTarget {
 
   // ---------------------------------------------------------------- sources
   streamUrl(id) {
-    return `/api/stream/${id}?q=${store.settings.quality}&codec=${audioCodec()}`;
+    return `/api/stream/${id}?${this.quality()}`;
+  }
+
+  quality() {
+    return `q=${store.settings.quality}&codec=${audioCodec()}`;
   }
 
   async sourceFor(t) {
@@ -126,6 +131,8 @@ class Player extends EventTarget {
       const url = await offline.audioUrl(t.videoId);
       if (url) return { url, blob: true };
     }
+    // Away from home (remote.js), each song arrives whole over the connection and plays from memory.
+    if (REMOTE) return { url: await songUrl(t.videoId, this.quality()), blob: true };
     return { url: this.streamUrl(t.videoId), blob: false };
   }
 
@@ -432,7 +439,11 @@ class Player extends EventTarget {
 
   prefetchNext() {
     const n = this.queue[this.index + 1];
-    if (n && navigator.onLine && !offline.has(n.videoId)) get.prefetch(n.videoId);
+    if (!n || !navigator.onLine || offline.has(n.videoId)) return;
+    if (!REMOTE) { get.prefetch(n.videoId); return; }
+    // Fetch the whole next song now, so it starts instantly, even with the screen locked.
+    const i = this.index + 1;
+    this.ensureAudio(i).then((t) => { if (t && !offline.has(t.videoId)) preloadSong(t.videoId, this.quality()); });
   }
 
   // ---------------------------------------------------------------- transport
@@ -743,12 +754,24 @@ class Player extends EventTarget {
     document.title = `${t.title} • ${t.artists.map((a) => a.name).join(', ')}`;
     if (!('mediaSession' in navigator) || !window.MediaMetadata) return;
     const art = new URL(img(t.thumbnail, 512), location.href).href;
-    navigator.mediaSession.metadata = new MediaMetadata({
-      title: t.title,
-      artist: t.artists.map((a) => a.name).join(', '),
-      album: t.album?.name || '',
-      artwork: [{ src: art, sizes: '512x512', type: 'image/jpeg' }],
-    });
+    const show = (src) => {
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: t.title,
+        artist: t.artists.map((a) => a.name).join(', '),
+        album: t.album?.name || '',
+        artwork: [{ src, sizes: '512x512', type: 'image/jpeg' }],
+      });
+    };
+    show(art);
+    // Away from home the Lock Screen can't load artwork by address; hand it the picture itself.
+    if (REMOTE && t.thumbnail) {
+      fetch(art).then((r) => (r.ok ? r.blob() : null)).then((b) => {
+        if (!b || this.current !== t) return;
+        if (this.artUrl) URL.revokeObjectURL(this.artUrl);
+        this.artUrl = URL.createObjectURL(b);
+        show(this.artUrl);
+      }).catch(() => {});
+    }
   }
 
   positionState() {

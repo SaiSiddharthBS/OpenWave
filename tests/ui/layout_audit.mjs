@@ -15,6 +15,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { CHECK } from './overflow.mjs';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -74,6 +75,9 @@ function catalogue(d) {
       albums: cards('album'), singles: cards('album'), related: cards('artist') },
     next: { tracks: songs(1, 30), lyricsId: 'MPLYaudit', relatedId: 'MPTRaudit' },
     lyrics: { found: true, synced: true, lines, source: 'Source: LRCLIB' },
+    phones: { available: true, via: false, name: d.artist, relays: 6, tickets: [{ id: 'audit', expires: 0, devices: [] }],
+      devices: [{ id: 'a1', label: 'iPhone', added: 1, seen: Math.floor(Date.now() / 1000), online: true },
+        { id: 'a2', label: 'Android phone', added: 2, seen: 1700000000, online: false }, { id: 'a3', label: 'iPad', added: 3, seen: null, online: false }] },
   };
 }
 
@@ -104,6 +108,9 @@ function fake(cat, url) {
   if (p === '/api/img') return { type: 'image/png', body: PNG };
   if (p.startsWith('/api/stream/')) return { type: 'audio/wav', body: WAV };
   if (p === '/api/app-update') return json({});
+  // OpenWave Connect (Settings → Phones), with as many paired phones as names allow.
+  if (p === '/api/connect') return json(cat.phones);
+  if (p === '/api/connect/pair') return json({ id: 'audit', link: `https://saisiddharthbs.github.io/OpenWave/app/#connect=${'eyJ2IjoxLCJoIjoi'.repeat(14)}`, expires: 0 });
   return null;
 }
 
@@ -172,48 +179,6 @@ async function cdp(wsUrl) {
 // overflow-hidden frame still counts (that is how the bug looks: the end time is clipped
 // at the edge). Only two kinds of clipping are fine: a container the user can scroll
 // sideways (shelves), and text that ends in "…" on purpose.
-const CHECK = `(() => {
-  const W = innerWidth, found = [];
-  const name = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.classList.length ? '.' + [...el.classList].join('.') : '');
-  const path = (el) => { const p = []; for (let e = el; e && e !== document.body && p.length < 5; e = e.parentElement) p.unshift(name(e)); return p.join(' > '); };
-  const shown = (el) => { for (let e = el; e; e = e.parentElement) { const s = getComputedStyle(e); if (s.display === 'none' || s.visibility === 'hidden' || +s.opacity === 0) return false; if (e.hidden) return false; } return true; };
-  // A text run is clipped by its own element too; a box only by its ancestors.
-  const visible = (el, r, text) => {
-    let left = r.left, right = r.right;
-    for (let e = text ? el : el.parentElement; e && e !== document.documentElement; e = e.parentElement) {
-      const s = getComputedStyle(e);
-      const scrolls = /(auto|scroll)/.test(s.overflowX);
-      const dots = s.textOverflow === 'ellipsis' && /(hidden|clip)/.test(s.overflowX);
-      if (scrolls || dots) { const c = e.getBoundingClientRect(); left = Math.max(left, c.left); right = Math.min(right, c.right); }
-      if (s.position === 'fixed') break;
-    }
-    return { left, right };
-  };
-  const seen = new Set();
-  const report = (el, r, what) => {
-    if (r.width < 1 || r.height < 1) return;
-    const v = visible(el, r, what === 'text');
-    if (v.right - v.left < 1) return;
-    if (v.right > W + 1 || v.left < -1) {
-      if ([...seen].some((s) => s.contains(el))) return;
-      seen.add(el);
-      found.push({ what, at: path(el), left: Math.round(v.left), right: Math.round(v.right), text: (el.textContent || '').trim().slice(0, 60) });
-    }
-  };
-  for (const el of document.body.querySelectorAll('*')) {
-    if (!el.getClientRects().length || !shown(el)) continue;
-    report(el, el.getBoundingClientRect(), 'box');
-  }
-  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-  for (let t; (t = walker.nextNode());) {
-    if (!t.textContent.trim() || !shown(t.parentElement)) continue;
-    const range = document.createRange(); range.selectNodeContents(t);
-    for (const r of range.getClientRects()) report(t.parentElement, r, 'text');
-  }
-  const doc = document.scrollingElement;
-  if (doc.scrollWidth > W + 1) found.unshift({ what: 'page', at: 'the whole page scrolls sideways', left: 0, right: doc.scrollWidth, text: '' });
-  return found;
-})()`;
 
 const ONLY = (process.env.AUDIT_ONLY || '').split(',').filter(Boolean);
 const wanted = (x) => { const name = x.name || x; const pool = name in DATASETS ? Object.keys(DATASETS) : VIEWPORTS.map((v) => v.name);
@@ -247,7 +212,8 @@ const SCREENS = [
   { name: 'my-playlist', hash: '#/my/auditlist', route: 'library', expect: '.view .row' },
   { name: 'on-repeat', hash: '#/smart/on-repeat', route: 'library', expect: '.view .row' },
   { name: 'insights', hash: '#/insights', route: 'insights', expect: '.view h1' },
-  { name: 'settings', hash: '#/settings', route: 'settings', expect: '.view .setting' },
+  { name: 'settings', hash: '#/settings', route: 'settings', expect: '.view [data-act=connect-remove]' },
+  { name: 'add-a-phone', hash: '#/settings', route: 'settings', steps: [`document.querySelector('[data-act=connect-pair]').click()`, `document.querySelector('#dialog details').open = true`], expect: '#dialog .pair-qr svg' },
   { name: 'track-menu', hash: '#/album/MPREb_audit', route: 'album', steps: [`document.querySelector('.view .row [data-menu]').click()`], expect: '#menu .menu-head' },
   { name: 'shared-playlist', hash: '#/my/auditshared', route: 'library', expect: '.view .row .added-by' },
   { name: 'shared-with', hash: '#/my/auditshared', route: 'library', steps: [`document.querySelector('[data-act=sharing]').click()`], expect: '#dialog .share-link input' },

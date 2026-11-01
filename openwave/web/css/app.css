@@ -347,6 +347,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
 .setting { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); }
 .setting p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
 .setting b { font-weight: 650; }
+.setting > .btn { flex: none; white-space: nowrap; }
 .select { background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; color: var(--text); }
 .switch { position: relative; width: 44px; height: 26px; border-radius: 999px; background: var(--surface-3); transition: background .2s; flex: none; }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 50%; background: #fff; transition: transform .2s var(--ease); }
@@ -840,3 +841,54 @@ body.linked .pb-artist { display: none; }
   .share-dialog .row-btns { justify-content: space-between; }
   .share-dialog .row-btns .danger-text { order: 3; width: 100%; text-align: center; justify-content: center; }
 }
+
+/* ------------------------------------------------------------------ OpenWave Connect */
+/* Settings → Phones → Add a phone (on the computer) */
+.pair-body { display: flex; gap: 20px; align-items: center; min-width: 0; }
+.pair-qr { flex: none; width: 196px; max-width: 100%; aspect-ratio: 1; background: #fff; border-radius: 12px; padding: 8px; }
+.pair-qr svg { display: block; width: 100%; height: 100%; }
+.pair-steps { margin: 0; padding-left: 20px; color: var(--muted); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.pair-steps b { color: var(--text); }
+.pair-state { margin-top: 16px !important; color: var(--text) !important; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pair-state[data-ok] { color: #5ee6a8 !important; font-weight: 600; }
+.pair-state svg { width: 18px; height: 18px; flex: none; }
+.pair-note { margin-top: 8px !important; font-size: 12.5px; }
+.pair-send { margin-top: 12px; color: var(--muted); font-size: 13px; }
+.pair-send summary { cursor: pointer; color: var(--text); }
+.pair-send p { margin-top: 8px !important; font-size: 12.5px; }
+.pair-send .share-link { flex-wrap: wrap; }
+.pair-send .share-link input { flex-basis: 100%; }
+@media (max-width: 560px) {
+  .pair-body { flex-direction: column; align-items: stretch; }
+  .pair-qr { width: min(220px, 100%); align-self: center; }
+}
+
+/* The website copy of the app: pairing, Add to Home Screen, connection status (js/remote.js) */
+.connect-screen { position: fixed; inset: 0; z-index: 210; display: grid; place-items: center; overflow-y: auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) 16px calc(env(safe-area-inset-bottom, 0px) + 24px);
+  background: radial-gradient(120% 80% at 50% 0%, rgba(79, 107, 255, .22), transparent 60%), radial-gradient(80% 60% at 90% 100%, rgba(196, 92, 255, .16), transparent 60%), var(--bg); }
+.connect-card { width: min(460px, 100%); min-width: 0; display: flex; flex-direction: column; gap: 14px; animation: np-in .4s var(--ease); }
+.connect-card > div { min-width: 0; }
+.connect-logo { height: 48px; width: auto; align-self: flex-start; filter: drop-shadow(0 6px 24px rgba(79, 107, 255, .5)); }
+.connect-card h1 { font-size: clamp(24px, 6vw, 32px); letter-spacing: -.02em; margin: 0 0 8px; }
+.connect-card p { color: var(--muted); margin: 0 0 12px; }
+.connect-steps { margin: 4px 0 16px; padding-left: 22px; display: flex; flex-direction: column; gap: 10px; color: var(--muted); }
+.connect-steps b { color: var(--text); }
+.connect-share { width: 18px; height: 18px; vertical-align: -3px; color: var(--accent-3); }
+.connect-note { font-size: 13px; color: var(--faint) !important; }
+.connect-paste { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+.connect-paste label { color: var(--muted); font-size: 13px; }
+.connect-paste textarea { width: 100%; background: var(--surface-3); border: 1px solid var(--line); border-radius: 10px; padding: 11px 13px; outline: none; resize: vertical;
+  font: 16px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--text); overflow-wrap: anywhere; }
+.connect-paste textarea:focus { border-color: var(--accent); }
+.connect-paste .btn { align-self: flex-start; }
+.connect-error { color: var(--danger) !important; margin: 0 !important; }
+.connect-card .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.connect-status { position: fixed; z-index: 230; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 50%; transform: translateX(-50%);
+  width: max-content; max-width: min(520px, calc(100vw - 32px)); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
+  padding: 9px 14px; border-radius: 14px; background: var(--surface-3); border: 1px solid var(--line); box-shadow: 0 12px 40px rgba(0,0,0,.5); font-size: 13px; }
+.connect-status > .ellipsis { min-width: 0; max-width: 100%; }
+.connect-status[data-state="offline"], .connect-status[data-state="outdated"] { border-color: rgba(255, 107, 107, .45); }
+.connect-msg { min-width: 0; text-align: center; }
+.connect-status .btn { padding: 6px 12px; font-size: 13px; }
+.connect-spin { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent-3); animation: spin .8s linear infinite; }

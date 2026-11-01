@@ -81,7 +81,7 @@ export async function shareInsights() {
   const g = ctx.createLinearGradient(0, 0, W, H);
   g.addColorStop(0, '#141838'); g.addColorStop(0.55, '#0b0b16'); g.addColorStop(1, '#2a0f3c');
   ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-  const logo = await loadImage('/icons/logo-mark-128.png');
+  const logo = await loadImage('icons/logo-mark-128.png');
   if (logo) ctx.drawImage(logo, 80, 80, 128 * (logo.width / logo.height) * 0.7, 128 * 0.7);
   ctx.fillStyle = '#fff';
   ctx.font = '800 44px system-ui, -apple-system, sans-serif';

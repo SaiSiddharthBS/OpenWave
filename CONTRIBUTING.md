@@ -24,7 +24,9 @@ If you change files the service worker caches, bump `VERSION` in `openwave/web/s
 
 `node tests/ui/layout_audit.mjs` (Node 22+ and Chrome) opens every screen at eight sizes, from a
 320 px phone to a desktop, with real-world and very long song, artist and playlist names, and fails
-if anything is pushed past the edge of the screen. CI runs it on every push.
+if anything is pushed past the edge of the screen. CI runs it on every push, together with
+`node tests/ui/connect_e2e.mjs`, which pairs a phone-sized browser with an engine through a test
+relay and goes through Connect end to end.
 
 ## Where things live
 
@@ -38,6 +40,8 @@ if anything is pushed past the edge of the screen. CI runs it on every push.
 | `openwave/updater.py` · `desktop.py` | Packaged-app entry point and background yt-dlp / ytmusicapi updates |
 | `openwave/link.py` | Devices on the same Wi-Fi: UDP discovery, the LAN listener, pairing, remote control and listening sessions |
 | `openwave/releases.py` | In-app update checks (`/api/app-update`) |
+| `openwave/connect.py` · `api_connect.py` | OpenWave Connect: phones away from home pair by QR code, meet through Nostr relays and talk over WebRTC (vendored aiortc in `openwave/_vendor/`, refreshed with `scripts/vendor-aiortc.sh`) |
+| `openwave/web/js/remote.js` · `connect.js` · `phones.js` | The phone side of Connect (the website's copy of the app), and Settings → Phones |
 | `openwave/web/js/store.js` | Client library cache + offline outbox that syncs to `/api/me/ops` |
 | `openwave/web/js/profiles.js` · `insights.js` · `importer.js` · `native.js` | Profile picker, insights + share card, import dialog, Mac app bridge |
 | `android/` | Android app (Kotlin): runs the engine on the phone via Chaquopy, WebView UI, media notification / lock screen / Bluetooth controls, audio focus |
@@ -48,7 +52,7 @@ if anything is pushed past the edge of the screen. CI runs it on every push.
 | `openwave/web/js/app.js` | Router, event handling, player UI bindings |
 | `openwave/web/js/link.js` | Devices menu, remote control and listen-together sync in the browser |
 | `openwave/web/js/gestures.js` · `update.js` | Touch gestures; the update card |
-| `site/` | Website, the Mac installer script (`install.sh`) and the Stats page |
+| `site/` · `scripts/build-site.py` | Website, the Mac installer script (`install.sh`) and the Stats page; the build adds the phone app under `/app/` |
 
 ## The Mac app
 
@@ -73,7 +77,7 @@ because pydantic 2's Rust core has no Android build. Keep server code compatible
 
 1. Open an issue first for anything big, so we can agree on the approach.
 2. Keep PRs focused; add or update tests in `tests/` for server changes.
-3. `pytest` must pass. For UI changes, `node tests/ui/layout_audit.mjs` must pass too, and include a screenshot (desktop + phone width).
+3. `pytest` must pass. For UI changes, `node tests/ui/layout_audit.mjs` must pass too, and include a screenshot (desktop + phone width). For changes to OpenWave Connect (phones away from home), `node tests/ui/connect_e2e.mjs` must pass.
 
 ## Releases
 

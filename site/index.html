@@ -148,7 +148,7 @@
     <div class="card platform" data-p="server"><ol class="steps">
       <li><b>Run</b> <code>docker run -d -p 8787:8787 -v openwave:/data --restart unless-stopped ghcr.io/saisiddharthbs/openwave</code></li>
       <li><b>Open</b> <code>http://&lt;server&gt;:8787</code> on any device. Everyone in the house gets a profile.</li>
-      <li><b>Optional:</b> put it behind HTTPS (Tailscale, Cloudflare Tunnel or Caddy) to listen anywhere.</li>
+      <li><b>Phones anywhere:</b> open Settings → Phones → Add a phone and scan the code. No port forwarding needed.</li>
     </ol></div>
   </section>
 
@@ -156,13 +156,13 @@
     <div class="phones">
       <div>
         <h2>On your phone</h2>
-        <p class="lead"><b>Android:</b> install the <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk">Android app</a>. It runs everything on the phone. <b>iPhone:</b> play from OpenWave on your Mac, anywhere, with the same profiles, playlists and likes:</p>
+        <p class="lead"><b>Android:</b> install the <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk">Android app</a>. It runs everything on the phone. <b>iPhone:</b> play from OpenWave on your computer, anywhere, with the same profiles, playlists and likes. No accounts, nothing to install:</p>
         <ol class="steps">
-          <li><b>Install <a href="https://tailscale.com/download">Tailscale</a></b> (free) on your Mac and iPhone, signed in to the same account.</li>
-          <li><b>On the Mac,</b> open OpenWave → Settings → <b>Phone</b> → Anywhere → <b>Turn On</b>, and scan the QR code with your iPhone.</li>
-          <li><b>Add it to your Home Screen:</b> Safari → Share → Add to Home Screen. It works on mobile data too, and downloads play offline.</li>
+          <li><b>On the computer,</b> open OpenWave → Settings → <b>Phones</b> → <b>Add a phone</b>. A QR code appears.</li>
+          <li><b>Point your iPhone's camera at it</b> and open the link.</li>
+          <li><b>Add it to your Home Screen:</b> Share → Add to Home Screen. It works at home, at work and on mobile data, and downloads play offline.</li>
         </ol>
-        <p class="small">Only at home? Settings → Phone → At home, then scan the code on the same Wi-Fi.</p>
+        <p class="small">Keep the computer on, with OpenWave open, while you listen. On a network that blocks direct connections, Tailscale works too: see the <a href="https://github.com/SaiSiddharthBS/OpenWave#iphone">guide</a>.</p>
       </div>
       <img src="screenshots/mobile-home.png" alt="OpenWave on a phone">
     </div>

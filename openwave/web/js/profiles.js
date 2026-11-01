@@ -30,7 +30,7 @@ function show(message, done) {
     done(profile);
   };
   const frame = (inner) => {
-    el.innerHTML = `<div class="profiles-inner"><img class="profiles-logo" src="/icons/logo-mark-128.png" alt="OpenWave">${inner}</div>`;
+    el.innerHTML = `<div class="profiles-inner"><img class="profiles-logo" src="icons/logo-mark-128.png" alt="OpenWave">${inner}</div>`;
   };
 
   async function pick() {

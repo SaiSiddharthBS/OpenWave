@@ -2,7 +2,9 @@
 
 Follows the rules shared playlists depend on: signatures are checked, and for replaceable events
 (kind 30000-39999) only the newest per (author, kind, "d" tag) is kept; on a tie of timestamps the
-lowest id wins, as NIP-01 specifies. `online = False` drops every connection, like a lost network.
+lowest id wins, as NIP-01 specifies. Ephemeral events (kind 20000-29999, used by OpenWave Connect)
+are passed to current subscribers and never stored. `outage()` drops every connection, like a lost
+network.
 """
 
 from __future__ import annotations
@@ -46,8 +48,9 @@ class FakeRelay:
     def _matches(flt: dict, ev: dict) -> bool:
         if "kinds" in flt and ev["kind"] not in flt["kinds"]:
             return False
-        if "#d" in flt and nostr.tag(ev, "d") not in flt["#d"]:
-            return False
+        for key, wanted in flt.items():
+            if key.startswith("#") and nostr.tag(ev, key[1:]) not in wanted:
+                return False
         return True
 
     async def _client(self, ws):
@@ -63,12 +66,13 @@ class FakeRelay:
                     if not nostr.valid_event(ev):
                         await ws.send(json.dumps(["OK", ev.get("id"), False, "invalid: bad signature"]))
                         continue
-                    key = (ev["pubkey"], ev["kind"], nostr.tag(ev, "d")) if 30000 <= ev["kind"] < 40000 else (ev["id"],)
-                    old = self.events.get(key)
-                    if old and (old["created_at"], [-ord(c) for c in old["id"]]) >= (ev["created_at"], [-ord(c) for c in ev["id"]]):
-                        await ws.send(json.dumps(["OK", ev["id"], True, "duplicate: have a newer one"]))
-                        continue
-                    self.events[key] = ev
+                    if not 20000 <= ev["kind"] < 30000:
+                        key = (ev["pubkey"], ev["kind"], nostr.tag(ev, "d")) if 30000 <= ev["kind"] < 40000 else (ev["id"],)
+                        old = self.events.get(key)
+                        if old and (old["created_at"], [-ord(c) for c in old["id"]]) >= (ev["created_at"], [-ord(c) for c in ev["id"]]):
+                            await ws.send(json.dumps(["OK", ev["id"], True, "duplicate: have a newer one"]))
+                            continue
+                        self.events[key] = ev
                     await ws.send(json.dumps(["OK", ev["id"], True, ""]))
                     for other, subs in list(self.clients.items()):
                         for sub_id, flt in subs.items():

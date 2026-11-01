@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 import time
 from contextlib import asynccontextmanager
@@ -15,7 +16,8 @@ from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
 
-from . import __version__, link, music, releases, updater, youtube
+from . import __version__, connect, link, music, releases, updater, youtube
+from .api_connect import error_response as connect_error, host as connect_host, router as connect_router
 from .api_library import error_response, router as library_router, sync as shared_sync
 from .config import FROZEN, data_dir
 from .library import LibraryError
@@ -30,10 +32,18 @@ client = httpx.AsyncClient(timeout=httpx.Timeout(20, read=60), follow_redirects=
 
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
+async def lifespan(this: FastAPI):
     await link.hub.start()
     await shared_sync().start()
+    phones = connect_host(this)
+    if phones:
+        try:
+            await phones.start()
+        except Exception:  # noqa: BLE001 - phones away from home can't connect, everything else works
+            logging.getLogger("openwave").exception("OpenWave Connect didn't start")
     yield
+    if phones:
+        await phones.stop()
     await shared_sync().stop()
     await link.hub.stop()
     await client.aclose()
@@ -44,7 +54,9 @@ app = FastAPI(title="OpenWave", version=__version__, docs_url="/api/docs", redoc
 
 app.include_router(library_router)
 app.include_router(link.router)
+app.include_router(connect_router)
 app.add_exception_handler(LibraryError, lambda _req, exc: error_response(exc))
+app.add_exception_handler(connect.ConnectError, lambda _req, exc: connect_error(exc))
 app.add_exception_handler(link.LinkError, lambda _req, exc: link._error(exc))
 
 
@@ -82,6 +94,8 @@ async def health():
     return {
         "ok": True,
         "version": __version__,
+        "api": connect.API,
+        "connect": bool(connect_host() and connect_host().started),
         "jsRuntimes": list(youtube.BASE_OPTS["js_runtimes"]),
         "ytDlp": yt_dlp.version.__version__,
         "ytmusicapi": ytmusicapi.__version__,

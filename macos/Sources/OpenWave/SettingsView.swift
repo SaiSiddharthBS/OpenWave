@@ -28,7 +28,14 @@ private struct PhoneAccessView: View {
 
                 GroupBox {
                     VStack(alignment: .leading, spacing: 10) {
-                        Label("Anywhere: at home, at work, on mobile data", systemImage: "globe").font(.headline)
+                        Label("Anywhere, no setup (recommended)", systemImage: "iphone.radiowaves.left.and.right").font(.headline)
+                        PhonesView(port: server.port)
+                    }.padding(8).frame(maxWidth: .infinity, alignment: .leading)
+                }
+
+                GroupBox {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Anywhere, with Tailscale", systemImage: "globe").font(.headline)
                         anywhere
                     }.padding(8).frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -108,6 +115,121 @@ private struct PhoneAccessView: View {
             await refresh()
             busy = false
         }
+    }
+}
+
+/// OpenWave Connect: pair phones by QR code (the engine's /api/connect; see openwave/connect.py).
+private struct PhonesView: View {
+    let port: Int
+    @State private var status: [String: Any]?
+    @State private var pairing: (id: String, link: URL)?
+    @State private var problem: String?
+
+    private var devices: [[String: Any]] { status?["devices"] as? [[String: Any]] ?? [] }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Scan a code with your iPhone, or any phone. It plays from this Mac at home, at work or on mobile data. No accounts, and nothing else to install.")
+                .foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            if let status, status["available"] as? Bool == false {
+                Text(status["reason"] as? String ?? "Not available.").foregroundStyle(.secondary)
+            } else if let pairing {
+                HStack(alignment: .top, spacing: 16) {
+                    if let qr = QRCode.image(for: pairing.link.absoluteString) {
+                        Image(nsImage: qr).interpolation(.none).resizable().frame(width: 150, height: 150)
+                            .padding(7).background(.white).clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("1. Open the Camera on the phone and point it at this code.")
+                        Text("2. Tap the link that appears.")
+                        Text("3. On an iPhone, add OpenWave to the Home Screen when it asks.")
+                        Text(connectedLine ?? "Waiting for the phone…").foregroundStyle(connectedLine == nil ? Color.secondary : Color.green)
+                        Text("The code works for 15 minutes. Anyone who scans it can use OpenWave on this Mac, so only show it to people you trust.")
+                            .font(.callout).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                        HStack {
+                            Button("Copy Link") {
+                                NSPasteboard.general.clearContents()
+                                NSPasteboard.general.setString(pairing.link.absoluteString, forType: .string)
+                            }
+                            Button("Done") { self.pairing = nil; Task { await refresh() } }.keyboardShortcut(.defaultAction)
+                        }
+                    }.fixedSize(horizontal: false, vertical: true)
+                }
+            } else {
+                Button("Add a Phone…") { Task { await pair() } }
+            }
+            ForEach(Array(devices.enumerated()), id: \.offset) { _, d in
+                HStack {
+                    Image(systemName: "iphone")
+                    VStack(alignment: .leading) {
+                        Text(d["label"] as? String ?? "Phone")
+                        Text(seen(d)).font(.caption).foregroundStyle(.secondary)
+                    }
+                    Spacer()
+                    Button("Remove") { Task { await remove(d["id"] as? String ?? "") } }
+                }
+            }
+            if let problem { Text(problem).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true) }
+        }
+        .task(id: port) {
+            while !Task.isCancelled {
+                await refresh()
+                try? await Task.sleep(nanoseconds: pairing == nil ? 10_000_000_000 : 2_000_000_000)
+            }
+        }
+    }
+
+    /// "iPhone is connected", once a phone has used the code on screen.
+    private var connectedLine: String? {
+        guard let pairing, let tickets = status?["tickets"] as? [[String: Any]],
+              let ticket = tickets.first(where: { $0["id"] as? String == pairing.id }),
+              let ids = ticket["devices"] as? [String], !ids.isEmpty else { return nil }
+        let names = devices.filter { ids.contains($0["id"] as? String ?? "") }.compactMap { $0["label"] as? String }
+        return names.isEmpty ? nil : "✓ \(names.joined(separator: ", ")) \(names.count == 1 ? "is" : "are") connected."
+    }
+
+    private func seen(_ d: [String: Any]) -> String {
+        if d["online"] as? Bool == true { return "Connected now" }
+        guard let t = d["seen"] as? Double else { return "Paired" }
+        let f = RelativeDateTimeFormatter()
+        f.unitsStyle = .full
+        return "Last used " + f.localizedString(for: Date(timeIntervalSince1970: t), relativeTo: Date())
+    }
+
+    private func call(_ path: String, method: String = "GET") async throws -> [String: Any] {
+        var req = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/connect\(path)")!)
+        req.httpMethod = method
+        req.timeoutInterval = 10
+        let (data, response) = try await URLSession.shared.data(for: req)
+        let body = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] ?? [:]
+        guard let http = response as? HTTPURLResponse, http.statusCode < 400 else {
+            throw NSError(domain: "OpenWave", code: 1, userInfo: [NSLocalizedDescriptionKey: body["error"] as? String ?? body["detail"] as? String ?? "OpenWave didn’t answer."])
+        }
+        return body
+    }
+
+    private func refresh() async {
+        if let s = try? await call("") { status = s }
+    }
+
+    private func pair() async {
+        problem = nil
+        do {
+            let p = try await call("/pair", method: "POST")
+            if let id = p["id"] as? String, let s = p["link"] as? String, let url = URL(string: s) { pairing = (id, url) }
+            await refresh()
+        } catch { problem = error.localizedDescription }
+    }
+
+    private func remove(_ id: String) async {
+        let alert = NSAlert()
+        alert.messageText = "Remove this phone?"
+        alert.informativeText = "It won’t be able to use OpenWave on this Mac any more. To use it again, add it again."
+        alert.addButton(withTitle: "Remove")
+        alert.addButton(withTitle: "Cancel")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        do { _ = try await call("/devices/\(id)/remove", method: "POST") } catch { problem = error.localizedDescription }
+        await refresh()
     }
 }
 

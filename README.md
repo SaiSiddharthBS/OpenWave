@@ -35,14 +35,14 @@
 
 OpenWave is an open-source, non-commercial music client for YouTube Music's public catalogue. It is an engineering project first: one engine, native apps on five platforms, a synced personal library, and devices that play together. It has no accounts, no tracking and no monetisation of any kind, and it hosts no content.
 
-- **One engine, every platform.** A single Python engine powers native apps for macOS, Windows, Linux and Android, a web app for iPhone, and a Docker image for home servers. Shared services keep the core listening and library experience consistent.
+- **One engine, every platform.** A single Python engine powers native apps for macOS, Windows, Linux and Android, a web app for iPhone that pairs with your computer by QR code and works from anywhere, and a Docker image for home servers. Shared services keep the core listening and library experience consistent.
 - **Your library is yours.** Profiles, likes, playlists and listening history live in a SQLite database on your own device or server. Nothing is sent to a cloud service (except an end-to-end encrypted copy of a playlist you choose to share), and the apps never report usage.
 - **Built like a product, not a script.** Gapless playback, personal mixes, synced lyrics, offline downloads, playlist import from other services, shared playlists with friends anywhere, multi-device control and listen-together sessions, in-app updates, and release checksums.
 
 <table>
   <tr><td><b>License</b></td><td>GPL-3.0. The project is offered free, with no accounts or monetisation.</td></tr>
   <tr><td><b>Account</b></td><td>None. Profiles are local, with an optional PIN.</td></tr>
-  <tr><td><b>Platforms</b></td><td>macOS 13+ (Apple Silicon and Intel), Windows 10/11, Linux x86-64, Android 7+ (64-bit), iPhone via Safari, Docker (amd64, arm64)</td></tr>
+  <tr><td><b>Platforms</b></td><td>macOS 13+ (Apple Silicon and Intel), Windows 10/11, Linux x86-64, Android 7+ (64-bit), iPhone (Home Screen web app, paired with your computer), Docker (amd64, arm64)</td></tr>
   <tr><td><b>Latest release</b></td><td><a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest">Current installers</a>, SHA-256 checksums and a Docker image</td></tr>
 </table>
 
@@ -61,7 +61,7 @@ curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash
 | **Windows** 10/11 | [OpenWave-Windows-Setup.exe](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Windows-Setup.exe) | On "Windows protected your PC", choose **More info → Run anyway**. No administrator rights needed. |
 | **Linux** x86-64 | [OpenWave-Linux-x86_64.AppImage](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Linux-x86_64.AppImage) | `chmod +x` the file, then open it. |
 | **Android** 7+ | [OpenWave-Android.apk](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk) | Open the file and allow your browser to install apps. For automatic updates, add this repository to [Obtainium](https://github.com/ImranR98/Obtainium). |
-| **iPhone** | Served by OpenWave on your Mac, PC or server | See [iPhone](#iphone). |
+| **iPhone** | Pairs with OpenWave on your Mac, PC or server | Scan a QR code: see [iPhone](#iphone). |
 | **Home server** | [Docker image](#self-hosting) for amd64 and arm64 | Open `http://<server>:8787` on any device. |
 
 Every app is self-contained, with nothing else to install. Installers are attached to each [GitHub release](https://github.com/SaiSiddharthBS/OpenWave/releases) together with `SHA256SUMS.txt`.
@@ -198,7 +198,7 @@ A native Swift app (AppKit and SwiftUI) that runs its own engine, with nothing t
 - **System integration:** media keys, Control Center and lock-screen controls with artwork, AirPods controls, song notifications and a Dock menu.
 - **Menu-bar mini player**, so you can control the music without opening the window. Closing the window keeps the music playing.
 - **Keyboard shortcuts:** <kbd>⌘</kbd><kbd>→</kbd> / <kbd>⌘</kbd><kbd>←</kbd> next and previous, <kbd>⌘</kbd><kbd>L</kbd> like, <kbd>⌘</kbd><kbd>F</kbd> search, <kbd>⌘</kbd><kbd>1</kbd>–<kbd>5</kbd> sections, <kbd>⌘</kbd><kbd>⇧</kbd><kbd>I</kbd> import.
-- **Phone access** from Settings → Phone, privately from anywhere through Tailscale or on the home Wi-Fi, with a QR code to scan.
+- **Phone access** from Settings → Phone: scan a QR code and your iPhone plays from this Mac anywhere ([OpenWave Connect](#iphone)), or use Tailscale or the home Wi-Fi.
 - **Self-installing updates**, verified by SHA-256 before the app replaces itself.
 - **Deep links** such as `openwave://play/<videoId>`, and launch at login.
 
@@ -228,21 +228,26 @@ A native Kotlin app that runs the complete engine on the phone through [Chaquopy
 
 ### iPhone
 
-Apple does not allow apps like OpenWave on the App Store, so the iPhone plays from OpenWave running on your Mac, PC or server, with the same profiles, playlists and likes, installed as an app on the Home Screen.
+Apple does not allow apps like OpenWave on the App Store, so the iPhone plays from OpenWave on a computer you already have: a Mac, a Windows or Linux PC, or a home server. It gets the same profiles, playlists and likes, and runs from the Home Screen like an app. Pairing takes a minute, with no accounts and nothing to install:
 
-**Anywhere, with offline downloads (recommended).** Free, and takes about three minutes once.
+1. On the computer, open **Settings → Phones → Add a phone** (in the Mac app, also **OpenWave → Settings… → Phone**). A QR code appears.
+2. Point the iPhone's camera at it and open the link.
+3. Tap **Share → Add to Home Screen**, then open OpenWave from the Home Screen.
 
-1. Install [Tailscale](https://tailscale.com/download) on the Mac and on the iPhone, signed in to the same account.
-2. On the Mac, open **OpenWave → Settings → Phone → Anywhere → Turn On**. A QR code appears.
-3. Scan it with the iPhone camera, then in Safari choose **Share → Add to Home Screen**.
+<p align="center">
+  <img src="docs/screenshots/connect-pair.png" width="440" alt="Settings → Phones → Add a phone, with a QR code">
+  &nbsp;
+  <img src="docs/screenshots/mobile-connect-add.png" width="200" alt="The iPhone suggesting Add to Home Screen">
+</p>
 
-<p align="center"><img src="docs/screenshots/mac-iphone.png" width="460" alt="Settings → Phone in the Mac app"></p>
+It works at home, at work and on mobile data, with no port forwarding, VPN or sign-in. OpenWave Connect finds a direct, encrypted path from the phone to the computer ([how it works](#privacy-and-security)). Songs keep playing with the screen locked, the Lock Screen shows controls and artwork, and downloaded songs play even when the computer is off. The computer needs to be on, with OpenWave open, for everything else. Paired phones are listed in Settings → Phones, where each can be removed.
 
-OpenWave gets a private HTTPS address that only your own devices can open. It works at home, at work and on mobile data; downloads play offline; and the lock screen shows playback controls. The Mac needs to be on and awake while you listen.
+<p align="center"><img src="docs/screenshots/connect-phones.png" width="560" alt="Settings → Phones listing a paired iPhone"></p>
 
-**At home only.** Settings → Phone → **At home**, then scan the QR code on the same Wi-Fi. Offline downloads require the "Anywhere" option, because browsers only allow them over HTTPS.
+A few networks (some workplaces, and some mobile carriers) block direct connections between devices; there the phone says it couldn't connect. These options work everywhere:
 
-On a home server or PC without the Mac app, `tailscale serve 8787` provides the same private HTTPS address. A Cloudflare Tunnel or a reverse proxy such as [Caddy](https://caddyserver.com) also works.
+- **With Tailscale.** Install [Tailscale](https://tailscale.com/download) on the computer and the iPhone, signed in to the same account. In the Mac app, open **Settings → Phone → Anywhere, with Tailscale → Turn On** and scan the code. On a PC or home server, `tailscale serve 8787` gives the same private HTTPS address.
+- **At home only.** In the Mac app, Settings → Phone → **At home**, then scan the code on the same Wi-Fi. Offline downloads need one of the options above, because browsers only allow them over HTTPS.
 
 <p align="center">
   <img src="docs/screenshots/mobile-library.png" width="200" alt="Library on a phone">
@@ -289,6 +294,10 @@ flowchart LR
   Music --> YTM
   Stream --> YT
   Link <-->|UDP discovery, paired HTTP| Peers
+  Phone["iPhone away from home<br/>web app from GitHub Pages"]
+  Conn["connect.py<br/>OpenWave Connect"]
+  Phone <-->|WebRTC data channel, direct| Conn
+  Conn -->|same API, in-process| Engine
 ```
 
 - **One engine, many shells.** The engine is a FastAPI application. Each platform wraps the same web interface in a native shell (Swift on macOS, Kotlin on Android, an app window on Windows and Linux) that adds system integration such as media keys, notifications and widgets.
@@ -296,6 +305,7 @@ flowchart LR
 - **Library and sync.** Each profile's library is a set of operations applied to SQLite. Clients apply changes optimistically, keep an outbox while offline, and sync it when they reconnect; other devices poll a version number and pick changes up within seconds.
 - **Devices.** Engines on the same network discover each other with a UDP broadcast, and talk over a separate, small listener (ports 47880–47889) that only serves the device routes. Pairing issues a bearer token whose hash is stored on the approving device. Only "what's playing" is shared; each device streams its own audio, and listeners stay in step by playing marginally faster or slower rather than skipping.
 - **Songs, not videos.** When YouTube returns a music video, the engine looks up its audio-track version, and radios are started from songs.
+- **OpenWave Connect.** A phone away from home runs the same web interface, published on GitHub Pages in a "connect" mode. Its requests travel over a WebRTC data channel to `connect.py`, which hands each one to the engine's own API in-process, so the phone gets exactly what a browser at home gets. The two sides meet by posting encrypted offers and answers to Nostr relays as short-lived events. Songs arrive whole and play from memory, with the next one fetched while the current one plays, which keeps music going with the screen locked. WebRTC comes from a vendored copy of [aiortc](https://github.com/aiortc/aiortc) (data channels only, without its video dependencies).
 
 ## Self-hosting
 
@@ -335,7 +345,8 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 | `OPENWAVE_LANGUAGE` | Metadata language, for example `en`, `hi` or `es`. |
 | `OPENWAVE_LINK` | `1` makes the device visible to other OpenWave devices on the network from the start. The Mac and Android apps set this; it can also be changed in Settings → Devices. |
 | `OPENWAVE_DEVICE_NAME` | The name other devices see. Defaults to the computer's name. |
-| `OPENWAVE_RELAYS` | Comma-separated `wss://` Nostr relays that shared playlists sync through, or `off` to keep shared playlists on this server only. Defaults to six public relays. |
+| `OPENWAVE_RELAYS` | Comma-separated `wss://` Nostr relays that shared playlists sync through and paired phones use to find this engine, or `off` to use neither. Defaults to six public relays. |
+| `OPENWAVE_CONNECT` | `0` turns off OpenWave Connect (phones paired in Settings → Phones). |
 
 </details>
 
@@ -355,16 +366,18 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 | `POST /api/import/parse` · `/api/import/match` | Playlist import |
 | `/api/link/*` | Devices, remote control and listening sessions |
 | `GET /api/app-update` | Whether a newer release exists, and the right file for this device |
+| `GET /api/connect` · `POST /api/connect/pair` · `POST /api/connect/devices/{id}/remove` | Paired phones (OpenWave Connect); pairing and removal are refused over Connect itself |
 
 </details>
 
 ## Privacy and security
 
 - **No telemetry.** The apps never report usage, crashes or identifiers. The public [Stats page](https://saisiddharthbs.github.io/OpenWave/stats.html) is built only from GitHub's public numbers: downloads per file, version and day, and stars.
-- **Local data.** Libraries live in SQLite on the device or server you run. Client devices talk only to your engine, never to Google.
+- **Local data.** Libraries live in SQLite on the device or server you run. Client devices talk only to your engine, never to Google; that includes artwork and lyrics.
 - **Shared playlists are end-to-end encrypted.** OpenWave runs no servers, so a shared playlist syncs through a few free, public [Nostr](https://nostr.com) relays. Each member's OpenWave publishes its copy encrypted with a key that exists only in the invite link (after the `#`, which browsers never send to a server). Relays see only encrypted data, a random identity per profile and your IP address, never song names or who you are. Owner-only changes are signed by the owner. Nothing is sent to a relay unless you share or join a playlist. Self-hosters can choose relays with `OPENWAVE_RELAYS` (or `off`).
 - **Device pairing.** Devices on the network can see each other's names, but cannot play anything or join a session until approved on the target device's own screen. Only playback state crosses the network: no audio, and no library data.
-- **Remote access stays private.** The "Anywhere" phone option uses Tailscale, so the address is reachable only by devices signed in to your own Tailscale account, over HTTPS.
+- **Phones connect directly and privately (OpenWave Connect).** The QR code holds a pairing code that works for 15 minutes. A phone that uses it makes its own key pair and sends only the public half; from then on the phone and the computer share a key that neither ever sends (ECDH), so a photo of the QR code is useless later. To find each other, they exchange short end-to-end encrypted messages through public Nostr relays, which pass them on without storing them and see only encrypted data and IP addresses; public STUN servers (Cloudflare, Google) tell each device its own public address. After that, the phone talks to the computer over a direct, encrypted WebRTC connection: music, artwork and library data never pass through anyone else. The app itself is a static page on GitHub Pages, and the pairing code sits after the `#` in its address, which browsers never send to a server. A paired phone can do what a browser at home can do and no more, and it can't pair other phones. Settings → Phones lists every paired phone with a Remove button, and `OPENWAVE_CONNECT=0` turns the feature off.
+- **Tailscale access stays private.** The Tailscale option makes the address reachable only by devices signed in to your own Tailscale account, over HTTPS.
 - **Verified releases.** Every installer ships with a SHA-256 checksum, which the Mac installer and the Mac app's updater verify before installing. Android releases are signed with a single, stable key.
 
 ## Development
@@ -398,6 +411,7 @@ The web interface in `openwave/web/` is plain HTML, CSS and ES modules with no b
 - [x] In-app updates on every platform
 - [x] Play on another device and listen together on the same Wi-Fi
 - [x] iPhone access from anywhere through Tailscale
+- [x] iPhone access from anywhere with a QR code and no accounts (OpenWave Connect)
 - [ ] Listen together over the internet
 - [ ] Distribution on F-Droid and IzzyOnDroid
 - [ ] Notarised macOS and signed Windows builds

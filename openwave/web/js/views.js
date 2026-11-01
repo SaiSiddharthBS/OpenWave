@@ -9,6 +9,8 @@ import { peopleLine, syncLine } from './sharing.js';
 import {
   esc, icon, fmtTotal, trackList, trackCards, cards, section, registerList, trackRow, artistLinks, empty, avatar,
 } from './ui.js';
+import { phonesSetting, phonesStatus } from './phones.js';
+import { REMOTE } from './remote.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -407,7 +409,7 @@ export async function settings() {
   const p = store.profile;
   let health = null;
   try { health = await (await fetch('/api/health')).json(); } catch { /* offline */ }
-  const [update, link] = await Promise.all([checkForUpdate(3000), linkSettings()]);
+  const [update, link, phones] = await Promise.all([checkForUpdate(3000), REMOTE ? null : linkSettings(), phonesStatus()]);
   const sw = (key) => `<button class="switch ${s[key] ? 'on' : ''}" data-setting-toggle="${key}" role="switch" aria-checked="${!!s[key]}" aria-label="${key}"></button>`;
   const select = (key, options, type = '') => `<select class="select" data-setting="${key}" ${type ? `data-type="${type}"` : ''}>
     ${options.map(([v, l]) => `<option value="${v}" ${String(s[key]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
@@ -429,6 +431,7 @@ export async function settings() {
       ${document.documentElement.classList.contains('native-mac-app') ? `<div class="setting"><div><b>Song notifications</b><p>Show a notification when the song changes while OpenWave is in the background.</p></div>${sw('notifications')}</div>` : ''}
       ${window.OpenWaveAndroid ? androidServerSetting() : ''}
       ${window.OpenWaveAndroid?.addWidget ? '<div class="setting"><div><b>Home-screen widget</b><p>See what’s playing and skip songs right from your home screen.</p></div><button class="btn" data-act="android-add-widget">Add widget</button></div>' : ''}
+      ${phonesSetting(phones)}
       ${link ? devicesSetting(link) : ''}
       <h2>Downloads</h2>
       <div class="setting"><div><b>Saved on this device</b><p id="dl-usage">${plural(offline.count, 'song')} • ${fmtBytes(await offline.usage().catch(() => 0))}. Downloads use the audio quality above.</p></div>

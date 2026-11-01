@@ -10,11 +10,13 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="icon" href="/icons/favicon-64.png" type="image/png" sizes="64x64">
-  <link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32">
-  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
-  <link rel="stylesheet" href="/css/app.css">
+  <meta name="apple-mobile-web-app-title" content="OpenWave">
+  <meta name="openwave-mode" content="engine">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/favicon-64.png" type="image/png" sizes="64x64">
+  <link rel="icon" href="icons/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -69,7 +71,7 @@
 
 <div class="app">
   <aside class="sidebar">
-    <a class="brand" href="#/home"><img class="logo-img" src="/icons/logo-mark-128.png" alt=""><span class="wordmark">Open<b>Wave</b></span></a>
+    <a class="brand" href="#/home"><img class="logo-img" src="icons/logo-mark-128.png" alt=""><span class="wordmark">Open<b>Wave</b></span></a>
     <nav class="side-nav">
       <a href="#/home" data-route="home"><svg><use href="#i-home"/></svg>Home</a>
       <a href="#/search" data-route="search"><svg><use href="#i-search"/></svg>Search</a>
@@ -93,7 +95,7 @@
         <button class="icon-btn round" data-act="back" aria-label="Back"><svg><use href="#i-back"/></svg></button>
         <button class="icon-btn round" data-act="forward" aria-label="Forward"><svg><use href="#i-forward"/></svg></button>
       </div>
-      <a class="brand mobile-only" href="#/home"><img class="logo-img" src="/icons/logo-mark-128.png" alt=""><span class="wordmark">Open<b>Wave</b></span></a>
+      <a class="brand mobile-only" href="#/home"><img class="logo-img" src="icons/logo-mark-128.png" alt=""><span class="wordmark">Open<b>Wave</b></span></a>
       <div class="topbar-title ellipsis" id="topbar-title" aria-hidden="true"></div>
       <form class="searchbar" id="search-form" role="search" autocomplete="off">
         <svg><use href="#i-search"/></svg>
@@ -206,6 +208,6 @@
 <dialog class="dialog" id="dialog"></dialog>
 <audio id="audio" preload="auto"></audio>
 
-<script type="module" src="/js/app.js"></script>
+<script type="module" src="js/boot.js"></script>
 </body>
 </html>

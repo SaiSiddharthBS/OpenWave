@@ -47,10 +47,11 @@ export const get = {
 };
 
 // Thumbnails are proxied so viewers never contact Google directly, and so the UI can sample colours.
+// The address is relative: the website copy of the app (remote.js) lives below the site's root.
 export function img(url, size) {
   if (!url) return PLACEHOLDER;
   if (size && /googleusercontent\.com|ggpht\.com/.test(url)) url = url.replace(/=w\d+-h\d+/, `=w${size}-h${size}`);
-  return `/api/img?u=${enc(url)}`;
+  return `api/img?u=${enc(url)}`;
 }
 
 export const PLACEHOLDER = 'data:image/svg+xml,' + enc(

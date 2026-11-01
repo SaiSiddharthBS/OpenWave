@@ -32,7 +32,9 @@ jobs:
         run: |
           pyinstaller --noconfirm --clean --windowed --name OpenWave --icon packaging/windows/openwave.ico `
             --add-data "openwave/web;openwave/web" --collect-all yt_dlp_ejs --collect-data ytmusicapi `
-            --collect-submodules yt_dlp --collect-submodules uvicorn packaging/launcher_entry.py
+            --collect-submodules yt_dlp --collect-submodules uvicorn `
+            --collect-submodules openwave._vendor.aiortc --collect-submodules aioice --collect-submodules dns --exclude-module av `
+            packaging/launcher_entry.py
           New-Item -ItemType Directory -Force dist/OpenWave/bin | Out-Null
           Copy-Item deno/deno.exe dist/OpenWave/bin/deno.exe
       - name: Smoke test the packaged app
@@ -46,6 +48,7 @@ jobs:
           if (-not $ok) { throw "engine did not start" }
           $h | ConvertTo-Json
           if ($h.jsRuntimes -notcontains "deno") { throw "bundled Deno not found" }
+          if (-not $h.connect) { throw "OpenWave Connect is missing from the build" }
       - name: Installer
         shell: pwsh
         run: |
@@ -74,14 +77,16 @@ jobs:
         run: |
           pyinstaller --noconfirm --clean --name OpenWave \
             --add-data "openwave/web:openwave/web" --collect-all yt_dlp_ejs --collect-data ytmusicapi \
-            --collect-submodules yt_dlp --collect-submodules uvicorn packaging/launcher_entry.py
+            --collect-submodules yt_dlp --collect-submodules uvicorn \
+            --collect-submodules openwave._vendor.aiortc --collect-submodules aioice --collect-submodules dns --exclude-module av \
+            packaging/launcher_entry.py
           curl -fsSL "https://github.com/denoland/deno/releases/download/v$DENO_VERSION/deno-x86_64-unknown-linux-gnu.zip" -o deno.zip
           mkdir -p dist/OpenWave/bin && unzip -q deno.zip -d dist/OpenWave/bin
       - name: Smoke test the packaged app
         run: |
           OPENWAVE_DATA=$(mktemp -d) PATH=/usr/bin:/bin dist/OpenWave/OpenWave --server-only --port 47999 &
           for i in $(seq 1 60); do curl -sf localhost:47999/api/health > health.json && break; sleep 1; done
-          cat health.json && grep -q '"deno"' health.json
+          cat health.json && grep -q '"deno"' health.json && grep -q '"connect":true' health.json
       - name: AppImage
         run: |
           ./packaging/linux/build-appimage.sh
