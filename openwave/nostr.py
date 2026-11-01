@@ -405,15 +405,17 @@ class Relay:
 class RelayPool:
     """Keeps every relay connected while there is something to sync, and none when there isn't."""
 
-    def __init__(self, urls: list[str], on_event: OnEvent, on_caught_up: Callable[[str], Awaitable[None]] | None = None):
+    def __init__(self, urls: list[str], on_event: OnEvent, on_caught_up: Callable[[str], Awaitable[None]] | None = None,
+                 kinds: tuple[int, ...] = (30078,), tag: str = "d"):
         self.relays = {u: Relay(u, self) for u in urls}
+        self.kinds, self.tag = list(kinds), tag
         self.on_event, self.on_caught_up = on_event, on_caught_up
         self.rooms: list[str] = []
         self.seen: dict[str, float] = {}
         self._background: set[asyncio.Task] = set()
 
     def filter(self) -> dict | None:
-        return {"kinds": [30078], "#d": sorted(self.rooms)} if self.rooms else None
+        return {"kinds": self.kinds, f"#{self.tag}": sorted(self.rooms)} if self.rooms else None
 
     async def set_rooms(self, rooms: list[str]) -> None:
         rooms = sorted(set(rooms))

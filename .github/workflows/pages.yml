@@ -6,7 +6,7 @@ name: Website
 on:
   push:
     branches: [main]
-    paths: ["site/**", "docs/**", ".github/workflows/pages.yml"]
+    paths: ["site/**", "docs/**", "openwave/web/js/connect.js", "openwave/web/js/vendor/**", ".github/workflows/pages.yml"]
   workflow_dispatch:
 
 permissions:
@@ -33,6 +33,9 @@ jobs:
           cp -R docs/screenshots _site/screenshots
           cp docs/logo.png _site/logo.png
           cp openwave/web/icons/favicon-64.png _site/favicon-64.png
+          mkdir -p _site/connect-test/vendor
+          cp openwave/web/js/connect.js _site/connect-test/
+          cp openwave/web/js/vendor/secp256k1.js _site/connect-test/vendor/
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

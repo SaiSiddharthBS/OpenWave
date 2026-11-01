@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0b0d12">
+<title>OpenWave Connect test</title>
+<style>
+  :root { color-scheme: dark; --bg: #0b0d12; --card: #151922; --ink: #e9edf5; --muted: #8b93a7; --accent: #2fc8ff; --ok: #4ade80; --bad: #f87171; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 -apple-system, system-ui, sans-serif; padding: max(16px, env(safe-area-inset-top)) 16px 40px; }
+  main { max-width: 640px; margin: 0 auto; display: grid; gap: 14px; }
+  h1 { font-size: 22px; margin: 4px 0 0; }
+  p { margin: 0; color: var(--muted); }
+  section { background: var(--card); border-radius: 14px; padding: 14px; display: grid; gap: 10px; min-width: 0; }
+  h2 { font-size: 15px; margin: 0; }
+  textarea, input { width: 100%; background: #0e1118; color: var(--ink); border: 1px solid #2a3040; border-radius: 10px; padding: 10px; font: 13px ui-monospace, monospace; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  button { background: var(--accent); color: #001018; border: 0; border-radius: 999px; padding: 10px 16px; font-weight: 600; font-size: 15px; }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid #2a3040; }
+  button:disabled { opacity: .45; }
+  #status { font-weight: 600; }
+  .ok { color: var(--ok); } .bad { color: var(--bad); }
+  #log { font: 12px/1.5 ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--muted); max-height: 46vh; overflow: auto; }
+  audio { width: 100%; }
+  #now { overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<main>
+  <div>
+    <h1>OpenWave Connect test</h1>
+    <p>Checks that this phone can reach an OpenWave engine from any network, and play from it with the screen locked.</p>
+  </div>
+
+  <section>
+    <h2>1. Connect</h2>
+    <textarea id="link" rows="3" placeholder="Pairing link" autocomplete="off" spellcheck="false"></textarea>
+    <div class="row"><button id="connect">Connect</button></div>
+    <div id="status">Not connected</div>
+  </section>
+
+  <section>
+    <h2>2. Speed</h2>
+    <div class="row"><button id="speed" disabled>Download one song</button></div>
+  </section>
+
+  <section>
+    <h2>3. Play with the screen locked</h2>
+    <p>Starts three songs. Tap “Jump near the end”, lock the phone, and listen: each song should move to the next on its own.</p>
+    <input id="q" value="Coldplay Yellow" aria-label="Search">
+    <div class="row">
+      <button id="play" disabled>Play three songs</button>
+      <button id="jump" class="ghost" disabled>Jump near the end</button>
+    </div>
+    <div id="now"></div>
+    <audio id="audio" controls playsinline></audio>
+  </section>
+
+  <section>
+    <h2>Log</h2>
+    <div class="row"><button id="copy" class="ghost">Copy log</button></div>
+    <div id="log"></div>
+  </section>
+</main>
+<script type="module">
+import { connect, parsePairing } from './connect.js';
+
+const $ = (id) => document.getElementById(id);
+const t0 = performance.now();
+const lines = [];
+function log(msg) {
+  const line = `${((performance.now() - t0) / 1000).toFixed(2).padStart(7)}s  ${msg}`;
+  lines.push(line);
+  $('log').textContent = lines.slice(-300).join('\n');
+  $('log').scrollTop = 1e9;
+}
+window.addEventListener('error', (e) => log(`error: ${e.message}`));
+window.addEventListener('unhandledrejection', (e) => log(`error: ${e.reason?.message || e.reason}`));
+document.addEventListener('visibilitychange', () => log(`page ${document.visibilityState}`));
+log(`${navigator.userAgent}`);
+log(`standalone: ${navigator.standalone === true || matchMedia('(display-mode: standalone)').matches}`);
+
+const saved = (() => { try { return localStorage.getItem('openwave:connect-test'); } catch { return null; } })();
+if (location.hash.includes('connect=')) {
+  $('link').value = location.href;
+  try { localStorage.setItem('openwave:connect-test', location.href); } catch { /* private mode */ }
+} else if (saved) $('link').value = saved;
+
+let link = null;
+let pairing = null;
+
+function setStatus(text, cls = '') { $('status').textContent = text; $('status').className = cls; }
+function ready(on) { for (const id of ['speed', 'play']) $(id).disabled = !on; }
+
+async function open() {
+  pairing = parsePairing($('link').value);
+  try { localStorage.setItem('openwave:connect-test', $('link').value.trim()); } catch { /* private mode */ }
+  setStatus(`Connecting to ${pairing.name}…`);
+  const start = performance.now();
+  link = await connect(pairing, { log });
+  const ms = Math.round(performance.now() - start);
+  const r = await link.route();
+  log(`connected in ${ms} ms; route ${r?.local} -> ${r?.remote}, rtt ${r?.rtt != null ? Math.round(r.rtt * 1000) + ' ms' : '?'}`);
+  setStatus(`Connected to ${pairing.name} in ${(ms / 1000).toFixed(1)} s`, 'ok');
+  ready(true);
+  link.onclose = () => {
+    log('connection closed');
+    setStatus('Connection lost; reconnecting…', 'bad');
+    ready(false);
+    link = null;
+    setTimeout(reconnect, 500);
+  };
+}
+
+async function reconnect() {
+  for (let attempt = 1; attempt <= 5 && !link; attempt++) {
+    try { await open(); return; } catch (e) { log(`reconnect ${attempt} failed: ${e.message}`); await new Promise((r) => setTimeout(r, 2000 * attempt)); }
+  }
+}
+
+$('connect').onclick = async () => {
+  $('connect').disabled = true;
+  try { link?.close(); link = null; await open(); } catch (e) { log(`failed: ${e.message}`); setStatus(e.message, 'bad'); }
+  $('connect').disabled = false;
+};
+
+async function getJSON(path) {
+  const r = await link.fetch(path);
+  if (!r.ok) throw new Error(`${path}: HTTP ${r.status}`);
+  return r.json();
+}
+
+async function download(videoId) {
+  const start = performance.now();
+  const r = await link.fetch(`/api/download/${videoId}?codec=aac`);
+  if (!r.ok) throw new Error(`download: HTTP ${r.status}`);
+  const first = performance.now();
+  const blob = await r.blob();
+  const secs = (performance.now() - start) / 1000;
+  log(`downloaded ${(blob.size / 1e6).toFixed(2)} MB in ${secs.toFixed(2)} s (first byte ${Math.round(first - start)} ms, ${(blob.size / 1e6 / secs).toFixed(2)} MB/s)`);
+  return new Blob([blob], { type: r.headers.get('content-type') || 'audio/mp4' });
+}
+
+$('speed').onclick = async () => {
+  $('speed').disabled = true;
+  try {
+    const res = await getJSON(`/api/search?q=${encodeURIComponent('Coldplay Yellow')}&type=songs`);
+    const song = res.results.find((x) => x.videoId);
+    log(`search ok: ${song.title}`);
+    await download(song.videoId);
+  } catch (e) { log(`speed test failed: ${e.message}`); }
+  $('speed').disabled = !link;
+};
+
+// Three songs, each fetched whole before it plays; the next one is fetched while the current one plays.
+let queue = [];
+let index = -1;
+const blobs = new Map();
+const audio = $('audio');
+
+function fetchSong(song) {
+  if (!blobs.has(song.videoId)) {
+    blobs.set(song.videoId, download(song.videoId).catch((e) => { blobs.delete(song.videoId); throw e; }));
+  }
+  return blobs.get(song.videoId);
+}
+
+async function playAt(i) {
+  index = i;
+  const song = queue[i];
+  if (!song) { log('queue finished'); $('now').textContent = 'Done.'; return; }
+  $('now').textContent = `${i + 1}/${queue.length}: ${song.title} - ${song.artists?.map((a) => a.name).join(', ')}`;
+  log(`loading ${i + 1}: ${song.title}`);
+  let blob;
+  for (let attempt = 1; ; attempt++) {
+    try {
+      if (!link) await reconnect();
+      blob = await fetchSong(song);
+      break;
+    } catch (e) {
+      log(`load failed (${attempt}): ${e.message}`);
+      if (attempt >= 3) return;
+    }
+  }
+  if (audio.src) URL.revokeObjectURL(audio.src);
+  audio.src = URL.createObjectURL(blob);
+  if ('mediaSession' in navigator) {
+    navigator.mediaSession.metadata = new MediaMetadata({ title: song.title, artist: song.artists?.map((a) => a.name).join(', '), artwork: song.thumbnail ? [{ src: song.thumbnail, sizes: '544x544' }] : [] });
+  }
+  try { await audio.play(); } catch (e) { log(`play() refused: ${e.message}`); }
+  if (queue[i + 1]) fetchSong(queue[i + 1]).catch(() => {});
+}
+
+audio.addEventListener('playing', () => log(`playing ${index + 1} (${document.visibilityState})`));
+audio.addEventListener('ended', () => { log(`ended ${index + 1} (${document.visibilityState})`); playAt(index + 1); });
+audio.addEventListener('error', () => log(`audio error ${audio.error?.code}: ${audio.error?.message}`));
+if ('mediaSession' in navigator) {
+  navigator.mediaSession.setActionHandler('nexttrack', () => playAt(index + 1));
+  navigator.mediaSession.setActionHandler('previoustrack', () => playAt(Math.max(0, index - 1)));
+}
+
+$('play').onclick = async () => {
+  $('play').disabled = true;
+  try {
+    const res = await getJSON(`/api/search?q=${encodeURIComponent($('q').value)}&type=songs`);
+    queue = res.results.filter((x) => x.videoId).slice(0, 3);
+    log(`queue: ${queue.map((s) => s.title).join(' | ')}`);
+    $('jump').disabled = false;
+    await playAt(0);
+  } catch (e) { log(`play failed: ${e.message}`); }
+  $('play').disabled = !link;
+};
+
+$('jump').onclick = () => {
+  if (audio.duration) { audio.currentTime = Math.max(0, audio.duration - 12); log(`jumped to ${Math.round(audio.currentTime)} s`); }
+};
+
+$('copy').onclick = async () => {
+  try { await navigator.clipboard.writeText(lines.join('\n')); $('copy').textContent = 'Copied'; } catch { log('copy failed; select the log text instead'); }
+};
+
+if ($('link').value && new URLSearchParams(location.search).has('auto')) $('connect').click();
+</script>
+</body>
+</html>
