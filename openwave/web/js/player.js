@@ -483,7 +483,8 @@ class Player extends EventTarget {
    */
   unexpectedPause() {
     const now = performance.now();
-    if (this.remote || this.el.ended || !this.loaded || now - this.heldAt < 1500 || now - this.navAt > 3000) return;
+    // Only Safari does this; elsewhere a pause the app didn't make is the system's (headphones out).
+    if (!IOS || this.remote || this.el.ended || !this.loaded || now - this.heldAt < 1500 || now - this.navAt > 3000) return;
     this.note('resuming: paused right after a screen change');
     this.el.play().catch((e) => this.note(`resume refused: ${e.name}`));
   }
