@@ -34,6 +34,7 @@ let failures = 0;
 
 function ok(cond, what) {
   console.log(`${cond ? '  ✓' : '  ✗'} ${what}`);
+  if (!cond && process.env.GITHUB_ACTIONS) console.log(`::error title=connect_e2e::${what}`);   // shows on the run page
   if (!cond) failures++;
   return cond;
 }
@@ -368,6 +369,7 @@ async function main() {
 
 main().catch((e) => {
   console.error(e);
+  if (process.env.GITHUB_ACTIONS) console.log(`::error title=connect_e2e::${String(e?.message || e).split('\n')[0]}`);
   for (const p of procs) try { p.kill(); } catch { /* gone */ }
   process.exit(1);
 });
