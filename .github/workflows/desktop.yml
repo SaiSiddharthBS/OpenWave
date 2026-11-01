@@ -1,6 +1,6 @@
 # Builds the Windows installer and the Linux AppImage. Version tags run it through publish.yml,
-# which puts them on the GitHub Release next to the macOS DMGs. Changes to the launcher or the
-# packaging build them on main too, so a broken Windows app shows up before a release.
+# which puts them on the GitHub Release next to the macOS DMGs. Changes to the engine, the interface
+# or the packaging build them on main too, so a broken Windows app shows up before a release.
 name: Windows & Linux apps
 
 on:
@@ -9,8 +9,7 @@ on:
   push:
     branches: [main]
     paths:
-      - openwave/launcher.py
-      - openwave/startup.py
+      - openwave/**
       - packaging/**
       - .github/workflows/desktop.yml
 

@@ -5,6 +5,13 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Changed
+- **A new look on every device.** OpenWave is redesigned around glass: the sidebar, player, tab bar, menus and dialogs float over your music, and the colours of the song playing glow through them. Lists, albums and Settings are cleaner, with Play and Shuffle buttons, inset settings groups and larger titles. The full-screen player fills the screen with the artwork's colours, the artwork settles back when paused, and it flies between the mini player and the full-screen player. Everything moves on springs. On phones, the tab bar tucks away as you scroll and returns when you scroll back, and pages have a back button.
+- The Android app now draws behind the status and navigation bars, as the iPhone version does.
+- **Pages come alive as you scroll.** Songs, albums and sections rise into place as they come into view, covers on album and playlist pages drift back and fade as you scroll, big titles sink into the top bar, and the colour behind the app shifts with the page. A mouse wheel on Windows and Linux now glides, and tapping the tab you're on scrolls back to the top.
+- If a device asks apps to reduce motion, OpenWave uses gentle fades instead of switching animation off, and Settings → Appearance → **Full animations** turns everything on anyway.
+- Settings → Appearance → **Reduce glass** swaps the see-through panels for solid ones on that device. Slower devices start with it on, and the system's Reduce Transparency setting is respected.
+
 ## [0.4.0] — 2026-11-01
 
 ### Added

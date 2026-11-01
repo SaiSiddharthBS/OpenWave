@@ -72,6 +72,13 @@ class MainActivity : ComponentActivity() {
         get() = prefs.getString("lastConnect", "") ?: ""
         set(value) = prefs.edit().putString("lastConnect", value).apply()
 
+    private var safeTop = 0f
+    private var safeBottom = 0f
+
+    private fun tellPageSafeArea() {
+        web.evaluateJavascript("(s=>{s.setProperty('--safe-t','${safeTop}px');s.setProperty('--safe-b','${safeBottom}px')})(document.documentElement.style)", null)
+    }
+
     private val pickFiles = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris ->
         fileCallback?.onReceiveValue(uris.toTypedArray())
         fileCallback = null
@@ -99,6 +106,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
+        window.statusBarColor = Color.TRANSPARENT
+        window.navigationBarColor = Color.TRANSPARENT
+        if (Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = false
 
         web = WebView(this).apply {
             setBackgroundColor(Color.parseColor("#0A0B14"))
@@ -115,10 +125,17 @@ class MainActivity : ComponentActivity() {
             setBackgroundColor(Color.parseColor("#0A0B14"))
             addView(web, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
         }
-        // Keep the page clear of the status and navigation bars (Android 15 draws edge to edge).
+        // Edge to edge, as on the iPhone: the page's colour runs behind the status and navigation
+        // bars, and the page is told how much room they take (--safe-t, --safe-b in css/app.css).
+        // The keyboard still pushes the page up.
         ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
-            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout() or WindowInsetsCompat.Type.ime())
-            v.updatePadding(left = bars.left, top = bars.top, right = bars.right, bottom = bars.bottom)
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout())
+            val keyboard = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            v.updatePadding(left = bars.left, right = bars.right, bottom = keyboard)
+            val density = resources.displayMetrics.density
+            safeTop = bars.top / density
+            safeBottom = if (keyboard > 0) 0f else bars.bottom / density
+            tellPageSafeArea()
             WindowInsetsCompat.CONSUMED
         }
         setContentView(root)
@@ -304,8 +321,11 @@ class MainActivity : ComponentActivity() {
             return true
         }
 
+        override fun onPageCommitVisible(view: WebView, url: String?) = tellPageSafeArea()
+
         override fun onPageFinished(view: WebView, url: String?) {
             Log.i(Engine.TAG, "page loaded: ${url?.take(80)}")
+            tellPageSafeArea()
         }
 
         override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {

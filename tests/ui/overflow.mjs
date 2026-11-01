@@ -5,7 +5,9 @@ export const CHECK = `(() => {
   const W = innerWidth, found = [];
   const name = (el) => el.tagName.toLowerCase() + (el.id ? '#' + el.id : '') + (el.classList.length ? '.' + [...el.classList].join('.') : '');
   const path = (el) => { const p = []; for (let e = el; e && e !== document.body && p.length < 5; e = e.parentElement) p.unshift(name(e)); return p.join(' > '); };
-  const shown = (el) => { for (let e = el; e; e = e.parentElement) { const s = getComputedStyle(e); if (s.display === 'none' || s.visibility === 'hidden' || +s.opacity === 0) return false; if (e.hidden) return false; } return true; };
+  // .rv: a piece of the page waiting to animate in as it's scrolled to; it counts, it's just not faded in yet.
+  // [data-decor]: colour behind the app, drawn past the window's edge on purpose.
+  const shown = (el) => { if (el.closest('[data-decor]')) return false; for (let e = el; e; e = e.parentElement) { const s = getComputedStyle(e); if (s.display === 'none' || s.visibility === 'hidden' || (+s.opacity === 0 && !e.classList.contains('rv'))) return false; if (e.hidden) return false; } return true; };
   // A text run is clipped by its own element too; a box only by its ancestors.
   const visible = (el, r, text) => {
     let left = r.left, right = r.right;
@@ -43,3 +45,10 @@ export const CHECK = `(() => {
   if (doc.scrollWidth > W + 1) found.unshift({ what: 'page', at: 'the whole page scrolls sideways', left: 0, right: doc.scrollWidth, text: '' });
   return found;
 })()`;
+
+// Pieces of a page wait (.rv) until they scroll into view, then animate in. None may be left waiting
+// on screen. Returns how many are.
+export const STUCK = `[...document.querySelectorAll('#view .rv')].filter((el) => {
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.bottom > 0 && r.right > 0 && r.left < innerWidth && r.top < innerHeight * 0.85;
+}).length`;

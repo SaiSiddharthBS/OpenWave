@@ -175,6 +175,7 @@ async function main() {
     const desk = await tab();
     const DESK = { width: 1280, height: 800, deviceScaleFactor: 2, mobile: false };
     await desk.send('Page.enable');
+    await desk.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
     await desk.send('Emulation.setDeviceMetricsOverride', DESK);
     await desk.send('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem('openwave:session:v2', ${JSON.stringify(JSON.stringify({ token: maya.token, profile: maya.profile }))});` });
     await desk.send('Page.navigate', { url: `${engine}/#/settings` });
@@ -193,6 +194,7 @@ async function main() {
     const phone = await tab();
     const PHONE = { width: 390, height: 844, deviceScaleFactor: 2, mobile: true };
     await phone.send('Page.enable');
+    await phone.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
     await phone.send('Network.enable');
     await phone.send('Network.setUserAgentOverride', { userAgent: IPHONE, platform: 'iPhone' });
     await phone.send('Emulation.setDeviceMetricsOverride', PHONE);
@@ -335,6 +337,7 @@ async function main() {
     const { targetId } = await browser.send('Target.createTarget', { url: 'about:blank', browserContextId });
     const droid = await cdp(`ws://127.0.0.1:${chromePort}/devtools/page/${targetId}`);
     await droid.send('Page.enable');
+    await droid.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
     await droid.send('Network.setUserAgentOverride', { userAgent: ANDROID, platform: 'Linux armv8l' });
     await droid.send('Emulation.setDeviceMetricsOverride', PHONE);
     await droid.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.OpenWaveAndroid = {

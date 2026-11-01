@@ -156,6 +156,7 @@ export function openMenu(anchor, items, head = '') {
   if (top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - 4);
   m.style.left = `${Math.max(8, left)}px`;
   m.style.top = `${top}px`;
+  m.style.transformOrigin = `${Math.min(mw, Math.max(0, r.right - left))}px ${top > r.top ? 0 : mh}px`;   // it grows out of the button
   const onClick = (e) => {
     const b = e.target.closest('[data-mi]');
     if (b) {

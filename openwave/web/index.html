@@ -69,10 +69,13 @@
   <symbol id="i-expand" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/></symbol>
 </svg>
 
+<div id="ambient" data-decor aria-hidden="true"><div class="amb"></div><div class="amb b"></div></div>
+
 <div class="app">
   <aside class="sidebar">
     <a class="brand" href="#/home"><img class="logo-img" src="icons/logo-mark-128.png" alt=""><span class="wordmark">Open<b>Wave</b></span></a>
     <nav class="side-nav">
+      <span class="nav-lens"></span>
       <a href="#/home" data-route="home"><svg><use href="#i-home"/></svg>Home</a>
       <a href="#/search" data-route="search"><svg><use href="#i-search"/></svg>Search</a>
       <a href="#/library" data-route="library"><svg><use href="#i-library"/></svg>Your Library</a>
@@ -148,6 +151,7 @@
 </footer>
 
 <nav class="tabbar">
+  <span class="tab-lens"></span>
   <a href="#/home" data-route="home"><svg><use href="#i-home"/></svg><span>Home</span></a>
   <a href="#/search" data-route="search"><svg><use href="#i-search"/></svg><span>Search</span></a>
   <a href="#/library" data-route="library"><svg><use href="#i-library"/></svg><span>Library</span></a>
@@ -155,7 +159,7 @@
 </nav>
 
 <section class="np" id="np" hidden aria-label="Now playing">
-  <div class="np-bg" data-bind="np-bg"></div>
+  <div class="np-bg" data-decor><i></i><i></i></div>
   <header class="np-head">
     <button class="icon-btn round" data-act="close-np" aria-label="Close"><svg><use href="#i-down"/></svg></button>
     <div class="np-from ellipsis"><small>Playing from</small><b data-bind="context">Queue</b></div>

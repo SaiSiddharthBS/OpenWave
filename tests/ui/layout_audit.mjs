@@ -15,7 +15,7 @@ import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { CHECK } from './overflow.mjs';
+import { CHECK, STUCK } from './overflow.mjs';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -274,6 +274,8 @@ async function audit(dataset, out) {
     const session = await seed(engine.base, d, cat);
     const page = await cdp(chrome.ws);
     await page.send('Page.enable');
+    // As on most devices, whatever this computer's own Reduce Motion setting says.
+    await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
     await page.send('Runtime.enable');
     await page.send('Network.enable');
     // Every request goes through the fakes below: no browser cache, and no service worker (it would
@@ -318,6 +320,15 @@ async function audit(dataset, out) {
         let missing = stepError || await page.ev(opened(sc));
         for (let i = 0; missing && !stepError && i < 20; i++) { await sleep(250); missing = await page.ev(opened(sc)); }
         const found = missing ? [{ what: 'open', at: `the screen did not open: ${missing}`, left: 0, right: 0, text: '' }] : await page.ev(CHECK);
+        // Nothing may stay faded out waiting to animate in, here or at the bottom of the page.
+        for (const y of ['0', '1e6']) {
+          if (missing) break;
+          await page.ev(`document.querySelector('#main').scrollTop = ${y}; true`);
+          await sleep(350);
+          const stuck = await page.ev(STUCK);
+          if (stuck) found.push({ what: 'hidden', at: `${stuck} piece(s) of the page never animated in (scrolled to ${y})`, left: 0, right: 0, text: '' });
+        }
+        await page.ev(`document.querySelector('#main').scrollTop = 0; true`);
         if (found.length || process.env.AUDIT_ALL) {
           const shot = join(out, `${dataset}-${vp.name}-${sc.name}.png`);
           const { data } = await page.send('Page.captureScreenshot', { format: 'png' });

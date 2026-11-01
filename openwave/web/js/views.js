@@ -12,6 +12,7 @@ import {
 } from './ui.js';
 import { phonesSetting, phonesStatus, onTheComputer } from './phones.js';
 import { REMOTE, computer } from './remote.js';
+import { fullMotion, glassReduced, motionReduced } from './glass.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -213,8 +214,8 @@ function downloadButton(tracks) {
 
 function actions({ play, shuffle = true, save = null, edit = false, del = false, invite = '', more = true, tracks = null }) {
   return `<div class="actions">
-    <button class="big-play" data-act="${play}" aria-label="Play">${icon('play')}</button>
-    ${shuffle ? `<button class="icon-btn lg" data-act="${play}-shuffle" title="Shuffle play" aria-label="Shuffle play">${icon('shuffle')}</button>` : ''}
+    <button class="big-play" data-act="${play}">${icon('play')}<span>Play</span></button>
+    ${shuffle ? `<button class="pill-btn" data-act="${play}-shuffle">${icon('shuffle')}<span>Shuffle</span></button>` : ''}
     ${downloadButton(tracks)}
     ${save ? `<button class="icon-btn lg like-btn ${save.on ? 'on' : ''}" data-act="save-collection" title="${save.on ? 'Remove from library' : 'Save to library'}" aria-label="Save">${icon(save.on ? 'heart-fill' : 'heart')}</button>` : ''}
     ${invite ? `<button class="icon-btn lg" data-act="${invite}" title="${invite === 'sharing' ? 'Shared with' : 'Share with friends'}" aria-label="${invite === 'sharing' ? 'Shared with' : 'Share with friends'}">${icon('people')}</button>` : ''}
@@ -264,8 +265,8 @@ export async function artist({ id }) {
   let html = `<div class="hero artist" style="background-image:url('${img(a.thumbnail, 1200)}')"><div class="info">
       <div class="kind">Artist</div><h1>${esc(a.name)}</h1><div class="meta">${esc(stats)}</div></div></div>
     <div class="actions">
-      <button class="big-play" data-act="play-collection" aria-label="Play">${icon('play')}</button>
-      <button class="icon-btn lg" data-act="play-collection-shuffle" title="Shuffle" aria-label="Shuffle">${icon('shuffle')}</button>
+      <button class="big-play" data-act="play-collection">${icon('play')}<span>Play</span></button>
+      <button class="pill-btn" data-act="play-collection-shuffle">${icon('shuffle')}<span>Shuffle</span></button>
       <button class="btn" data-act="artist-radio">${icon('radio')} Radio</button>
       <button class="btn" data-act="save-collection">${followed ? 'Following' : 'Follow'}</button>
     </div>`;
@@ -444,6 +445,11 @@ export async function settings() {
       ${window.OpenWaveAndroid?.addWidget ? '<div class="setting"><div><b>Home-screen widget</b><p>See what’s playing and skip songs right from your home screen.</p></div><button class="btn" data-act="android-add-widget">Add widget</button></div>' : ''}
       ${phonesSetting(phones)}
       ${link ? devicesSetting(link) : ''}
+      <h2>Appearance</h2>
+      <div class="setting"><div><b>Reduce glass</b><p>Solid panels instead of see-through ones, for this device. Smoother on older phones and easier to read.</p></div>
+        <button class="switch ${glassReduced() ? 'on' : ''}" data-act="toggle-glass" role="switch" aria-checked="${glassReduced()}" aria-label="Reduce glass"></button></div>
+      ${motionReduced() ? `<div class="setting"><div><b>Full animations</b><p>This device is set to reduce motion, so OpenWave uses gentle fades. Turn this on for every animation, on this device.</p></div>
+        <button class="switch ${fullMotion() ? 'on' : ''}" data-act="toggle-motion" role="switch" aria-checked="${fullMotion()}" aria-label="Full animations"></button></div>` : ''}
       <h2>Downloads</h2>
       <div class="setting"><div><b>Saved on this device</b><p id="dl-usage">${plural(offline.count, 'song')} • ${fmtBytes(await offline.usage().catch(() => 0))}. Downloads use the audio quality above.</p></div>
         <button class="btn danger" data-act="clear-downloads" ${offline.count ? '' : 'disabled'}>Delete all</button></div>

@@ -15,6 +15,7 @@ import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import { initLink, openDevices, linkLabel, linkEvents, setVisible, rename, forget } from './link.js';
 import { startSharing, openSharing, openJoin, showNotices, isInvite } from './sharing.js';
 import { REMOTE, computer } from './remote.js';
+import { fullMotion, glassReduced, initGlass, moveLenses, npClosed, npClosing, npOpened, pageShown, setAmbient, setFullMotion, setGlassReduced } from './glass.js';
 import { openPairing, removePhone, forgetComputer, switchTailscale, showTailscaleCode, switchStartup } from './phones.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
@@ -75,6 +76,7 @@ async function render({ keepScroll = false } = {}) {
   document.body.classList.add(`route-${name}`);
   $$('[data-route]').forEach((a) => a.classList.toggle('on', a.dataset.route === name));
   $$('.side-item').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === location.hash));
+  moveLenses();
   closeMenu();
   hideSuggest();
   if (name === 'search' && document.activeElement !== searchInput) searchInput.value = params.get('q') || '';
@@ -93,6 +95,7 @@ async function render({ keepScroll = false } = {}) {
     if (out.collection?.shared) document.body.dataset.sharedView = '1'; else delete document.body.dataset.sharedView;
     view.innerHTML = out.html;
     main.scrollTop = keepScroll ? scroll : 0;
+    pageShown(view, !keepScroll);
     if (!keepScroll) enter(back ? 'enter-back' : sk === 'detail' ? 'enter-fwd' : 'enter-tab');
     topbarTitle.textContent = view.querySelector('.hero h1, .lib-head h1, .settings h1')?.textContent || '';
     topbar.classList.toggle('has-title', !!topbarTitle.textContent);
@@ -530,6 +533,18 @@ const ACTIONS = {
     if (!pin) return;
     try { await store.updateProfile({ pin }); toast('PIN set'); } catch (e) { toast(e.message); }
   },
+  'toggle-glass': (el) => {
+    const on = !glassReduced();
+    setGlassReduced(on);
+    el.classList.toggle('on', on);
+    el.setAttribute('aria-checked', String(on));
+  },
+  'toggle-motion': (el) => {
+    const on = !fullMotion();
+    setFullMotion(on);
+    el.classList.toggle('on', on);
+    el.setAttribute('aria-checked', String(on));
+  },
   'remove-pin': async () => { await store.updateProfile({ removePin: true }); toast('PIN removed'); },
   'profile-private': async (el) => {
     const on = !!el.dataset.on;
@@ -836,6 +851,7 @@ function bindTrack(t) {
   bind('context').forEach((el) => { el.textContent = player.context?.label || 'Queue'; });
   bindLike();
   markPlaying();
+  setAmbient(t ? img(t.thumbnail, 240) : '');
   if (t) sampleTint(img(t.thumbnail, 120)).then((c) => c && document.documentElement.style.setProperty('--np-tint', c));
   else document.title = 'OpenWave';
   lyricsFor = null;
@@ -844,6 +860,7 @@ function bindTrack(t) {
 
 function bindState() {
   const playing = player.loaded && !player.paused;
+  document.body.classList.toggle('paused', !playing);
   bind('play').forEach((b) => {
     b.innerHTML = icon(playing ? 'pause' : 'play');
     b.classList.toggle('loading', player.loading && player.loaded);
@@ -915,23 +932,23 @@ function openNP(tab) {
   document.body.classList.add('np-open');
   if (tab) showTab(tab);
   else if ($('#np-lyrics').hidden) renderQueue(); else loadLyrics();
+  npOpened(np);
 }
 
-/** Close the full-screen player, sliding it down (from where the finger left it, after a swipe). */
+/** Close the full-screen player, shrinking it into the mini player (from where the finger left it, after a swipe). */
 function closeNP({ from = 0 } = {}) {
   if (np.hidden || np.classList.contains('closing')) return;
   np.classList.remove('show-panel');
   document.body.classList.remove('np-open');
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) { np.hidden = true; np.style.transform = ''; return; }
   np.classList.add('closing');
-  np.style.transform = `translateY(${from}px)`;
-  requestAnimationFrame(() => requestAnimationFrame(() => { np.style.transform = 'translateY(100%)'; }));
-  setTimeout(() => {
+  np.style.transform = from ? `translateY(${from}px)` : '';
+  npClosing(np).then(() => {
     if (!np.classList.contains('closing')) return; // reopened meanwhile
     np.hidden = true;
     np.classList.remove('closing');
     np.style.transform = '';
-  }, 280);
+    npClosed();
+  });
 }
 
 function toggleNP(tab) {
@@ -1046,6 +1063,7 @@ bindTrack(player.current);
 bindSleep();
 initUpdates();
 initGestures({ np, closeNP });
+initGlass({ main });
 initLink();
 Promise.all([offline.init(), ensureProfile()]).finally(() => {
   renderProfileChip();
