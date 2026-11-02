@@ -6,8 +6,7 @@
 import { $, $$ } from './ui.js';
 
 const STORE = 'openwave:glass';           // "reduced" or "full"; unset decides by the device
-const MOTION = 'openwave:motion';         // "full": every animation, even if the device asks for less
-const systemCalm = matchMedia('(prefers-reduced-motion: reduce)');
+const MOTION = 'openwave:motion';         // "calm": gentle fades instead of movement; unset is every animation
 const narrowScreen = matchMedia('(max-width: 860px)');
 const touchScreen = matchMedia('(pointer: coarse)');
 const SPRING = CSS.supports('animation-timing-function', 'linear(0, 1)')
@@ -15,25 +14,20 @@ const SPRING = CSS.supports('animation-timing-function', 'linear(0, 1)')
   : 'cubic-bezier(.2, .8, .2, 1)';
 
 // ------------------------------------------------------------------ reduced motion
-/** Does this device ask apps to reduce motion? */
-export const motionReduced = () => systemCalm.matches;
-
+/** Every animation, on every device, until the person turns it off in Settings. */
 export function fullMotion() {
-  try { return localStorage.getItem(MOTION) === 'full'; } catch { return false; }
+  try { return localStorage.getItem(MOTION) !== 'calm'; } catch { return true; }
 }
 
-/** Fades instead of movement: the device asked for that, and the person hasn't chosen otherwise. */
-export const calm = () => systemCalm.matches && !fullMotion();
-
-const applyMotion = () => document.documentElement.classList.toggle('calm', calm());
+/** Fades instead of movement. */
+export const calm = () => !fullMotion();
 
 export function setFullMotion(on) {
-  try { if (on) localStorage.setItem(MOTION, 'full'); else localStorage.removeItem(MOTION); } catch { /* storage blocked */ }
-  applyMotion();
+  try { if (on) localStorage.removeItem(MOTION); else localStorage.setItem(MOTION, 'calm'); } catch { /* storage blocked */ }
+  document.documentElement.classList.toggle('calm', !on);
 }
 
-applyMotion();
-systemCalm.addEventListener('change', applyMotion);
+document.documentElement.classList.toggle('calm', calm());
 
 // ------------------------------------------------------------------ reduced glass
 function slowDevice() {

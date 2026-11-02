@@ -12,7 +12,7 @@ import {
 } from './ui.js';
 import { phonesSetting, phonesStatus, onTheComputer } from './phones.js';
 import { REMOTE, computer } from './remote.js';
-import { fullMotion, glassReduced, motionReduced } from './glass.js';
+import { fullMotion, glassReduced } from './glass.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -448,8 +448,8 @@ export async function settings() {
       <h2>Appearance</h2>
       <div class="setting"><div><b>Reduce glass</b><p>Solid panels instead of see-through ones, for this device. Smoother on older phones and easier to read.</p></div>
         <button class="switch ${glassReduced() ? 'on' : ''}" data-act="toggle-glass" role="switch" aria-checked="${glassReduced()}" aria-label="Reduce glass"></button></div>
-      ${motionReduced() ? `<div class="setting"><div><b>Full animations</b><p>This device is set to reduce motion, so OpenWave uses gentle fades. Turn this on for every animation, on this device.</p></div>
-        <button class="switch ${fullMotion() ? 'on' : ''}" data-act="toggle-motion" role="switch" aria-checked="${fullMotion()}" aria-label="Full animations"></button></div>` : ''}
+      <div class="setting"><div><b>Full animations</b><p>Every animation and movement in the app. Turn this off for gentle fades instead. This device only.</p></div>
+        <button class="switch ${fullMotion() ? 'on' : ''}" data-act="toggle-motion" role="switch" aria-checked="${fullMotion()}" aria-label="Full animations"></button></div>
       <h2>Downloads</h2>
       <div class="setting"><div><b>Saved on this device</b><p id="dl-usage">${plural(offline.count, 'song')} • ${fmtBytes(await offline.usage().catch(() => 0))}. Downloads use the audio quality above.</p></div>
         <button class="btn danger" data-act="clear-downloads" ${offline.count ? '' : 'disabled'}>Delete all</button></div>

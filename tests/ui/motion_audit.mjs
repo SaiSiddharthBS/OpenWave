@@ -187,6 +187,24 @@ try {
     if (process.env.MOTION_WHY) console.log(why(events));
     await s.check?.(page);
   }
+
+  // Every animation, even on a device set to reduce motion, until the person turns it off.
+  await page.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+  await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
+  const state = `({ calm: document.documentElement.classList.contains('calm'), on: document.querySelector('[data-act=toggle-motion]')?.classList.contains('on') })`;
+  const expect = async (what, calm, on) => {
+    const now = await page.ev(state);
+    if (now.calm !== calm || now.on !== on) problems.push(`${what}: ${JSON.stringify(now)}`);
+  };
+  const settings = async () => { await page.send('Page.reload'); await sleep(2500); await page.ev(`location.hash = '#/settings'; true`); await sleep(1200); };
+  await settings();
+  await expect('Full animations should start on', false, true);
+  await page.ev(`document.querySelector('[data-act=toggle-motion]').click(); true`);
+  await expect('Turning Full animations off should give fades', true, false);
+  await settings();
+  await expect('Full animations should stay off after a restart', true, false);
+  await page.ev(`document.querySelector('[data-act=toggle-motion]').click(); true`);
+  await expect('Full animations should turn back on', false, true);
   page.close();
 } finally {
   chrome.proc.kill();
@@ -196,5 +214,5 @@ try {
 }
 for (const p of new Set(problems)) console.log(`Not smooth: ${p}`);
 if (problems.length) process.exitCode = 1;
-else console.log('\nThe bars move with transforms and opacity only.');
+else console.log('\nThe bars move with transforms and opacity only, and Full animations starts on.');
 if (process.env.MOTION_JSON) writeFileSync(process.env.MOTION_JSON, JSON.stringify(results, null, 1));
