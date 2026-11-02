@@ -108,7 +108,12 @@ class Player extends EventTarget {
       el.addEventListener('waiting', mine(() => this.setLoading(true)));
       el.addEventListener('playing', mine(() => { this.setLoading(false); this.errors = 0; this.prefetchNext(); }));
       el.addEventListener('canplay', mine(() => this.setLoading(false)));
-      el.addEventListener('loadedmetadata', mine(() => { this.emit('time'); this.positionState(); }));
+      el.addEventListener('loadedmetadata', mine(() => {
+        // Some lists leave out a song's length: remember it, for when the song is restored at the next start.
+        if (this.current && !this.current.duration && Number.isFinite(el.duration) && !this.misreadLength()) this.current.duration = Math.round(el.duration);
+        this.emit('time');
+        this.positionState();
+      }));
       el.addEventListener('seeking', mine(() => { this.cancelFade(); this.lastPos = null; }));
       el.addEventListener('ended', mine(() => this.onEnded()));
       el.addEventListener('error', mine(() => { if (el.getAttribute('src')) this.onError(); }));

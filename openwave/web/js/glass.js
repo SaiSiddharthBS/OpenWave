@@ -66,6 +66,8 @@ function glow(picture) {
   ctx.drawImage(picture, 0, 0, size, size);
   const image = ctx.getImageData(0, 0, size, size);
   const px = image.data;
+  let spread = 0;                                 // how colourful the picture is
+  for (let i = 0; i < px.length; i += 4) spread += Math.max(px[i], px[i + 1], px[i + 2]) - Math.min(px[i], px[i + 1], px[i + 2]);
   const blur = (from, step, count, radius) => {   // one pass of a box blur along a row or a column
     const line = [];
     for (let i = 0; i < count; i++) line.push(px[from + i * step]);
@@ -86,7 +88,7 @@ function glow(picture) {
     for (let c = 0; c < 3; c++) px[i + c] = Math.max(0, Math.min(255, (grey + (px[i + c] - grey) * 1.8) * .78));
   }
   ctx.putImageData(image, 0, 0);
-  return canvas.toDataURL('image/png');
+  return { colourful: Math.max(0, Math.min(1, (spread / (size * size) - 12) / 40)), url: canvas.toDataURL('image/png') };
 }
 
 /** How far the small glow layers have to be scaled to cover the window while they turn. */
@@ -111,11 +113,14 @@ export function setAmbient(src) {
     let glowing;
     try { glowing = glow(picture); } catch { return; }   // a picture it isn't allowed to read: stay on the brand colours
     const next = layers[1 - front];
-    next.style.backgroundImage = `url("${glowing}")`;
+    next.style.backgroundImage = `url("${glowing.url}")`;
+    // The less colour a cover has, the more of the app's own colours show through instead of grey.
+    next.style.setProperty('--amb-o', glowing.colourful.toFixed(2));
     next.classList.add('on');
     layers[front].classList.remove('on');
     front = 1 - front;
-    $('#np').style.setProperty('--np-art', `url("${glowing}")`);
+    $('#np').style.setProperty('--np-art', `url("${glowing.url}")`);
+    $('#np').style.setProperty('--amb-o', glowing.colourful.toFixed(2));
   };
   const picture = new Image();
   // Blurring takes a moment, so it waits for one with nothing on the move, like a skip's animation.
@@ -295,6 +300,24 @@ function miniArt() {
   return !('empty' in $('#playerbar').dataset) && r.width > 0 ? r : null;
 }
 
+/** Where the mini player's artwork will be when the player has closed. On a computer the bar moves
+ * back to make room for the sidebar, so this is where it's going, not where it is. Its move is
+ * restarted to match the artwork's flight, so the two arrive together. */
+function miniArtAfterClose(time) {
+  const bar = $('#playerbar');
+  const from = bar.getBoundingClientRect().left;
+  bar.style.transition = 'none';
+  const small = miniArt();
+  const to = bar.getBoundingClientRect().left;
+  if (small && Math.abs(from - to) > 1) {
+    bar.style.left = `${from}px`;
+    bar.getBoundingClientRect();
+    bar.style.transition = `left ${time.duration}ms ${time.easing}`;
+    bar.style.removeProperty('left');
+  } else bar.style.transition = '';
+  return small;
+}
+
 /** Where the big artwork has to be drawn to sit exactly over the small one. */
 function overMini(big, small) {
   const r = big.getBoundingClientRect();
@@ -304,7 +327,7 @@ function overMini(big, small) {
 }
 
 let flying = [];
-const land = () => { flying.forEach((a) => a.cancel()); flying = []; };
+const land = () => { flying.forEach((a) => a.cancel()); flying = []; $('#playerbar').style.removeProperty('transition'); };
 
 const uncover = () => document.body.classList.remove('np-cover');
 
@@ -335,8 +358,8 @@ export function npClosing(np) {
     return Promise.race([flying[0].finished, new Promise((r) => { setTimeout(r, 300); })]).catch(() => {});
   }
   const art = $('.np-art');
-  const small = miniArt();
   const time = { duration: 340, easing: 'cubic-bezier(.3, .7, .2, 1)', fill: 'forwards' };
+  const small = miniArtAfterClose(time);
   flying = small
     ? [art.animate([{}, { transform: overMini(art, small), borderRadius: '40px' }], time),
       np.animate([{ opacity: 1 }, { opacity: 1, offset: .55 }, { opacity: 0 }], time)]

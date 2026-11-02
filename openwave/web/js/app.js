@@ -71,6 +71,8 @@ async function render({ keepScroll = false } = {}) {
   if (!route) { go('#/home', { replace: true }); return; }
   const token = ++renderToken;
   const [, name, load, sk] = route;
+  // New results for what's being typed: they replace the old ones when they're ready, around the box.
+  const live = name === 'search' && document.body.classList.contains('route-search') && document.activeElement === searchInput;
 
   document.body.classList.forEach((c) => c.startsWith('route-') && document.body.classList.remove(c));
   document.body.classList.add(`route-${name}`);
@@ -78,7 +80,7 @@ async function render({ keepScroll = false } = {}) {
   $$('.side-item').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === location.hash));
   moveLenses();
   closeMenu();
-  hideSuggest();
+  if (!live) hideSuggest();
   if (name === 'search' && document.activeElement !== searchInput) searchInput.value = params.get('q') || '';
 
   document.body.classList.toggle('kind-detail', sk === 'detail');
@@ -86,7 +88,7 @@ async function render({ keepScroll = false } = {}) {
   const scroll = main.scrollTop;
   const back = navBack;
   navBack = false;
-  const slow = setTimeout(() => { if (token === renderToken) { view.innerHTML = skeleton(sk); main.scrollTop = 0; } }, 150);
+  const slow = live ? 0 : setTimeout(() => { if (token === renderToken) { view.innerHTML = skeleton(sk); main.scrollTop = 0; } }, 150);
   try {
     const out = await load(match, params);
     if (token !== renderToken) return;
@@ -95,10 +97,10 @@ async function render({ keepScroll = false } = {}) {
     if (out.collection?.shared) document.body.dataset.sharedView = '1'; else delete document.body.dataset.sharedView;
     view.innerHTML = out.html;
     main.scrollTop = keepScroll ? scroll : 0;
-    pageShown(view, !keepScroll);
+    pageShown(view, !keepScroll && !live);
     measureHero();
     edgeTopbar();
-    if (!keepScroll) enter(back ? 'enter-back' : sk === 'detail' ? 'enter-fwd' : 'enter-tab');
+    if (!keepScroll && !live) enter(back ? 'enter-back' : sk === 'detail' ? 'enter-fwd' : 'enter-tab');
     topbarTitle.textContent = view.querySelector('.hero h1, .lib-head h1, .settings h1')?.textContent || '';
     topbar.classList.toggle('has-title', !!topbarTitle.textContent);
     out.mount?.(view);
@@ -280,6 +282,7 @@ searchInput.addEventListener('keydown', (e) => {
 
 searchInput.addEventListener('focus', () => { if (!document.body.classList.contains('route-search')) go('#/search'); });
 searchInput.addEventListener('blur', () => setTimeout(hideSuggest, 150));
+$('#suggest').addEventListener('mousedown', (e) => e.preventDefault());   // holding a suggestion down mustn't close the list
 $('#search-form').addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(liveTimer); submitSearch(searchInput.value); });
 
 // ================================================================== track menus
@@ -898,7 +901,7 @@ function bindTime() {
   // this runs four times a second for nothing, and would interrupt a scroll to do it.
   if (phoneLayout.matches && np.hidden) return;
   bind('cur').forEach((el) => { if (!seeking) el.textContent = fmtTime(cur); });
-  bind('dur').forEach((el) => { el.textContent = fmtTime(dur); });
+  bind('dur').forEach((el) => { el.textContent = dur ? fmtTime(dur) : '–:––'; });
   if (!seeking) bind('seek').forEach((r) => { r.value = Math.round(pct * 10); r.style.setProperty('--p', `${pct}%`); });
   syncLyrics();
 }

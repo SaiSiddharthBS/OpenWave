@@ -95,7 +95,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
   background: radial-gradient(90% 70% at 12% 8%, rgba(79, 107, 255, .3), transparent 62%), radial-gradient(80% 70% at 92% 92%, rgba(196, 92, 255, .22), transparent 60%), radial-gradient(60% 50% at 80% 12%, rgba(47, 200, 255, .13), transparent 60%), var(--bg); }
 .amb { position: absolute; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px; background-size: cover; opacity: 0; transition: opacity 1.4s ease; will-change: transform; animation: amb-drift 60s linear infinite; }
 .amb.b { animation-direction: reverse; }
-.amb.on { opacity: 1; }
+.amb.on { opacity: var(--amb-o, 1); }
 @keyframes amb-drift { from { transform: rotate(0) scale(var(--amb-s, 22)); } to { transform: rotate(360deg) scale(var(--amb-s, 22)); } }
 #ambient::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 11, 20, .42), rgba(10, 11, 20, .68)); }
 
@@ -505,8 +505,8 @@ body.np-open .playerbar { left: var(--gutter); }
 }
 /* The artwork itself, enormous and blurred, turning slowly behind everything. */
 .np-bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; background: radial-gradient(120% 90% at 20% 10%, rgba(var(--np-tint), .7), transparent 70%), linear-gradient(180deg, rgba(var(--np-tint), .4), var(--bg)); transition: background 1s; }
-.np-bg i { position: absolute; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px; background: var(--np-art, none) center/cover; will-change: transform; animation: amb-drift 42s linear infinite; }
-.np-bg i + i { opacity: .55; animation-duration: 58s; animation-direction: reverse; }
+.np-bg i { position: absolute; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px; background: var(--np-art, none) center/cover; will-change: transform; animation: amb-drift 42s linear infinite; opacity: var(--amb-o, 1); }
+.np-bg i + i { opacity: calc(var(--amb-o, 1) * .55); animation-duration: 58s; animation-direction: reverse; }
 .np-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,11,20,.12), rgba(10,11,20,.42)); }
 .lite-glass .np-bg i { display: none; }
 @media (prefers-reduced-transparency: reduce) { .np-bg i { display: none; } }
