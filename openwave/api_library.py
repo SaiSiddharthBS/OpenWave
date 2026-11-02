@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from . import importer, music, shared
+from . import importer, mixes as daily_mixes, music, shared
 from .config import data_dir
 from .library import Library, LibraryError
 
@@ -159,6 +159,12 @@ async def smart_radio(video_id: str, pid: str = Depends(me)):
 def smart(pid: str = Depends(me)):
     """On Repeat and Rediscover, from your own listening (no YouTube calls)."""
     return library().smart_lists(pid)
+
+
+@router.get("/me/daily")
+async def daily(pid: str = Depends(me)):
+    """Today's Daily Mixes (see mixes.py)."""
+    return await daily_mixes.daily(library(), pid)
 
 
 @router.get("/me/mixes")

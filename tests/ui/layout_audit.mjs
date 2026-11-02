@@ -55,6 +55,7 @@ const SCREENS = [
   { name: 'history', hash: '#/history', route: 'library', expect: '.view .row' },
   { name: 'my-playlist', hash: '#/my/auditlist', route: 'library', expect: '.view .row' },
   { name: 'on-repeat', hash: '#/smart/on-repeat', route: 'library', expect: '.view .row' },
+  { name: 'daily-mix', hash: '#/daily/1', route: 'library', expect: '.view .row' },
   { name: 'insights', hash: '#/insights', route: 'insights', expect: '.view h1' },
   { name: 'settings', hash: '#/settings', route: 'settings', expect: '.view [data-act=connect-remove]' },
   { name: 'tailscale-code', hash: '#/settings', route: 'settings', steps: [`document.querySelector('[data-act=tailscale-code]').click()`], expect: '#dialog .pair-qr svg' },

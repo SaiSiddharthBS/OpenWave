@@ -52,13 +52,15 @@ export async function home() {
 
   let personal = null;
   let mine = null;
+  let today = null;
   if (store.session && store.history.length) {
-    // Recommendations still load if either of these fails.
-    [personal, mine] = await Promise.all([store.api('/api/me/mixes').catch(() => null), store.api('/api/me/smart').catch(() => null)]);
+    // Recommendations still load if any of these fails.
+    [personal, mine, today] = await Promise.all([store.api('/api/me/mixes').catch(() => null), store.api('/api/me/smart').catch(() => null),
+      store.api('/api/me/daily').catch(() => null)]);
   }
   let html = `<h1 class="greeting">${greeting()}${store.profile ? `, ${esc(store.profile.name)}` : ''}</h1>`;
   html += shortcuts();
-  const made = smartCards(mine) + (personal?.mixes || []).map(mixCard).join('');
+  const made = (today?.mixes || []).map(dailyCard).join('') + smartCards(mine) + (personal?.mixes || []).map(mixCard).join('');
   if (made) html += section(`Made for ${store.profile.name}`, made);
   if (recent.length) html += section('Jump back in', trackCards(recent, { mode: 'radio', context: { label: 'Recently played' } }));
   if (personal?.topArtists.length >= 3) {
@@ -94,6 +96,24 @@ function smartCards(lists) {
   return Object.entries(SMART).filter(([, [key]]) => lists?.[key]?.length >= 5).map(([slug, [key, title, sub, tint]]) =>
     `<a class="card mix" href="#/smart/${slug}" style="--mix:${tint}"><div class="art"><img loading="lazy" decoding="async" src="${img(lists[key][0].thumbnail, 300)}" alt="">
       <span class="mix-label">${title}</span></div><div class="title">${title}</div><div class="sub">${sub}</div></a>`).join('');
+}
+
+function dailyCard(m, i) {
+  return `<a class="card mix" href="#/daily/${esc(m.id)}" style="--mix:${MIX_TINTS[i % MIX_TINTS.length]}"><div class="art"><img loading="lazy" decoding="async" src="${img(m.thumbnail, 300)}" alt="">
+    <span class="mix-label">${esc(m.title)}</span></div><div class="title">${esc(m.title)}</div><div class="sub">${esc(m.subtitle)}</div></a>`;
+}
+
+/** One of today's Daily Mixes (see mixes.py in the engine). */
+export async function daily({ id }) {
+  const m = (await store.api('/api/me/daily')).mixes.find((x) => x.id === id);
+  if (!m) return { html: empty('sparkle', 'This mix isn’t ready', 'Keep listening. Your Daily Mixes are on Home.', '<p><a class="btn" href="#/home">Go to Home</a></p>') };
+  const context = { label: m.title, href: `#/daily/${m.id}` };
+  return {
+    tint: m.thumbnail,
+    collection: { tracks: m.tracks, context, kind: 'smart' },
+    html: collectionHeader({ kind: 'Made for you', title: m.title, cover: m.thumbnail, meta: `${m.subtitle} • ${plural(m.tracks.length, 'song')} • New every day` })
+      + actions({ play: 'play-collection', tracks: m.tracks }) + trackList(m.tracks, { album: true, context }),
+  };
 }
 
 export async function smart({ which }) {

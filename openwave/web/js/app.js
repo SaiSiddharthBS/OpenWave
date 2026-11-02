@@ -41,6 +41,7 @@ const ROUTES = [
   [/^\/downloads$/, 'downloads', () => views.downloads(), 'detail'],
   [/^\/my\/(.+)$/, 'library', (m) => views.myPlaylist({ id: id(m) }), 'detail'],
   [/^\/smart\/(on-repeat|rediscover)$/, 'library', (m) => views.smart({ which: m[1] }), 'detail'],
+  [/^\/daily\/(\d+)$/, 'library', (m) => views.daily({ id: m[1] }), 'detail'],
   [/^\/settings$/, 'settings', () => views.settings(), 'home'],
   [/^\/insights$/, 'insights', (m, q) => insights({ days: q.get('days') || 30 }), 'home'],
   [/^\/play\/([A-Za-z0-9_-]{11})$/, 'home', (m) => playLink(m[1]), 'home'],

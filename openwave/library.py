@@ -806,6 +806,15 @@ class Library:
         return {"onRepeat": [json.loads(r["data"]) for r in on_repeat[:50]],
                 "rediscover": [json.loads(r["data"]) for r in rediscover[:50]]}
 
+    def listening(self, profile_id: str, since: float) -> list[dict]:
+        """Every play since then, skips included, oldest first."""
+        with self.lock:
+            rows = self._q(
+                "SELECT p.played_at, p.seconds, t.data FROM plays p JOIN tracks t ON t.video_id = p.video_id "
+                "WHERE p.profile_id = ? AND p.played_at >= ? ORDER BY p.played_at",
+                (profile_id, since)).fetchall()
+        return [{"at": r["played_at"], "seconds": r["seconds"], "track": json.loads(r["data"])} for r in rows]
+
     def recent_video_ids(self, profile_id: str, limit: int = 300) -> list[str]:
         with self.lock:
             return [r["video_id"] for r in self._q(
