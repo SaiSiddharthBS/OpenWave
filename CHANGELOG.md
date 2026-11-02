@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-11-02
+
 ### Changed
 - **A new look on every device.** OpenWave is redesigned around glass: the sidebar, player, tab bar, menus and dialogs float over your music, and the colours of the song playing glow through them. Lists, albums and Settings are cleaner, with Play and Shuffle buttons, inset settings groups and larger titles. The full-screen player fills the screen with the artwork's colours, the artwork settles back when paused, and it flies between the mini player and the full-screen player. Everything moves on springs. On phones, the tab bar tucks away as you scroll and returns when you scroll back, and pages have a back button.
 - The Android app now draws behind the status and navigation bars, as the iPhone version does.
