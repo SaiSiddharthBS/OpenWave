@@ -101,6 +101,16 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 
+    /** Phones with 90 or 120 Hz screens often hold apps they don't recognise at 60, which looks less fluid than the rest of the phone. */
+    private fun useFastestScreenMode() {
+        val screen = (if (Build.VERSION.SDK_INT >= 30) display else @Suppress("DEPRECATION") windowManager.defaultDisplay) ?: return
+        val now = screen.mode
+        val fastest = screen.supportedModes
+            .filter { it.physicalWidth == now.physicalWidth && it.physicalHeight == now.physicalHeight }
+            .maxByOrNull { it.refreshRate } ?: return
+        window.attributes = window.attributes.apply { preferredDisplayModeId = fastest.modeId }
+    }
+
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -109,6 +119,7 @@ class MainActivity : ComponentActivity() {
         window.statusBarColor = Color.TRANSPARENT
         window.navigationBarColor = Color.TRANSPARENT
         if (Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = false
+        useFastestScreenMode()
 
         web = WebView(this).apply {
             setBackgroundColor(Color.parseColor("#0A0B14"))

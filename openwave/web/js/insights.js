@@ -26,7 +26,7 @@ export async function insights({ days = 30 }) {
   const busiest = s.hours.indexOf(Math.max(...s.hours));
   const bars = s.hours.map((n, h) => `<div class="hbar" data-tip="${hourLabel(h)} · ${n} play${n === 1 ? '' : 's'}"><i style="height:${Math.max(n ? 4 : 0, (n / peak) * 100)}%"></i></div>`).join('');
   const artists = s.topArtists.map((a, i) => `<a class="card artist" ${a.id ? `href="#/artist/${encodeURIComponent(a.id)}"` : ''}>
-      <div class="art"><img loading="lazy" src="${img(a.thumbnail, 300)}" alt=""></div>
+      <div class="art"><img loading="lazy" decoding="async" src="${img(a.thumbnail, 300)}" alt=""></div>
       <div class="title">${i + 1}. ${esc(a.name)}</div><div class="sub">${fmt(a.plays)} plays</div></a>`).join('');
   return {
     tintColor: '60, 60, 160',

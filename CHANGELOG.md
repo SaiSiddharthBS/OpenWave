@@ -5,6 +5,11 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Changed
+- **Smoother on Android.** Scrolling no longer waits on the page: the covers and titles that follow the scroll run alongside it, and playback no longer interrupts it. The glass is drawn more lightly on Android, and the background only turns in the full-screen player. Long lists stay ready ahead of a fast fling.
+- The Android app asks for the screen's fastest refresh rate, for phones that hold apps at 60 Hz by default.
+- On phones, the tab bar now slides away as you scroll down and the mini player takes its place. Scroll up to bring it back.
+
 ## [0.5.0] — 2026-11-02
 
 ### Changed

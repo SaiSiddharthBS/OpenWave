@@ -93,7 +93,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
    nearly free to draw, so it never slows scrolling down. */
 #ambient { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; contain: strict; --amb-s: 22;
   background: radial-gradient(90% 70% at 12% 8%, rgba(79, 107, 255, .3), transparent 62%), radial-gradient(80% 70% at 92% 92%, rgba(196, 92, 255, .22), transparent 60%), radial-gradient(60% 50% at 80% 12%, rgba(47, 200, 255, .13), transparent 60%), var(--bg); }
-.amb { position: absolute; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px; background-size: cover; opacity: 0; transition: opacity 1.4s ease; will-change: transform; animation: amb-drift 60s linear infinite; translate: 0 var(--amb-y, 0); }
+.amb { position: absolute; left: 50%; top: 50%; width: 100px; height: 100px; margin: -50px 0 0 -50px; background-size: cover; opacity: 0; transition: opacity 1.4s ease; will-change: transform; animation: amb-drift 60s linear infinite; }
 .amb.b { animation-direction: reverse; }
 .amb.on { opacity: 1; }
 @keyframes amb-drift { from { transform: rotate(0) scale(var(--amb-s, 22)); } to { transform: rotate(360deg) scale(var(--amb-s, 22)); } }
@@ -376,10 +376,10 @@ body.np-open .playerbar { left: var(--gutter); }
 }
 .row:hover { background: var(--hover); }
 /* A hairline between songs, starting under the title as in Apple's lists. */
-.tracks .row + .row::before { content: ""; position: absolute; left: 66px; right: 8px; top: 0; height: 1px; background: var(--line); pointer-events: none; }
+.tracks .row + .row::before, .track-block + .track-block .row:first-child::before { content: ""; position: absolute; left: 66px; right: 8px; top: 0; height: 1px; background: var(--line); pointer-events: none; }
 .tracks .row:hover::before, .tracks .row:hover + .row::before { opacity: 0; }
 .row.numbered { grid-template-columns: 28px minmax(0, 1fr) auto auto; }
-.tracks .row.numbered + .row.numbered::before { left: 48px; }
+.tracks .row.numbered + .row.numbered::before, .track-block + .track-block .row.numbered:first-child::before { left: 48px; }
 .row.with-album { grid-template-columns: 46px minmax(0, 1.4fr) minmax(0, 1fr) auto auto; }
 .row .num { color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
 .row .thumb { width: 46px; height: 46px; border-radius: 9px; object-fit: cover; background: var(--surface-2); }
@@ -585,8 +585,8 @@ body.paused .np-art { transform: scale(.86); box-shadow: 0 16px 44px rgba(0,0,0,
 .dialog p { color: var(--muted); margin: 0; }
 
 /* ------------------------------------------------------------ loading */
-.skeleton { background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%); background-size: 200% 100%; animation: shimmer 1.3s infinite; border-radius: var(--radius); }
-@keyframes shimmer { to { background-position: -200% 0; } }
+.skeleton { background: var(--surface-2); animation: breathe .9s ease-in-out infinite alternate; border-radius: var(--radius); }
+@keyframes breathe { from { opacity: .5; } }
 .sk-shelf { display: grid; grid-auto-flow: column; grid-auto-columns: 172px; gap: 20px; overflow: hidden; }
 .sk-shelf div { aspect-ratio: 1; }
 .error-box { padding: 60px 20px; text-align: center; color: var(--muted); }
@@ -628,7 +628,7 @@ body.paused .np-art { transform: scale(.86); box-shadow: 0 16px 44px rgba(0,0,0,
   .section-head h2 { font-size: 21px; }
   .card .hover-play { display: none; }
   .row { gap: 12px; padding: 6px 4px; }
-  .tracks .row + .row::before { left: 62px; right: 4px; }
+  .tracks .row + .row::before, .track-block + .track-block .row:first-child::before { left: 62px; right: 4px; }
   .row.with-album { grid-template-columns: 46px minmax(0,1fr) auto auto; }
   .row.with-album .alb { display: none; }
   .row .more { opacity: 1; }
@@ -650,11 +650,11 @@ body.paused .np-art { transform: scale(.86); box-shadow: 0 16px 44px rgba(0,0,0,
     left: var(--bar-x); right: var(--bar-x); bottom: calc(var(--bar-b) + var(--tabbar-h) + 8px);
     height: var(--player-h); padding: 0 6px 0 7px; border-radius: 22px;
     grid-template-columns: minmax(0, 1fr) auto; gap: 6px;
-    transition: left .6s var(--spring-soft), bottom .6s var(--spring-soft), transform .6s var(--spring-soft);
+    transition: transform .6s var(--spring-soft);
   }
   .playerbar[data-empty] { display: none; }
   .pb-progress-mini { display: block; position: absolute; z-index: 2; left: 22px; right: 22px; bottom: 0; height: 2px; background: rgba(255,255,255,.14); border-radius: 2px; overflow: hidden; }
-  .pb-progress-mini i { display: block; height: 100%; width: 0; background: rgba(255,255,255,.85); }
+  .pb-progress-mini i { display: block; height: 100%; background: rgba(255,255,255,.85); transform: scaleX(0); transform-origin: left; }
   .pb-art { width: 44px; height: 44px; border-radius: 13px; }
   .pb-center { flex-direction: row; }
   .controls { gap: 0; }
@@ -664,12 +664,12 @@ body.paused .np-art { transform: scale(.86); box-shadow: 0 16px 44px rgba(0,0,0,
   .tabbar {
     display: flex; position: fixed; left: var(--bar-x); bottom: var(--bar-b); z-index: 49;
     width: calc(100% - var(--bar-x) * 2); height: var(--tabbar-h); padding: 4px; border-radius: 999px;
-    transition: width .6s var(--spring-soft);
+    transition: transform .6s var(--spring-soft), opacity .3s;
   }
   .tab-lens {
     position: absolute; left: 4px; top: 4px; bottom: 4px; width: calc((100% - 8px) / 4); border-radius: 999px; pointer-events: none;
     background: rgba(255,255,255,.14); box-shadow: inset 0 1px 0 rgba(255,255,255,.2), inset 0 -1px 0 rgba(255,255,255,.05);
-    transform: translateX(calc(var(--i, 0) * 100%)); opacity: 0; transition: transform .6s var(--spring), width .6s var(--spring-soft), opacity .25s;
+    transform: translateX(calc(var(--i, 0) * 100%)); opacity: 0; transition: transform .6s var(--spring), opacity .25s;
   }
   .tab-lens.on { opacity: 1; }
   .tabbar:active .tab-lens { transform: translateX(calc(var(--i, 0) * 100%)) scale(1.05, 1.1); }
@@ -677,14 +677,14 @@ body.paused .np-art { transform: scale(.86); box-shadow: 0 16px 44px rgba(0,0,0,
   .tabbar a span { transition: opacity .2s; }
   .tabbar a.on { color: var(--accent); }
 
-  /* Scrolling down tucks the tab bar away to one button, and the mini player slides in beside it.
-     Scrolling back up brings it all back (js/glass.js). */
-  .tabs-min .tabbar { width: var(--tabbar-h); }
-  .tabs-min .tab-lens { width: calc(100% - 8px); transform: none; }
-  .tabs-min .tabbar a { flex: 0 0 0; opacity: 0; pointer-events: none; overflow: hidden; }
-  .tabs-min .tabbar a.on { flex: 1 1 auto; opacity: 1; pointer-events: auto; }
-  .tabs-min .tabbar a span { display: none; }
-  .tabs-min .playerbar { left: calc(var(--bar-x) + var(--tabbar-h) + 8px); bottom: calc(var(--bar-b) + (var(--tabbar-h) - var(--player-h)) / 2); }
+  /* Scrolling down tucks the tab bar away and the mini player slides down into its place. Scrolling
+     back up brings it all back (js/glass.js). Only transforms and opacity, so that this happens beside
+     the scroll instead of interrupting it: changing a size or a position redoes the page's layout. */
+  .tabs-min .tabbar { transform: translateY(calc(100% + var(--bar-b))); opacity: 0; pointer-events: none; }
+  .tabs-min .playerbar { transform: translateY(calc(var(--tabbar-h) + 8px)); }
+
+  /* Everything under the finished full-screen player: there's no need to draw it (js/glass.js). */
+  .np-cover #ambient, .np-cover .app, .np-cover .playerbar, .np-cover .tabbar { opacity: 0; }
 
   .np { inset: 0; z-index: 60; grid-template-rows: auto 1fr auto; padding-bottom: max(10px, var(--safe-b)); }
   .np-head { padding: calc(8px + var(--safe-t)) 16px 8px; }
@@ -874,8 +874,20 @@ body.offline .offline-pill { display: flex !important; }
 @keyframes view-fwd { from { transform: translateX(28px); } }
 @keyframes view-back { from { transform: translateX(-28px); } }
 .rv { opacity: 0; }
-/* Long lists: the browser skips the songs far off screen until you reach them. */
-.tracks .row { content-visibility: auto; contain-intrinsic-size: auto 58px; }
+/* Scrolling away from the top of a page. Tied to the scroll, these run beside it with no work for
+   the page (js/glass.js does the same by hand where this isn't available). */
+@supports (animation-timeline: scroll()) {
+  .main { scroll-timeline: --page block; }
+  .hero .cover, .hero .mosaic { animation: leave-art linear both; animation-timeline: --page; animation-range: 0 270px; }
+  .hero .info { animation: leave-info linear both; animation-timeline: --page; animation-range: 0 320px; }
+  .greeting, .lib-head h1, .settings h1 { transform-origin: left center; animation: leave-title linear both; animation-timeline: --page; animation-range: 0 64px; }
+  .calm .hero .cover, .calm .hero .mosaic, .calm .hero .info, .calm .greeting, .calm .lib-head h1, .calm .settings h1 { animation-name: leave-fade; }
+}
+@keyframes leave-art { 55% { opacity: .7; } to { opacity: 0; transform: translateY(86px) scale(.84); } }
+@keyframes leave-info { to { opacity: 0; transform: translateY(38px); } }
+@keyframes leave-title { to { opacity: 0; transform: scale(.9); } }
+@keyframes leave-fade { to { opacity: 0; } }
+.track-block { content-visibility: auto; }   /* see trackList in js/ui.js */
 
 /* Artwork fades in as it arrives instead of popping in. */
 .view img, .pb-art { transition: opacity .35s ease; }
@@ -1085,3 +1097,19 @@ body.linked .pb-artist { display: none; }
 .connect-msg { min-width: 0; text-align: center; }
 .connect-status .btn { padding: 6px 12px; height: auto; font-size: 13px; }
 .connect-spin { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent-3); animation: spin .8s linear infinite; }
+
+/* ------------------------------------------------------------ Android */
+/* A blur has to be redrawn for every frame of a scroll, for every piece of glass over the page, and
+   on Android that's the most expensive thing on screen. The two capsules at the bottom keep it, more
+   lightly; the rest gets the same colours without it. A slowly turning background would also keep
+   the whole screen redrawing, for no visible gain, so it holds still until the full-screen player. */
+.android { --glass-fx: blur(14px) saturate(170%) brightness(.78); --glass-fill: rgba(34, 36, 52, .62); --glass-drop: 0 8px 22px rgba(0, 0, 0, .34); --art-shadow: 0 6px 16px rgba(0, 0, 0, .3); }
+.android .nav-arrows, .android .icon-btn.round, .android .profile-chip { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(34, 36, 52, .78); }
+.android .nav-arrows .icon-btn.round { background: none; }
+.android .topbar::before { -webkit-backdrop-filter: none; backdrop-filter: none; -webkit-mask: none; mask: none; background: linear-gradient(rgba(14, 15, 25, .96) 62%, rgba(14, 15, 25, 0)); }
+.android .amb { animation: none; transform: scale(var(--amb-s, 22)); }
+.android .np-bg i + i { display: none; }
+.android .lyrics p { filter: none; transition: color .4s ease, transform .6s var(--spring-soft); }
+.android .card .art img { transition: opacity .35s ease; }
+.android .row img, .android .row img:not(.ld) { transition: none; opacity: 1; }
+.android .card .art img:not(.ld) { transform: none; }

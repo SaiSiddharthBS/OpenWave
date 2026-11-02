@@ -68,7 +68,7 @@ function swipeDownToClose(np, close) {
   for (const el of [body, stage]) {
     drag(el, {
       axis: 'y',
-      onStart: () => { np.style.transition = 'none'; },
+      onStart: () => { document.body.classList.remove('np-cover'); np.style.transition = 'none'; },
       onMove: (dx, dy) => { np.style.transform = `translateY(${Math.max(0, dy)}px)`; },
       onEnd: (dx, dy, vx, vy) => {
         np.style.transition = '';

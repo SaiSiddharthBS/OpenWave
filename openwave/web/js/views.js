@@ -28,9 +28,9 @@ function shortcuts() {
   if (store.liked.length) tiles.push(['#/liked', `<div class="art liked-tile">${icon('heart-fill')}</div>`, 'Liked songs']);
   if (offline.count) tiles.push(['#/downloads', `<div class="art download-tile">${icon('download')}</div>`, 'Downloads']);
   store.playlists.slice(0, 6).forEach((p) => tiles.push([`#/my/${encodeURIComponent(p.id)}`,
-    p.tracks[0]?.thumbnail ? `<img class="art" loading="lazy" src="${img(p.tracks[0].thumbnail, 120)}" alt="">` : `<div class="art">${icon('library')}</div>`, p.name]));
+    p.tracks[0]?.thumbnail ? `<img class="art" loading="lazy" decoding="async" src="${img(p.tracks[0].thumbnail, 120)}" alt="">` : `<div class="art">${icon('library')}</div>`, p.name]));
   for (const kind of ['playlist', 'album']) {
-    store.savedList(kind).slice(0, 4).forEach((c) => tiles.push([`#/${kind}/${encodeURIComponent(c.id)}`, `<img class="art" loading="lazy" src="${img(c.thumbnail, 120)}" alt="">`, c.title]));
+    store.savedList(kind).slice(0, 4).forEach((c) => tiles.push([`#/${kind}/${encodeURIComponent(c.id)}`, `<img class="art" loading="lazy" decoding="async" src="${img(c.thumbnail, 120)}" alt="">`, c.title]));
   }
   if (tiles.length < 2) return '';
   return `<div class="shortcuts">${tiles.slice(0, 8).map(([href, art, name]) => `<a class="shortcut" href="${href}">${art}<span>${esc(name)}</span></a>`).join('')}</div>`;
@@ -92,7 +92,7 @@ const SMART = {
 
 function smartCards(lists) {
   return Object.entries(SMART).filter(([, [key]]) => lists?.[key]?.length >= 5).map(([slug, [key, title, sub, tint]]) =>
-    `<a class="card mix" href="#/smart/${slug}" style="--mix:${tint}"><div class="art"><img loading="lazy" src="${img(lists[key][0].thumbnail, 300)}" alt="">
+    `<a class="card mix" href="#/smart/${slug}" style="--mix:${tint}"><div class="art"><img loading="lazy" decoding="async" src="${img(lists[key][0].thumbnail, 300)}" alt="">
       <span class="mix-label">${title}</span></div><div class="title">${title}</div><div class="sub">${sub}</div></a>`).join('');
 }
 
@@ -113,7 +113,7 @@ function mixCard(m) {
   const key = registerList([m.seed], { mode: 'radio', context: { label: m.title } });
   const tint = MIX_TINTS[mixN++ % MIX_TINTS.length];
   return `<div class="card mix" data-list="${key}" data-i="0" data-vid="${esc(m.seed.videoId)}" role="button" tabindex="0" style="--mix:${tint}">
-    <div class="art"><img loading="lazy" src="${img(m.seed.thumbnail, 300)}" alt=""><span class="mix-label">${esc(m.title)}</span>
+    <div class="art"><img loading="lazy" decoding="async" src="${img(m.seed.thumbnail, 300)}" alt=""><span class="mix-label">${esc(m.title)}</span>
       <span class="hover-play">${icon('play')}</span></div>
     <div class="title">${esc(m.title)}</div><div class="sub">${esc(m.subtitle)}</div></div>`;
 }

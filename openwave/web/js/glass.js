@@ -8,7 +8,8 @@ import { $, $$ } from './ui.js';
 const STORE = 'openwave:glass';           // "reduced" or "full"; unset decides by the device
 const MOTION = 'openwave:motion';         // "full": every animation, even if the device asks for less
 const systemCalm = matchMedia('(prefers-reduced-motion: reduce)');
-const narrow = () => matchMedia('(max-width: 860px)').matches;
+const narrowScreen = matchMedia('(max-width: 860px)');
+const touchScreen = matchMedia('(pointer: coarse)');
 const SPRING = CSS.supports('animation-timing-function', 'linear(0, 1)')
   ? getComputedStyle(document.documentElement).getPropertyValue('--spring-soft').trim()
   : 'cubic-bezier(.2, .8, .2, 1)';
@@ -54,6 +55,7 @@ export function setGlassReduced(on) {
 }
 
 document.documentElement.classList.toggle('lite-glass', glassReduced());
+document.documentElement.classList.toggle('android', /Android/.test(navigator.userAgent));   // see "Android" in css/app.css
 document.addEventListener('visibilitychange', () => document.documentElement.classList.toggle('page-hidden', document.hidden));
 
 // ------------------------------------------------------------------ the colour behind the glass
@@ -110,8 +112,7 @@ export function setAmbient(src) {
     $('#np').style.removeProperty('--np-art');
     return;
   }
-  const picture = new Image();
-  picture.onload = () => {
+  const paint = (picture) => {
     if (wanted !== url) return;
     let glowing;
     try { glowing = glow(picture); } catch { return; }   // a picture it isn't allowed to read: stay on the brand colours
@@ -122,6 +123,9 @@ export function setAmbient(src) {
     front = 1 - front;
     $('#np').style.setProperty('--np-art', `url("${glowing}")`);
   };
+  const picture = new Image();
+  // Blurring takes a moment, so it waits for one with nothing on the move, like a skip's animation.
+  picture.onload = () => (window.requestIdleCallback ? requestIdleCallback(() => paint(picture), { timeout: 600 }) : setTimeout(() => paint(picture), 200));
   picture.src = url;
 }
 
@@ -148,15 +152,12 @@ function tuckTabsOnScroll(main) {
     const moved = y - last;
     if (Math.abs(moved) < 8) return;
     last = y;
-    if (!narrow()) return;
+    if (!narrowScreen.matches) return;
     const tuck = moved > 0 && y > 90 && !!$('.tabbar a.on') && !('empty' in $('#playerbar').dataset);
     document.body.classList.toggle('tabs-min', tuck);
   }, { passive: true });
   const toTop = (e) => { if (e.target.closest('a.on')) main.scrollTo({ top: 0, behavior: calm() ? 'auto' : 'smooth' }); };
-  $('.tabbar').addEventListener('click', (e) => {
-    if (!document.body.classList.contains('tabs-min')) toTop(e);   // the tab you're on goes back to the top
-    document.body.classList.remove('tabs-min');
-  });
+  $('.tabbar').addEventListener('click', toTop);    // the tab you're on goes back to the top
   $('.side-nav').addEventListener('click', toTop);
 }
 
@@ -164,53 +165,72 @@ function tuckTabsOnScroll(main) {
 const PIECES = ['.greeting', '.lib-head', '.settings h1', '.settings h2', '.setting', '.section-head', '.shortcut', '.card', '.row', '.top-card', '.genre',
   '.stat', '.chips', '.recent', '.actions', '.hero .cover', '.hero .mosaic', '.hero .info', '.list-head', '.hours', '.empty', '.about'].join(', ');
 const RISE = [{ opacity: 0, transform: 'translateY(26px) scale(.965)' }, {}];
+const SLIDE = [{ opacity: 0, transform: 'translateY(16px)' }, {}];   // no scaling: text would be redrawn at the end
 const FADE = [{ opacity: 0 }, {}];
+const MOST_PIECES = 80;     // a long list's other songs are simply there when you reach them
+const MOST_TOGETHER = 6;    // more than this, at one moment of a scroll, would hold the scroll up
+const FLING = 0.9;          // pixels a millisecond: too fast to see anything arrive
 let watcher = null;
 
 function byPlace(a, b) {
-  const r = a.getBoundingClientRect();
-  const s = b.getBoundingClientRect();
+  const r = a.boundingClientRect;
+  const s = b.boundingClientRect;
   return Math.abs(r.top - s.top) > 8 ? r.top - s.top : r.left - s.left;
 }
 
 /** Hold back what's on a new page, then bring each piece in as it comes into view, top to bottom
- * and left to right, a moment apart. */
+ * and left to right, a moment apart. What comes into view during a scroll has to cost that scroll
+ * nothing: it arrives more simply, and not at all in a fling. */
 function arriveOnScroll(view) {
   watcher?.disconnect();
   watcher = null;
   if (!('IntersectionObserver' in window)) return;
+  const main = $('#main');
   const still = calm();
-  const pieces = $$(PIECES, view);
+  const pieces = $$(PIECES, view).slice(0, MOST_PIECES);
   pieces.forEach((el) => el.classList.add('rv'));
+  let first = true;
+  let lastY = main.scrollTop;
+  let lastAt = performance.now();
   const seen = new IntersectionObserver((entries) => {
-    entries.filter((e) => e.isIntersecting).map((e) => e.target).sort(byPlace).forEach((el, i) => {
+    const y = main.scrollTop;
+    const now = performance.now();
+    const speed = Math.abs(y - lastY) / Math.max(1, now - lastAt);
+    lastY = y;
+    lastAt = now;
+    entries.filter((e) => e.isIntersecting).sort(byPlace).map((e) => e.target).forEach((el, i) => {
       seen.unobserve(el);
       el.classList.remove('rv');
       if (still) el.animate(FADE, { duration: 320, delay: Math.min(i, 12) * 14, easing: 'ease', fill: 'backwards' });
-      else el.animate(RISE, { duration: 720, delay: Math.min(i, 12) * 36, easing: SPRING, fill: 'backwards' });
+      else if (first && !touchScreen.matches) el.animate(RISE, { duration: 720, delay: Math.min(i, 12) * 36, easing: SPRING, fill: 'backwards' });
+      else if (first) el.animate(SLIDE, { duration: 560, delay: Math.min(i, 8) * 28, easing: SPRING, fill: 'backwards' });
+      else if (speed < FLING && i < MOST_TOGETHER) el.animate(SLIDE, { duration: 420, delay: i * 24, easing: SPRING, fill: 'backwards' });
     });
+    if (entries.some((e) => e.isIntersecting)) first = false;
   }, { rootMargin: '0px 0px -7% 0px', threshold: 0 });
   pieces.forEach((el) => seen.observe(el));
   watcher = seen;
 }
 
 // ------------------------------------------------------------------ the page follows the scroll
+// css/app.css ties these to the scroll so that they run beside it, with no work for the page. This
+// is for browsers that can't do that yet.
 let drawScroll = () => {};
 
 function scrollEffects(main) {
+  if (CSS.supports('animation-timeline', 'scroll()')) return;
   let frame = 0;
   let art = null;       // what moves on this page, found once for each page
+  let artHeight = 1;
   let info = null;
   let title = null;
-  const ambient = $('#ambient');
   const draw = () => {
     frame = 0;
     const y = Math.max(0, main.scrollTop);
     const still = calm();    // fade with the scroll, without moving
-    ambient.style.setProperty('--amb-y', still ? '0px' : `${Math.round(Math.max(-y * 0.05, -90))}px`);
     if (art) {
       // The cover drifts up more slowly than the page, shrinks and fades, as if left behind.
-      const gone = Math.min(1, y / (art.offsetHeight * 0.95));
+      const gone = Math.min(1, y / (artHeight * 0.95));
       art.style.transform = gone && !still ? `translateY(${(y * 0.32).toFixed(1)}px) scale(${(1 - gone * 0.16).toFixed(3)})` : '';
       art.style.opacity = gone ? (1 - gone * gone).toFixed(3) : '';
     }
@@ -222,7 +242,6 @@ function scrollEffects(main) {
     if (title) {
       // The big title sinks into the top bar.
       const gone = Math.min(1, y / 64);
-      title.style.transformOrigin = 'left center';
       title.style.transform = gone && !still ? `scale(${(1 - gone * 0.1).toFixed(3)})` : '';
       title.style.opacity = gone ? (1 - gone).toFixed(3) : '';
     }
@@ -230,6 +249,7 @@ function scrollEffects(main) {
   main.addEventListener('scroll', () => { frame ||= requestAnimationFrame(draw); }, { passive: true });
   drawScroll = (view) => {
     art = $('.hero .cover, .hero .mosaic', view);
+    artHeight = art?.offsetHeight || 1;
     info = $('.hero .info', view);
     title = $('.greeting, .lib-head h1, .settings h1', view);
     draw();
@@ -292,6 +312,8 @@ function overMini(big, small) {
 let flying = [];
 const land = () => { flying.forEach((a) => a.cancel()); flying = []; };
 
+const uncover = () => document.body.classList.remove('np-cover');
+
 /** The full-screen player has just been shown: grow it out of the mini player. */
 export function npOpened(np) {
   land();
@@ -305,11 +327,15 @@ export function npOpened(np) {
   for (const el of $$('.np-head, .np-controls, .np-panel', np)) {
     flying.push(el.animate([{ opacity: 0, transform: 'translateY(16px)' }, {}], rise));
   }
+  // Once it has landed, nothing has to draw the glass and the page hidden underneath it.
+  const now = flying;
+  Promise.all(now.map((a) => a.finished)).then(() => { if (now === flying && !np.hidden) document.body.classList.add('np-cover'); }).catch(() => {});
 }
 
 /** Shrink the full-screen player back into the mini player. Resolves when it's out of sight. */
 export function npClosing(np) {
   land();
+  uncover();
   if (calm()) {
     flying = [np.animate([{}, { opacity: 0 }], { duration: 200, easing: 'ease', fill: 'forwards' })];
     return Promise.race([flying[0].finished, new Promise((r) => { setTimeout(r, 300); })]).catch(() => {});

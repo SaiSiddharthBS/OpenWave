@@ -5,7 +5,7 @@ const BASE = new URL('./', self.location.href).pathname;
 // Copies of the app at different paths of one site (the website's /app/ and /app-next/) keep
 // separate caches, so updating one never empties the other's.
 const SCOPE = BASE === '/' ? '' : `@${BASE}`;
-const VERSION = `openwave-v19${SCOPE}`;
+const VERSION = `openwave-v20${SCOPE}`;
 const IMAGES = `openwave-img-v1${SCOPE}`;
 const MAX_IMAGES = 600;
 const SHELL = [

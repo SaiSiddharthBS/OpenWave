@@ -96,6 +96,8 @@ async function render({ keepScroll = false } = {}) {
     view.innerHTML = out.html;
     main.scrollTop = keepScroll ? scroll : 0;
     pageShown(view, !keepScroll);
+    measureHero();
+    edgeTopbar();
     if (!keepScroll) enter(back ? 'enter-back' : sk === 'detail' ? 'enter-fwd' : 'enter-tab');
     topbarTitle.textContent = view.querySelector('.hero h1, .lib-head h1, .settings h1')?.textContent || '';
     topbar.classList.toggle('has-title', !!topbarTitle.textContent);
@@ -127,11 +129,17 @@ function enter(kind) {
 // title once the big header scrolls away, like other music apps.
 const topbar = $('#topbar');
 const topbarTitle = $('#topbar-title');
-main.addEventListener('scroll', () => {
+let solidFrom = 40;
+function measureHero() {
   const hero = view.querySelector('.hero, .lib-head, .settings h1');
-  const past = hero ? main.scrollTop > hero.offsetTop + hero.offsetHeight - topbar.offsetHeight - 8 : main.scrollTop > 40;
+  solidFrom = hero ? hero.offsetTop + hero.offsetHeight - topbar.offsetHeight - 8 : 40;
+}
+const edgeTopbar = () => {
+  const past = main.scrollTop > solidFrom;
   if (topbar.classList.contains('solid') !== past) topbar.classList.toggle('solid', past);
-}, { passive: true });
+};
+main.addEventListener('scroll', edgeTopbar, { passive: true });
+window.addEventListener('resize', measureHero);
 
 // ================================================================== back (Android back button / gesture)
 // The app keeps its own trail of screens: the WebView's history also holds the start-up page and
@@ -203,7 +211,7 @@ function profileMenu(anchor) {
 // ================================================================== sidebar
 function renderSidebar() {
   const item = (href, art, title, sub) => `<a class="side-item" href="${href}">${art}<div class="ellipsis"><b class="ellipsis">${esc(title)}</b><small>${esc(sub)}</small></div></a>`;
-  const pic = (url, round) => `<img class="${round ? 'round' : ''}" loading="lazy" src="${img(url, 120)}" alt="">`;
+  const pic = (url, round) => `<img class="${round ? 'round' : ''}" loading="lazy" decoding="async" src="${img(url, 120)}" alt="">`;
   const html = [
     item('#/liked', `<span class="tile liked-tile">${icon('heart-fill')}</span>`, 'Liked songs', `Playlist • ${store.liked.length} songs`),
     ...store.playlists.map((p) => item(`#/my/${p.id}`, p.tracks[0] ? pic(p.tracks[0].thumbnail) : `<span class="tile liked-tile" style="background:var(--surface-3)">${icon(p.shared ? 'people' : 'queue')}</span>`, p.name, `${p.shared ? 'Shared' : 'Playlist'} • ${p.tracks.length} songs`)),
@@ -875,14 +883,23 @@ function bindState() {
 }
 
 let seeking = false;
+const phoneLayout = matchMedia('(max-width: 860px)');
+let shownProgress = '';
 function bindTime() {
   const dur = player.duration;
   const cur = Math.min(player.time, dur || Infinity);
+  const pct = dur ? (cur / dur) * 100 : 0;
+  const line = (pct / 100).toFixed(3);
+  if (line !== shownProgress) {
+    shownProgress = line;
+    bind('progress').forEach((el) => { el.style.transform = `scaleX(${line})`; });
+  }
+  // On a phone the times and the slider only exist in the full-screen player, so while it's closed
+  // this runs four times a second for nothing, and would interrupt a scroll to do it.
+  if (phoneLayout.matches && np.hidden) return;
   bind('cur').forEach((el) => { if (!seeking) el.textContent = fmtTime(cur); });
   bind('dur').forEach((el) => { el.textContent = fmtTime(dur); });
-  const pct = dur ? (cur / dur) * 100 : 0;
   if (!seeking) bind('seek').forEach((r) => { r.value = Math.round(pct * 10); r.style.setProperty('--p', `${pct}%`); });
-  bind('progress').forEach((el) => { el.style.width = `${pct}%`; });
   syncLyrics();
 }
 
@@ -932,6 +949,7 @@ function openNP(tab) {
   document.body.classList.add('np-open');
   if (tab) showTab(tab);
   else if ($('#np-lyrics').hidden) renderQueue(); else loadLyrics();
+  bindTime();
   npOpened(np);
 }
 

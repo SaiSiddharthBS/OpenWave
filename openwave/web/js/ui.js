@@ -47,7 +47,7 @@ export const getList = (key) => lists.get(key);
 export function trackRow(t, i, key, { numbered = false, album = false, playing = false, addedBy = false } = {}) {
   const lead = numbered
     ? `<span class="lead num">${i + 1}</span>`
-    : `<span class="lead"><img class="thumb" loading="lazy" src="${img(t.thumbnail, 120)}" alt=""></span>`;
+    : `<span class="lead"><img class="thumb" loading="lazy" decoding="async" src="${img(t.thumbnail, 120)}" alt=""></span>`;
   const badges = t.explicit ? '<span class="badge-e" title="Explicit">E</span>' : '';
   const cls = ['row', numbered && 'numbered', album && 'with-album', playing && 'playing'].filter(Boolean).join(' ');
   return `<div class="${cls}" data-list="${key}" data-i="${i}" data-vid="${esc(t.videoId)}"${t.type === 'video' ? ' data-mv="1"' : ''} role="button" tabindex="0">
@@ -59,14 +59,25 @@ export function trackRow(t, i, key, { numbered = false, album = false, playing =
   </div>`;
 }
 
+const CHUNK = 40;
+
 export function trackList(tracks, opts = {}) {
   const key = registerList(tracks, opts);
-  return `<div class="tracks">${tracks.map((t, i) => trackRow(t, i, key, opts)).join('')}</div>`;
+  const rows = tracks.map((t, i) => trackRow(t, i, key, opts));
+  if (rows.length <= CHUNK) return `<div class="tracks">${rows.join('')}</div>`;
+  // Long lists: the browser leaves out what's far off screen, a block of songs at a time, so a block
+  // is ready well before a fast scroll reaches it instead of each song appearing as it comes into view.
+  const blocks = [];
+  for (let i = 0; i < rows.length; i += CHUNK) {
+    const part = rows.slice(i, i + CHUNK);
+    blocks.push(`<div class="track-block" style="contain-intrinsic-size:auto ${part.length * 58}px">${part.join('')}</div>`);
+  }
+  return `<div class="tracks">${blocks.join('')}</div>`;
 }
 
 export function trackCard(t, i, key) {
   return `<div class="card" data-list="${key}" data-i="${i}" data-vid="${esc(t.videoId)}"${t.type === 'video' ? ' data-mv="1"' : ''} role="button" tabindex="0">
-    <div class="art"><img loading="lazy" src="${img(t.thumbnail, 300)}" alt="">
+    <div class="art"><img loading="lazy" decoding="async" src="${img(t.thumbnail, 300)}" alt="">
       <span class="hover-play">${icon('play')}</span></div>
     <div class="title">${esc(t.title)}</div>
     <div class="sub">${t.explicit ? '<span class="badge-e">E</span>' : ''}${esc(artistNames(t))}</div>
@@ -84,7 +95,7 @@ export function card(c) {
   const href = `#/${HREF[c.type]}/${encodeURIComponent(c.id)}`;
   const canPlay = c.type !== 'artist';
   return `<a class="card ${c.type}" href="${href}">
-    <div class="art"><img loading="lazy" src="${img(c.thumbnail, 300)}" alt="">
+    <div class="art"><img loading="lazy" decoding="async" src="${img(c.thumbnail, 300)}" alt="">
       ${canPlay ? `<button class="hover-play" data-play-card="${c.type}:${esc(c.id)}" aria-label="Play">${icon('play')}</button>` : ''}</div>
     <div class="title">${esc(c.title)}</div>
     <div class="sub">${esc(c.subtitle || '')}</div>
