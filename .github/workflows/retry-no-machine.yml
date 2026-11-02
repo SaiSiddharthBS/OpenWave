@@ -1,0 +1,41 @@
+# GitHub sometimes runs out of Apple Silicon machines and cancels a job before it has started, which
+# marks the commit as failed although nothing was tested. This starts such a run again. A job that
+# ran and failed is never retried: that's a real failure and it should stay red.
+name: Retry when no machine was free
+
+on:
+  workflow_run:
+    workflows: ["CI", "macOS app", "Release"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: [".github/workflows/retry-no-machine.yml"]
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  retry:
+    if: github.event_name == 'push' || (github.event.workflow_run.conclusion == 'failure' && github.event.workflow_run.head_repository.full_name == github.repository)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Start again whatever never got a machine
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          THIS_RUN: ${{ github.event.workflow_run.id }}
+        run: |
+          runs="$THIS_RUN"
+          [ -n "$runs" ] || runs=$(gh run list --branch main --status failure --limit 20 --json databaseId --jq '.[].databaseId')
+          for id in $runs; do
+            attempt=$(gh api "repos/$GH_REPO/actions/runs/$id" --jq .run_attempt)
+            if [ "$attempt" -ge 4 ]; then continue; fi
+            missed=$(gh api "repos/$GH_REPO/actions/runs/$id/jobs" --jq '
+              .jobs | if any(.conclusion == "failure") then false
+                      else any(.conclusion == "cancelled" and (.steps | length) == 0) end')
+            if [ "$missed" = "true" ]; then
+              echo "Starting run $id again"
+              gh run rerun "$id" --failed
+            fi
+          done
