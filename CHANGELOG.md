@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.5.2] — 2026-11-03
+
 ### Changed
 - **Full animations are on by default on every device**, including devices set to reduce motion. Settings → Appearance → **Full animations** is now always there, and turning it off gives gentle fades instead.
 
