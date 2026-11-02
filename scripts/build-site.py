@@ -29,7 +29,9 @@ ROOT = Path(__file__).resolve().parent.parent
 def remote_mode(app: Path, unlisted: bool) -> None:
     index = app / "index.html"
     html = index.read_text()
-    html, n = re.subn(r'<meta name="openwave-mode" content="engine">', '<meta name="openwave-mode" content="connect">', html)
+    version = re.search(r'__version__ = "(.+?)"', (ROOT / "openwave" / "__init__.py").read_text()).group(1)
+    html, n = re.subn(r'<meta name="openwave-mode" content="engine">',
+                      f'<meta name="openwave-mode" content="connect">\n  <meta name="openwave-version" content="{version}">', html)
     if n != 1:
         raise SystemExit(f"{index}: no openwave-mode tag to switch")
     # No manifest: iOS then saves the page's own address (with its pairing code) to the Home

@@ -1,5 +1,6 @@
 import AppKit
 import CryptoKit
+import UserNotifications
 
 /// Looks for a newer OpenWave release on GitHub and installs it.
 ///
@@ -14,14 +15,21 @@ enum Updates {
     private static let dmgName = "OpenWave-macOS-Intel.dmg"
     #endif
 
-    static func checkInBackground() {
-        let last = UserDefaults.standard.double(forKey: "lastUpdateCheck")
-        guard Date().timeIntervalSince1970 - last > 86_400 else { return }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 20) { check(userInitiated: false) }
+    /// The page looks for updates while the app is open (update.js) and shows a card with an Update
+    /// button. This is the same news as a system notification, for when the window isn't in front.
+    static func notify(_ title: String) {
+        let center = UNUserNotificationCenter.current()
+        center.requestAuthorization(options: [.alert]) { granted, _ in
+            guard granted else { return }
+            let content = UNMutableNotificationContent()
+            content.title = title
+            content.body = "Open OpenWave to update."
+            center.add(UNNotificationRequest(identifier: "update", content: content, trigger: nil))
+        }
     }
 
-    static func check(userInitiated: Bool) {
-        UserDefaults.standard.set(Date().timeIntervalSince1970, forKey: "lastUpdateCheck")
+    /// `install`: the person already said yes on the page, so go straight to it.
+    static func check(userInitiated: Bool, install: Bool = false) {
         var req = URLRequest(url: api)
         req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         URLSession.shared.dataTask(with: req) { data, response, _ in
@@ -36,12 +44,14 @@ enum Updates {
             DispatchQueue.main.async {
                 let current = Bundle.main.shortVersion
                 if let tag, let page, isNewer(tag, than: current) {
-                    let alert = NSAlert()
-                    alert.messageText = "OpenWave \(tag) is available"
-                    alert.informativeText = "You have \(current). OpenWave will download the update, install it and restart. Your library stays as it is."
-                    alert.addButton(withTitle: "Update Now")
-                    alert.addButton(withTitle: "Later")
-                    guard alert.runModal() == .alertFirstButtonReturn else { return }
+                    if !install {
+                        let alert = NSAlert()
+                        alert.messageText = "OpenWave \(tag) is available"
+                        alert.informativeText = "You have \(current). OpenWave will download the update, install it and restart. Your library stays as it is."
+                        alert.addButton(withTitle: "Update Now")
+                        alert.addButton(withTitle: "Later")
+                        guard alert.runModal() == .alertFirstButtonReturn else { return }
+                    }
                     if let dmg, let checksum, canReplaceApp { Installer(version: tag, dmg: dmg, checksum: checksum, page: page).start() } else { NSWorkspace.shared.open(dmg ?? page) }
                 } else if userInitiated {
                     let alert = NSAlert()

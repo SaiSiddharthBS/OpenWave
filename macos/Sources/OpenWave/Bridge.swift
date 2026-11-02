@@ -53,6 +53,10 @@ final class Bridge: ObservableObject {
             pending.removeAll()
             queued.forEach { command($0.0, $0.1) }
             if let s = msg["settings"] as? [String: Any], let n = s["notifications"] as? Bool { notificationsEnabled = n }
+        case "updateAvailable":
+            if let title = msg["title"] as? String { Updates.notify(title) }
+        case "installUpdate":
+            Updates.check(userInitiated: false, install: true)
         case "attention":
             AppDelegate.shared?.showMain() // another device is asking to connect
         case "settings":

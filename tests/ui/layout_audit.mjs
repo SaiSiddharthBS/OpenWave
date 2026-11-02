@@ -34,7 +34,12 @@ const VIEWPORTS = [
   { name: 'phone-375', width: 375, height: 667, mobile: true },
   { name: 'phone-390', width: 390, height: 844, mobile: true },
   { name: 'phone-412', width: 412, height: 915, mobile: true },
+  { name: 'tablet-600', width: 600, height: 960, mobile: true },
   { name: 'tablet-768', width: 768, height: 1024, mobile: true },
+  { name: 'tablet-834', width: 834, height: 1194, mobile: true },
+  { name: 'tablet-1024', width: 1024, height: 768, mobile: true },
+  { name: 'tablet-1180', width: 1180, height: 820, mobile: true },
+  { name: 'phone-sideways', width: 844, height: 390, mobile: true },
   { name: 'desktop-1024', width: 1024, height: 700, mobile: false },
   { name: 'desktop-1440', width: 1440, height: 900, mobile: false },
 ];

@@ -81,6 +81,9 @@ Every app is self-contained, with nothing else to install. Installers are attach
 - **Sleep timer** from 5 to 90 minutes, or to the end of the song, with a gentle fade-out.
 - **Adaptive audio.** OpenWave picks the best format the device plays well (Opus or AAC, up to about 160 kbps), with a data-saver option.
 - **A glass design that moves with your music.** The sidebar, player and tab bar float as glass over the colours of the song playing, pages arrive piece by piece as you scroll, and the artwork flies between the mini player and the full-screen player, the same on every device. Settings → Appearance has **Reduce glass** for older devices and **Full animations**, which is on everywhere and can be turned off for gentle fades.
+- **Daily Mixes.** Three new mixes every day, one mood each, from what you actually finish, skip and play together. Every profile has its own.
+- **Made for tablets.** A layout of their own, upright or on their side, on iPad and Android tablets.
+- **Updates that find you.** A notification on Android, even when the app is closed, a one-click update on the Mac, and the iPhone app updates itself.
 - **Fast by design.** Home appears instantly from cache, songs begin loading while your finger is still on them, and the song version of a music video is found in well under a second and remembered.
 
 <table>

@@ -5,6 +5,22 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Added
+- **Daily Mixes.** Three new mixes every day on Home, each with one mood: artists you play together share a mix, and it's part songs you love and part songs you haven't heard. They learn as you listen: songs you finish count for more, songs you keep skipping are left out, and recent listening counts most. Every profile has its own.
+- **Tablet layouts.** Upright, tablets get their own layout: the tabs and the mini player share one row, covers and titles sit side by side, Quick picks and your Library use the room, and search is always at the top. On its side, a tablet gets the computer's layout with buttons sized for fingers.
+- **Update notifications.** The Android app tells you about a new version with a notification, even when it's closed. The Mac, Windows and Linux apps look for updates every few hours while they're open and tell the system, not only when they start. The iPhone app updates itself and says so.
+
+### Changed
+- The Mac app updates from a card in the app with one click, instead of a window that interrupts you.
+- **Later** on an update now means a few days, and a newer version shows up straight away.
+- Full animations are on by default on every device (this was in 0.5.2, which was never published).
+- Songs with little colour in their artwork let the app's own colours show behind them instead of grey.
+
+### Fixed
+- Search suggestions no longer disappear a moment after they appear, and results no longer flash while you type.
+- On a computer, closing the full-screen player now shrinks the artwork into the mini player instead of sending it to the far left of the window.
+- A song of unknown length shows –:–– instead of 0:00, and remembers its length once it has played.
+
 ## [0.5.2] — 2026-11-03
 
 ### Changed

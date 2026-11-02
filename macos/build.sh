@@ -54,7 +54,7 @@ fi
 
 echo "▸ Fetching Deno $DENO_VERSION (JavaScript runtime for YouTube's player challenges)"
 DENO_ZIP="$WORK/deno.zip"
-curl -fsSL "https://github.com/denoland/deno/releases/download/v$DENO_VERSION/deno-$DENO_ARCH-apple-darwin.zip" -o "$DENO_ZIP"
+curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors "https://github.com/denoland/deno/releases/download/v$DENO_VERSION/deno-$DENO_ARCH-apple-darwin.zip" -o "$DENO_ZIP"
 unzip -q -o "$DENO_ZIP" -d "$WORK/deno"
 
 echo "▸ Building the Swift app"

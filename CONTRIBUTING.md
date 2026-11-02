@@ -22,13 +22,16 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 The frontend in `openwave/web/` is plain HTML/CSS/ES modules with no build step: edit and reload.
 If you change files the service worker caches, bump `VERSION` in `openwave/web/sw.js`.
 
+`node tests/ui/behaviour.mjs` does what a person does and checks what a layout check can't see: search
+suggestions that stay, the player closing into the mini player, update cards and notifications.
+
 `node tests/ui/motion_audit.mjs` scrolls and flings on a phone-sized window with the processor slowed
 down, prints how much work each one gave the page, and fails if the bars at the bottom of the screen
 animate anything but transforms and opacity. Keep animations to those two: anything else redoes the
 page's layout or repaints it on every frame, and that's what makes a phone stutter. `MOTION_WHY=1`
 shows what caused the work.
 
-`node tests/ui/layout_audit.mjs` (Node 22+ and Chrome) opens every screen at eight sizes, from a
+`node tests/ui/layout_audit.mjs` (Node 22+ and Chrome) opens every screen at thirteen sizes, from a
 320 px phone to a desktop, with real-world and very long song, artist and playlist names, and fails
 if anything is pushed past the edge of the screen. CI runs it on every push, together with
 `node tests/ui/connect_e2e.mjs`, which pairs a phone-sized browser with an engine through a test

@@ -43,7 +43,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         Bridge.shared.webView = WebHost.shared.webView
         Bridge.shared.setUpSystemControls()
         startServer()
-        Updates.checkInBackground()
     }
 
     func startServer() {

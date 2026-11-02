@@ -938,6 +938,9 @@ body.offline .offline-pill { display: flex !important; }
   .shortcut { height: 54px; font-size: 12.5px; gap: 10px; }
   .shortcut .art { width: 54px; height: 54px; }
 
+}
+
+@media (max-width: 599.98px), (max-width: 860px) and (max-height: 599.98px) {
   /* Library: a list, like other music apps. */
   .route-library .grid { grid-template-columns: minmax(0, 1fr); gap: 2px; }
   .route-library .grid .card { display: grid; grid-template-columns: 60px minmax(0, 1fr); column-gap: 14px; align-items: center; padding: 7px 0; border-radius: 12px; }
@@ -947,6 +950,9 @@ body.offline .offline-pill { display: flex !important; }
   .route-library .grid .card .art svg { width: 45%; height: 45%; }
   .route-library .grid .card .title { margin: 0; align-self: end; -webkit-line-clamp: 1; font-size: 15.5px; font-weight: 500; }
   .route-library .grid .card .sub { align-self: start; -webkit-line-clamp: 1; font-size: 13px; }
+}
+
+@media (max-width: 860px) {
   .lib-actions .btn { height: 36px; padding: 0 14px; font-size: 13px; }
 
   /* Top bar on detail pages: the title appears once the header scrolls away. */
@@ -1097,6 +1103,58 @@ body.linked .pb-artist { display: none; }
 .connect-msg { min-width: 0; text-align: center; }
 .connect-status .btn { padding: 6px 12px; height: auto; font-size: 13px; }
 .connect-spin { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent-3); animation: spin .8s linear infinite; }
+
+/* ------------------------------------------------------------ tablets */
+/* Held upright: the phone's layout, with the room used. The tabs and the mini player share one row,
+   nothing needs to tuck away, and cover and title sit side by side. A phone on its side is as wide
+   but too short for this, so it stays a phone. */
+@media (min-width: 600px) and (max-width: 860px) and (min-height: 600px) {
+  :root { --page-x: 28px; --bar-x: 20px; --tabs-w: 340px; --chrome-b: calc(var(--bar-b) + var(--tabbar-h)); }
+  html:has(.playerbar[data-empty]) .tabbar { left: calc(50% - var(--tabs-w) / 2); }
+
+  .tabbar { width: var(--tabs-w); }
+  .playerbar, body.np-open .playerbar { left: calc(var(--bar-x) + var(--tabs-w) + 10px); bottom: var(--bar-b); height: var(--tabbar-h); border-radius: 26px; }
+  .pb-art { width: 48px; height: 48px; border-radius: 14px; }
+  .tabs-min .tabbar, .tabs-min .playerbar { transform: none; opacity: 1; pointer-events: auto; }
+
+  body:not(.route-search) .searchbar { display: flex; }
+  .searchbar { max-width: 380px; }
+  .searchbar:focus-within { max-width: 380px; }
+  .topbar .top-actions { margin-left: auto; }
+
+  .greeting, .lib-head h1, .settings h1 { font-size: 36px; }
+  .shortcuts { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .shelf { grid-auto-columns: 168px; gap: 18px; scroll-snap-type: x proximity; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(156px, 1fr)); gap: 24px 18px; }
+  .quick { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 24px; }
+  .row.with-album { grid-template-columns: 46px minmax(0, 1.4fr) minmax(0, 1fr) auto auto; }
+  .row.with-album .alb { display: block; }
+
+  .hero { flex-direction: row; align-items: flex-end; text-align: left; gap: 26px; padding: calc(var(--topbar-h) + 12px) var(--page-x) 20px; }
+  .hero .cover, .mosaic { width: 220px; height: 220px; flex: none; }
+  .hero h1 { font-size: 34px; }
+  .actions { justify-content: flex-start; }
+  .big-play, .pill-btn { flex: 0 0 auto; min-width: 150px; }
+
+  .np-body { padding: 0 40px; }
+  .np-art { width: min(100%, 52vh); border-radius: 22px; }
+  .np-controls { width: 100%; max-width: 660px; justify-self: center; }
+  .np-panel { inset: 0 40px 0; }
+}
+
+/* On its side a tablet has the computer's layout, but no pointer to hover with, and buttons on the
+   side for the volume. */
+@media (hover: none) and (min-width: 861px) {
+  .card .hover-play, .top-card .hover-play { display: none; }
+  .vol { display: none; }
+  .pb-right .icon-btn, .playerbar .icon-btn { width: 42px; height: 42px; }
+  .side-nav a { min-height: 44px; }
+  .side-item { min-height: 48px; }
+}
+@media (hover: none) and (min-width: 861px) and (max-width: 1100px) {
+  :root { --side-w: 212px; }
+  .playerbar { grid-template-columns: minmax(200px, 1fr) minmax(220px, 1.1fr) auto; gap: 10px; }
+}
 
 /* ------------------------------------------------------------ Android */
 /* A blur has to be redrawn for every frame of a scroll, for every piece of glass over the page, and

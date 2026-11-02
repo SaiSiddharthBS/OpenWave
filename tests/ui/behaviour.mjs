@@ -25,9 +25,17 @@ try {
   await page.send('Network.enable');
   await page.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'no-preference' }] });
   await page.send('Network.setBypassServiceWorker', { bypass: true });
-  await page.send('Fetch.enable', { patterns: [{ urlPattern: `${engine.base}/api/*` }, { urlPattern: `${engine.base}/sw.js` }] });
+  await page.send('Fetch.enable', { patterns: [{ urlPattern: `${engine.base}/api/*` }, { urlPattern: `${engine.base}/sw.js` }, { urlPattern: `${engine.base}/?webapp*` }] });
   page.on('Fetch.requestPaused', async ({ requestId, request }) => {
     const url = new URL(request.url);
+    if (url.pathname === '/api/app-update' && answers.update) {
+      const body = Buffer.from(JSON.stringify(answers.update)).toString('base64');
+      return page.send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body }).catch(() => {});
+    }
+    if (url.searchParams.has('webapp')) {   // the page as the iPhone web app gets it, at the version being tested
+      const html = (await (await fetch(`${engine.base}/`)).text()).replace('<head>', `<head><meta name="openwave-version" content="${answers.webVersion}">`);
+      return page.send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'text/html' }], body: Buffer.from(html).toString('base64') }).catch(() => {});
+    }
     if (url.pathname === '/api/suggest') {
       const body = Buffer.from(JSON.stringify(answers.suggest)).toString('base64');
       return page.send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body }).catch(() => {});
@@ -92,8 +100,7 @@ try {
       document.querySelector('[data-act=close-np]').click();
       await new Promise((r) => requestAnimationFrame(r));
       const art = document.querySelector('.np-art');
-      const a = art.getAnimations()[0];
-      const to = a.effect.getKeyframes().at(-1).transform;
+      const to = art.getAnimations().flatMap((a) => a.effect.getKeyframes()).map((k) => k.transform).find((t) => t?.startsWith('translate'));
       const r = art.getBoundingClientRect();
       const [, x, y] = to.match(/translate\\((-?[\\d.]+)px, (-?[\\d.]+)px\\)/);
       return { x: r.left + r.width / 2 + Number(x), y: r.top + r.height / 2 + Number(y) };
@@ -116,6 +123,46 @@ try {
   await sleep(2500);
   const times = await page.ev(`[...document.querySelectorAll('[data-bind=dur]')].map((e) => e.textContent)`);
   check(times.length && times.every((t) => t !== '0:00'), `an unknown length doesn't show as 0:00 (${times[0]})`);
+
+
+  console.log('Updates');
+  const release = (latest) => ({ current: '0.5.0', latest, newer: true, available: true, device: 'windows', download: `${engine.base}/?downloaded`, page: 'https://example.com' });
+  const card = `!document.querySelector('#update-card').hidden`;
+  const told = `JSON.parse(sessionStorage.getItem('told') || '[]')`;
+  await page.send('Browser.grantPermissions', { origin: engine.base, permissions: ['notifications'] });
+  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `window.Notification = class { static permission = 'granted'; constructor(t) {
+    sessionStorage.setItem('told', JSON.stringify([...JSON.parse(sessionStorage.getItem('told') || '[]'), t])); } };` });
+  const restart = async () => { await page.send('Page.reload'); await sleep(9200); };
+  answers.update = release('9.9.9');
+  await restart();
+  check(await page.ev(card), 'a new version brings up the card');
+  check((await page.ev(`document.querySelector('#update-card').textContent`)).includes('9.9.9'), 'naming the version');
+  check((await page.ev(told)).length === 1, 'and a system notification');
+  await page.ev(`document.querySelector('[data-update=later]').click(); true`);
+  check(!(await page.ev(card)), 'Later puts it away');
+  await restart();
+  check(!(await page.ev(card)), 'and it stays away after a restart');
+  check((await page.ev(told)).length === 1, 'with no second notification for the same version');
+  await page.ev(`(() => { const l = JSON.parse(localStorage.getItem('openwave.updateLater')); l.until = Date.now() - 1; localStorage.setItem('openwave.updateLater', JSON.stringify(l)); })(); true`);
+  await restart();
+  check(await page.ev(card), 'it comes back after a few days');
+  answers.update = release('9.9.10');
+  await page.ev(`document.querySelector('[data-update=later]').click(); true`);
+  await restart();
+  check(await page.ev(card), 'a newer version doesn\'t wait for Later');
+  check((await page.ev(told)).length === 2, 'and gets its own notification');
+  answers.update = { current: '9.9.10', latest: '9.9.10', newer: false, available: false, device: 'windows' };
+  await restart();
+  check(!(await page.ev(card)), 'nothing shows when you\'re up to date');
+  answers.webVersion = '1.0.0';
+  await page.send('Page.navigate', { url: `${engine.base}/?webapp=1` });
+  await sleep(3000);
+  const greeted = `document.querySelector('#toast')?.textContent || ''`;
+  check(!(await page.ev(greeted)).includes('updated'), 'the web app says nothing the first time');
+  answers.webVersion = '1.0.1';
+  await page.send('Page.navigate', { url: `${engine.base}/?webapp=2` });
+  await sleep(2000);
+  check((await page.ev(greeted)).includes('updated to 1.0.1'), 'and says so when it has updated itself');
 
   page.close();
 } finally {

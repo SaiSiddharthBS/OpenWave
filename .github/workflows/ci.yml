@@ -39,6 +39,10 @@ jobs:
           OPENWAVE_PYTHON: python
           CHROME: /usr/bin/google-chrome
           AUDIT_OUT: audit-shots
+      - run: node tests/ui/behaviour.mjs
+        env:
+          OPENWAVE_PYTHON: python
+          CHROME: /usr/bin/google-chrome
       - run: node tests/ui/motion_audit.mjs
         env:
           OPENWAVE_PYTHON: python

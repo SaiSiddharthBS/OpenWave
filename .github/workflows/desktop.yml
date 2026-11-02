@@ -32,7 +32,7 @@ jobs:
       - name: Fetch Deno
         shell: pwsh
         run: |
-          Invoke-WebRequest "https://github.com/denoland/deno/releases/download/v$env:DENO_VERSION/deno-x86_64-pc-windows-msvc.zip" -OutFile deno.zip
+          Invoke-WebRequest -MaximumRetryCount 5 -RetryIntervalSec 5 "https://github.com/denoland/deno/releases/download/v$env:DENO_VERSION/deno-x86_64-pc-windows-msvc.zip" -OutFile deno.zip
           Expand-Archive deno.zip -DestinationPath deno
       - name: Freeze
         shell: pwsh
@@ -109,7 +109,7 @@ jobs:
             --collect-submodules yt_dlp --collect-submodules uvicorn \
             --collect-submodules openwave._vendor.aiortc --collect-submodules aioice --collect-submodules dns --exclude-module av \
             packaging/launcher_entry.py
-          curl -fsSL "https://github.com/denoland/deno/releases/download/v$DENO_VERSION/deno-x86_64-unknown-linux-gnu.zip" -o deno.zip
+          curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors "https://github.com/denoland/deno/releases/download/v$DENO_VERSION/deno-x86_64-unknown-linux-gnu.zip" -o deno.zip
           mkdir -p dist/OpenWave/bin && unzip -q deno.zip -d dist/OpenWave/bin
       - name: Smoke test the packaged app
         run: |

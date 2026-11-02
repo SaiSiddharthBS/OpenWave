@@ -169,6 +169,7 @@ class MainActivity : ComponentActivity() {
             askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         PlaybackService.start(this)
+        UpdateCheck.schedule(this)
         pendingLink = linkFrom(intent)
         pendingLink?.let { link -> pairingBase(link)?.let { usePairing(link, it, boot = false); pendingLink = null } }
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
