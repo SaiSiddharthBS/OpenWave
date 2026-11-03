@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.5.3] — 2026-11-03
+
 ### Added
 - **Daily Mixes.** Three new mixes every day on Home, each with one mood: artists you play together share a mix, and it's part songs you love and part songs you haven't heard. They learn as you listen: songs you finish count for more, songs you keep skipping are left out, and recent listening counts most. Every profile has its own.
 - **Tablet layouts.** Upright, tablets get their own layout: the tabs and the mini player share one row, covers and titles sit side by side, Quick picks and your Library use the room, and search is always at the top. On its side, a tablet gets the computer's layout with buttons sized for fingers.
