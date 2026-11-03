@@ -60,7 +60,8 @@ final class WebHost: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
         webView.load(URLRequest(url: url))
     }
 
-    func showSplash(message: String, retry: Bool = false) {
+    /// The logo while OpenWave starts, with no words; `message` only when something needs saying.
+    func showSplash(message: String = "", retry: Bool = false) {
         let logo = Bundle.main.url(forResource: "logo-mark", withExtension: "png")
             .flatMap { try? Data(contentsOf: $0) }
             .map { "data:image/png;base64,\($0.base64EncodedString())" } ?? ""
@@ -69,11 +70,12 @@ final class WebHost: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
         html,body{height:100%;margin:0;background:#0a0b14;color:#f3f3f6;font:15px -apple-system,system-ui,sans-serif}
         body{display:grid;place-items:center;-webkit-user-select:none}
         .c{text-align:center;display:flex;flex-direction:column;align-items:center;gap:18px;max-width:440px;padding:24px}
-        img{height:72px;filter:drop-shadow(0 8px 30px rgba(79,107,255,.55));animation:b 1.6s ease-in-out infinite}
-        @keyframes b{50%{transform:scale(1.06)}}
+        img{height:72px;filter:drop-shadow(0 8px 30px rgba(79,107,255,.55));opacity:0;animation:in .8s cubic-bezier(.22,1,.36,1) .1s forwards,b 2.6s ease-in-out .9s infinite}
+        @keyframes in{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
+        @keyframes b{50%{transform:scale(1.035)}}
         p{color:#a4a4b2;margin:0;line-height:1.5}
         a{color:#fff;background:linear-gradient(135deg,#2fc8ff,#4f6bff 45%,#c45cff);padding:10px 22px;border-radius:999px;text-decoration:none;font-weight:650}
-        </style></head><body><div class="c"><img src="\(logo)" alt=""><p>\(message.htmlEscaped)</p>
+        </style></head><body><div class="c"><img src="\(logo)" alt="OpenWave">\(message.isEmpty ? "" : "<p>\(message.htmlEscaped)</p>")
         \(retry ? "<a href=\"openwave-retry:\">Try again</a>" : "")</div></body></html>
         """
         webView.loadHTMLString(html, baseURL: nil)

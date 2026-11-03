@@ -229,7 +229,7 @@ class MainActivity : ComponentActivity() {
             return
         }
         if (remote.isNotEmpty()) {
-            splash("Connecting to OpenWave on your computer…")
+            splash()
             io.execute {
                 val ok = reachable(remote)
                 runOnUiThread {
@@ -239,7 +239,7 @@ class MainActivity : ComponentActivity() {
             }
             return
         }
-        splash(if (Engine.state == Engine.State.RUNNING) "Loading…" else "Starting OpenWave…")
+        splash()
         Engine.start(applicationContext) { ok ->
             // Android may have recreated the screen while the engine started: talk to the live one.
             val screen = current.get() ?: return@start
@@ -265,18 +265,20 @@ class MainActivity : ComponentActivity() {
         }
     }.getOrDefault(false)
 
-    private fun splash(message: String, retry: Boolean = false, offerLocal: Boolean = false) {
+    /** The logo while OpenWave starts, with no words; `message` only when something needs saying. */
+    private fun splash(message: String = "", retry: Boolean = false, offerLocal: Boolean = false) {
         val html = """
             <!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
             html,body{height:100%;margin:0;background:#0a0b14;color:#f3f3f6;font:16px system-ui,sans-serif}
             body{display:grid;place-items:center;text-align:center}
             .c{display:flex;flex-direction:column;align-items:center;gap:20px;padding:28px;max-width:420px}
-            img{width:180px;filter:drop-shadow(0 10px 36px rgba(79,107,255,.55));animation:b 1.6s ease-in-out infinite}
-            @keyframes b{50%{transform:scale(1.05)}}
+            img{width:180px;filter:drop-shadow(0 10px 36px rgba(79,107,255,.55));opacity:0;animation:in .8s cubic-bezier(.22,1,.36,1) .1s forwards,b 2.6s ease-in-out .9s infinite}
+            @keyframes in{from{opacity:0;transform:translateY(10px) scale(.94)}to{opacity:1;transform:none}}
+            @keyframes b{50%{transform:scale(1.035)}}
             p{color:#a4a4b2;margin:0;line-height:1.5}
             a{color:#fff;text-decoration:none;font-weight:650;padding:12px 24px;border-radius:999px;background:linear-gradient(135deg,#2fc8ff,#4f6bff 45%,#c45cff)}
             a.alt{background:none;border:1px solid rgba(255,255,255,.3)}
-            </style></head><body><div class="c"><img src="logo.png" alt=""><p>${message.replace("<", "&lt;")}</p>
+            </style></head><body><div class="c"><img src="logo.png" alt="OpenWave">${if (message.isEmpty()) "" else "<p>${message.replace("<", "&lt;")}</p>"}
             ${if (retry) "<a href=\"openwave-app://retry\">Try again</a>" else ""}
             ${if (offerLocal) "<a class=\"alt\" href=\"openwave-app://local\">Use this phone instead</a>" else ""}
             </div></body></html>

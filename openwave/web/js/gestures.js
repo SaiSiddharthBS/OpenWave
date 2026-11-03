@@ -4,6 +4,7 @@
 
 import { player } from './player.js';
 import { haptic } from './native.js';
+import { uncover } from './glass.js';
 
 const touchy = (e) => e.pointerType === 'touch' || e.pointerType === 'pen';
 
@@ -68,7 +69,7 @@ function swipeDownToClose(np, close) {
   for (const el of [body, stage]) {
     drag(el, {
       axis: 'y',
-      onStart: () => { document.body.classList.remove('np-cover'); np.style.transition = 'none'; },
+      onStart: () => { uncover(); np.style.transition = 'none'; },
       onMove: (dx, dy) => { np.style.transform = `translateY(${Math.max(0, dy)}px)`; },
       onEnd: (dx, dy, vx, vy) => {
         np.style.transition = '';

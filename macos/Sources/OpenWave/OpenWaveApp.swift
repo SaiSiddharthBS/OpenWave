@@ -46,7 +46,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     func startServer() {
-        WebHost.shared.showSplash(message: "Starting OpenWave…")
+        WebHost.shared.showSplash()
         ServerManager.shared.start { result in
             switch result {
             case .success(let url):

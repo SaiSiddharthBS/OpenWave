@@ -100,7 +100,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
 #ambient::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10, 11, 20, .42), rgba(10, 11, 20, .68)); }
 
 /* ------------------------------------------------------------ glass */
-.sidebar, .playerbar, .tabbar, .searchbar, .nav-arrows, .icon-btn.round, .profile-chip, .menu, .dialog, .toast, .update-card, .connect-status, .np-panel {
+.sidebar, .pb-glass, .tabbar, .searchbar, .nav-arrows, .icon-btn.round, .profile-chip, .menu, .dialog, .toast, .update-card, .connect-status, .np-panel {
   background-color: var(--glass-fill);
   -webkit-backdrop-filter: var(--glass-fx);
   backdrop-filter: var(--glass-fx);
@@ -112,7 +112,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
 /* What people read at length sits on denser glass. */
 .menu, .dialog, .toast, .update-card, .connect-status, .np-panel { background-color: var(--glass-fill-strong); }
 /* The light catching the edge of the glass: brightest at the top left, fading round the rim. */
-.sidebar::before, .playerbar::before, .tabbar::before, .menu::before, .update-card::before {
+.sidebar::before, .pb-glass::before, .tabbar::before, .menu::before, .update-card::before {
   content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
   background: linear-gradient(140deg, rgba(255,255,255,.34), rgba(255,255,255,.07) 34%, rgba(255,255,255,.02) 62%, rgba(255,255,255,.16));
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
@@ -294,10 +294,13 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
   position: fixed; left: calc(var(--side-w) + var(--gutter) * 2); right: var(--gutter); bottom: calc(var(--gutter) + var(--safe-b)); z-index: 50;
   height: var(--player-h); padding: 0 16px 0 10px; border-radius: 26px;
   display: grid; grid-template-columns: minmax(180px, 1fr) minmax(300px, 1.3fr) minmax(180px, 1fr); align-items: center; gap: 16px;
-  transition: left .6s var(--spring-soft), transform .6s var(--spring-soft);
+  transition: transform .6s var(--spring-soft);
 }
-body.np-open .playerbar { left: var(--gutter); }
+/* Wider while the full-screen player is open (js/app.js); a class on the bar alone, so nothing else is restyled. */
+.playerbar.wide { left: var(--gutter); }
 .playerbar > * { position: relative; z-index: 1; }
+/* The bar's glass is a layer of its own, so it can stretch while the bar changes size (js/glass.js). */
+.playerbar > .pb-glass { position: absolute; inset: 0; z-index: 0; border-radius: inherit; pointer-events: none; transform-origin: left center; }
 .pb-progress-mini { display: none; }
 .pb-left { display: flex; align-items: center; gap: 12px; min-width: 0; cursor: pointer; }
 .pb-art { width: 56px; height: 56px; border-radius: 14px; object-fit: cover; background: var(--surface-2); flex: none; box-shadow: 0 4px 14px rgba(0,0,0,.35); }
@@ -684,7 +687,7 @@ body.paused .np-art { transform: scale(.86); box-shadow: 0 16px 44px rgba(0,0,0,
   .tabs-min .playerbar { transform: translateY(calc(var(--tabbar-h) + 8px)); }
 
   /* Everything under the finished full-screen player: there's no need to draw it (js/glass.js). */
-  .np-cover #ambient, .np-cover .app, .np-cover .playerbar, .np-cover .tabbar { opacity: 0; }
+  .covered { opacity: 0; }
 
   .np { inset: 0; z-index: 60; grid-template-rows: auto 1fr auto; padding-bottom: max(10px, var(--safe-b)); }
   .np-head { padding: calc(8px + var(--safe-t)) 16px 8px; }
@@ -1113,7 +1116,7 @@ body.linked .pb-artist { display: none; }
   html:has(.playerbar[data-empty]) .tabbar { left: calc(50% - var(--tabs-w) / 2); }
 
   .tabbar { width: var(--tabs-w); }
-  .playerbar, body.np-open .playerbar { left: calc(var(--bar-x) + var(--tabs-w) + 10px); bottom: var(--bar-b); height: var(--tabbar-h); border-radius: 26px; }
+  .playerbar, .playerbar.wide { left: calc(var(--bar-x) + var(--tabs-w) + 10px); bottom: var(--bar-b); height: var(--tabbar-h); border-radius: 26px; }
   .pb-art { width: 48px; height: 48px; border-radius: 14px; }
   .tabs-min .tabbar, .tabs-min .playerbar { transform: none; opacity: 1; pointer-events: auto; }
 
@@ -1164,6 +1167,9 @@ body.linked .pb-artist { display: none; }
 .webkit { --spring: cubic-bezier(.34, 1.3, .64, 1); --spring-soft: cubic-bezier(.22, 1, .36, 1); }
 .webkit .amb, .webkit .np-bg i { animation: none; transform: scale(var(--amb-s, 22)); }
 .webkit .np-bg i + i { display: none; }
+/* Over the player's already blurred background, a blur adds nothing you can see, but it's redrawn on every frame. */
+.webkit .np-art { box-shadow: 0 20px 50px rgba(0, 0, 0, .45); }
+.webkit .np-panel { -webkit-backdrop-filter: none; backdrop-filter: none; background-color: rgba(22, 23, 36, .62); }
 .webkit .card .art img { transition: opacity .35s ease; }
 .webkit .card .art img:not(.ld) { transform: none; }
 

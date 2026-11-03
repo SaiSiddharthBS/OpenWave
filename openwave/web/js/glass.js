@@ -14,6 +14,9 @@ const touchScreen = matchMedia('(pointer: coarse)');
 // match (measured on an Intel MacBook Pro; see "WebKit" in css/app.css).
 const webkit = /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Android|Edg\//.test(navigator.userAgent);
 document.documentElement.classList.toggle('webkit', webkit);
+const SPRING_SOFT = !webkit && CSS.supports('animation-timing-function', 'linear(0, 1)')
+  ? getComputedStyle(document.documentElement).getPropertyValue('--spring-soft').trim()
+  : 'cubic-bezier(.22, 1, .36, 1)';
 const SPRING = !webkit && CSS.supports('animation-timing-function', 'linear(0, 1)')
   ? getComputedStyle(document.documentElement).getPropertyValue('--spring-soft').trim()
   : 'cubic-bezier(.2, .8, .2, 1)';
@@ -307,22 +310,34 @@ function miniArt() {
   return !('empty' in $('#playerbar').dataset) && r.width > 0 ? r : null;
 }
 
-/** Where the mini player's artwork will be when the player has closed. On a computer the bar moves
- * back to make room for the sidebar, so this is where it's going, not where it is. Its move is
- * restarted to match the artwork's flight, so the two arrive together. */
-function miniArtAfterClose(time) {
+let barMoves = [];
+
+/**
+ * Change the mini player's size with `change` (it covers the sidebar while the full-screen player is
+ * open). The size changes at once; what you see is its glass stretching and its contents gliding into
+ * their new places, which the graphics chip does by itself. Animating the size itself would redo the
+ * page's layout on every frame, and that's what made this choppy. `measure` runs once the bar is in
+ * its new place, before anything moves.
+ */
+export function resizeBar(change, time = { duration: 560, easing: SPRING_SOFT }, measure = () => {}) {
   const bar = $('#playerbar');
-  const from = bar.getBoundingClientRect().left;
-  bar.style.transition = 'none';
-  const small = miniArt();
-  const to = bar.getBoundingClientRect().left;
-  if (small && Math.abs(from - to) > 1) {
-    bar.style.left = `${from}px`;
-    bar.getBoundingClientRect();
-    bar.style.transition = `left ${time.duration}ms ${time.easing}`;
-    bar.style.removeProperty('left');
-  } else bar.style.transition = '';
-  return small;
+  const glass = bar.querySelector('.pb-glass');
+  barMoves.forEach((a) => a.cancel());
+  barMoves = [];
+  const parts = [...bar.children].filter((el) => el !== glass);
+  const before = bar.getBoundingClientRect();
+  const was = parts.map((el) => el.getBoundingClientRect().left);
+  change();
+  const after = bar.getBoundingClientRect();
+  const found = measure();
+  if (calm() || !after.width || Math.abs(after.width - before.width) < 1) return found;
+  const options = { duration: time.duration, easing: time.easing };
+  barMoves.push(glass.animate([{ transform: `translateX(${before.left - after.left}px) scaleX(${before.width / after.width})` }, { transform: 'none' }], options));
+  parts.forEach((el, i) => {
+    const dx = was[i] - el.getBoundingClientRect().left;
+    if (Math.abs(dx) >= 1) barMoves.push(el.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], options));
+  });
+  return found;
 }
 
 /** Where the big artwork has to be drawn to sit exactly over the small one. */
@@ -334,9 +349,12 @@ function overMini(big, small) {
 }
 
 let flying = [];
-const land = () => { flying.forEach((a) => a.cancel()); flying = []; $('#playerbar').style.removeProperty('transition'); };
+const land = () => { flying.forEach((a) => a.cancel()); flying = []; };
 
-const uncover = () => document.body.classList.remove('np-cover');
+// Under the finished full-screen player, nothing else needs drawing (phones; see .covered in css/app.css).
+// A class on just these, so that nothing else on the page is restyled when it changes.
+const underPlayer = () => $$('#ambient, .app, #playerbar, .tabbar');
+export const uncover = () => underPlayer().forEach((el) => el.classList.remove('covered'));
 
 /** The full-screen player has just been shown: grow it out of the mini player. */
 export function npOpened(np) {
@@ -346,29 +364,31 @@ export function npOpened(np) {
   const small = miniArt();
   const rise = { duration: 420, easing: 'cubic-bezier(.2, .8, .2, 1)' };
   flying = [np.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease' })];
-  if (small) flying.push(art.animate([{ transform: overMini(art, small), borderRadius: '40px' }, {}], { duration: 640, easing: SPRING }));
+  if (small) flying.push(art.animate([{ transform: overMini(art, small) }, {}], { duration: 640, easing: SPRING }));
   else flying.push(art.animate([{ transform: 'scale(.9)' }, {}], { duration: 520, easing: SPRING }));
   for (const el of $$('.np-head, .np-controls, .np-panel', np)) {
     flying.push(el.animate([{ opacity: 0, transform: 'translateY(16px)' }, {}], rise));
   }
   // Once it has landed, nothing has to draw the glass and the page hidden underneath it.
   const now = flying;
-  Promise.all(now.map((a) => a.finished)).then(() => { if (now === flying && !np.hidden) document.body.classList.add('np-cover'); }).catch(() => {});
+  Promise.all(now.map((a) => a.finished)).then(() => { if (now === flying && !np.hidden) underPlayer().forEach((el) => el.classList.add('covered')); }).catch(() => {});
 }
 
-/** Shrink the full-screen player back into the mini player. Resolves when it's out of sight. */
-export function npClosing(np) {
+/** Shrink the full-screen player back into the mini player; `change` gives the mini player back its
+ * place beside the sidebar. Resolves when the player is out of sight. */
+export function npClosing(np, change) {
   land();
   uncover();
   if (calm()) {
+    change();
     flying = [np.animate([{}, { opacity: 0 }], { duration: 200, easing: 'ease', fill: 'forwards' })];
     return Promise.race([flying[0].finished, new Promise((r) => { setTimeout(r, 300); })]).catch(() => {});
   }
   const art = $('.np-art');
   const time = { duration: 340, easing: 'cubic-bezier(.3, .7, .2, 1)', fill: 'forwards' };
-  const small = miniArtAfterClose(time);
+  const small = resizeBar(change, time, miniArt);   // where the mini player's artwork is going, so the two arrive together
   flying = small
-    ? [art.animate([{}, { transform: overMini(art, small), borderRadius: '40px' }], time),
+    ? [art.animate([{}, { transform: overMini(art, small) }], time),
       np.animate([{ opacity: 1 }, { opacity: 1, offset: .55 }, { opacity: 0 }], time)]
     : [np.animate([{}, { transform: 'translateY(100%)' }], time)];
   for (const el of $$('.np-head, .np-controls, .np-panel', np)) flying.push(el.animate([{}, { opacity: 0 }], { duration: 160, fill: 'forwards' }));

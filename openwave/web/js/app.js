@@ -15,7 +15,7 @@ import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import { initLink, openDevices, linkLabel, linkEvents, setVisible, rename, forget } from './link.js';
 import { startSharing, openSharing, openJoin, showNotices, isInvite } from './sharing.js';
 import { REMOTE, computer } from './remote.js';
-import { fullMotion, glassReduced, initGlass, moveLenses, npClosed, npClosing, npOpened, pageShown, setAmbient, setFullMotion, setGlassReduced } from './glass.js';
+import { fullMotion, glassReduced, initGlass, moveLenses, npClosed, npClosing, npOpened, pageShown, resizeBar, setAmbient, setFullMotion, setGlassReduced } from './glass.js';
 import { openPairing, removePhone, forgetComputer, switchTailscale, showTailscaleCode, switchStartup } from './phones.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
@@ -930,7 +930,9 @@ player.addEventListener('track', (e) => bindTrack(e.detail));
 player.addEventListener('state', bindState);
 player.addEventListener('time', bindTime);
 player.addEventListener('volume', bindVolume);
-player.addEventListener('queue', () => { bind('context').forEach((el) => { el.textContent = player.context?.label || 'Queue'; }); if (!np.hidden) renderQueue(); markPlaying(); });
+player.addEventListener('queue', () => { bind('context').forEach((el) => { el.textContent = player.context?.label || 'Queue'; }); queueChanged(); markPlaying(); });
+player.addEventListener('track', () => queueChanged());
+store.on((what) => { if (what === 'settings') queueChanged(); });
 player.addEventListener('error', (e) => toast(e.detail, 4500));
 
 // Playing on, or listening together with, another device: say so under the song, Spotify-style.
@@ -950,9 +952,9 @@ function openNP(tab) {
   np.classList.remove('closing');
   np.style.transform = '';
   np.hidden = false;
-  document.body.classList.add('np-open');
+  resizeBar(() => $('#playerbar').classList.add('wide'));
   if (tab) showTab(tab);
-  else if ($('#np-lyrics').hidden) renderQueue(); else loadLyrics();
+  else if ($('#np-lyrics').hidden) { if (queueStale) renderQueue(); } else loadLyrics();
   bindTime();
   npOpened(np);
 }
@@ -961,10 +963,9 @@ function openNP(tab) {
 function closeNP({ from = 0 } = {}) {
   if (np.hidden || np.classList.contains('closing')) return;
   np.classList.remove('show-panel');
-  document.body.classList.remove('np-open');
   np.classList.add('closing');
   np.style.transform = from ? `translateY(${from}px)` : '';
-  npClosing(np).then(() => {
+  npClosing(np, () => $('#playerbar').classList.remove('wide')).then(() => {
     if (!np.classList.contains('closing')) return; // reopened meanwhile
     np.hidden = true;
     np.classList.remove('closing');
@@ -992,7 +993,20 @@ function showTab(tab) {
   if (tab === 'queue') renderQueue(); else loadLyrics();
 }
 
+// Up next is drawn ahead of time, when the queue changes, so that opening the player has nothing
+// to build: building a long queue as it opened made the opening animation stutter.
+let queueStale = true;
+let queueSoon = 0;
+function queueChanged() {
+  queueStale = true;
+  if (!np.hidden) { renderQueue(); return; }
+  if (queueSoon) return;
+  const draw = () => { queueSoon = 0; if (queueStale) renderQueue(); };
+  queueSoon = window.requestIdleCallback ? requestIdleCallback(draw, { timeout: 2000 }) : setTimeout(draw, 300);
+}
+
 function renderQueue() {
+  queueStale = false;
   const box = $('#np-queue');
   const t = player.current;
   if (!t) { box.innerHTML = empty('queue', 'Your queue is empty', 'Play something to get started.'); return; }
