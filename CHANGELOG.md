@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.5.5] — 2026-11-03
+
 ### Changed
 - **Smoother full-screen player.** Opening and closing it was choppy on the Mac: the player bar widened by redoing the page's layout on every frame, the artwork's corners were animated in a way that kept the graphics chip out of it, and Up next was built as the player opened. The bar now stretches and the artwork flies on the graphics chip, and Up next is ready beforehand. Measured on an Intel MacBook Pro, the worst stutter went from about 220 ms to under 90 ms, and closing costs about the same as no animation at all.
 - **A cleaner start.** The Mac and Android apps show only the OpenWave logo while they start, with no "Starting OpenWave…" or "Loading…" text. Messages still appear when something needs your attention.
