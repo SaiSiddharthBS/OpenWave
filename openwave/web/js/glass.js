@@ -9,7 +9,12 @@ const STORE = 'openwave:glass';           // "reduced" or "full"; unset decides 
 const MOTION = 'openwave:motion';         // "calm": gentle fades instead of movement; unset is every animation
 const narrowScreen = matchMedia('(max-width: 860px)');
 const touchScreen = matchMedia('(pointer: coarse)');
-const SPRING = CSS.supports('animation-timing-function', 'linear(0, 1)')
+// Safari's engine, in the Mac app and on iPhone and iPad. It can't hand a spring-shaped curve to the
+// graphics chip, and a moving piece of a page costs it more than Chrome, so motion there is chosen to
+// match (measured on an Intel MacBook Pro; see "WebKit" in css/app.css).
+const webkit = /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Chromium|Android|Edg\//.test(navigator.userAgent);
+document.documentElement.classList.toggle('webkit', webkit);
+const SPRING = !webkit && CSS.supports('animation-timing-function', 'linear(0, 1)')
   ? getComputedStyle(document.documentElement).getPropertyValue('--spring-soft').trim()
   : 'cubic-bezier(.2, .8, .2, 1)';
 
@@ -169,6 +174,7 @@ const FADE = [{ opacity: 0 }, {}];
 const MOST_PIECES = 80;     // a long list's other songs are simply there when you reach them
 const MOST_TOGETHER = 6;    // more than this, at one moment of a scroll, would hold the scroll up
 const FLING = 0.9;          // pixels a millisecond: too fast to see anything arrive
+const MOST_SLIDING = 10;    // Safari: the first pieces of a page slide in, the rest fade
 let watcher = null;
 
 function byPlace(a, b) {
@@ -200,10 +206,11 @@ function arriveOnScroll(view) {
     entries.filter((e) => e.isIntersecting).sort(byPlace).map((e) => e.target).forEach((el, i) => {
       seen.unobserve(el);
       el.classList.remove('rv');
-      if (still) el.animate(FADE, { duration: 320, delay: Math.min(i, 12) * 14, easing: 'ease', fill: 'backwards' });
-      else if (first && !touchScreen.matches) el.animate(RISE, { duration: 720, delay: Math.min(i, 12) * 36, easing: SPRING, fill: 'backwards' });
+      if (!first && (speed >= FLING || i >= MOST_TOGETHER)) return;
+      if (still || (webkit && (!first || i >= MOST_SLIDING))) el.animate(FADE, { duration: 320, delay: Math.min(i, 12) * 14, easing: 'ease', fill: 'backwards' });
+      else if (first && !touchScreen.matches && !webkit) el.animate(RISE, { duration: 720, delay: Math.min(i, 12) * 36, easing: SPRING, fill: 'backwards' });
       else if (first) el.animate(SLIDE, { duration: 560, delay: Math.min(i, 8) * 28, easing: SPRING, fill: 'backwards' });
-      else if (speed < FLING && i < MOST_TOGETHER) el.animate(SLIDE, { duration: 420, delay: i * 24, easing: SPRING, fill: 'backwards' });
+      else el.animate(SLIDE, { duration: 420, delay: i * 24, easing: SPRING, fill: 'backwards' });
     });
     if (entries.some((e) => e.isIntersecting)) first = false;
   }, { rootMargin: '0px 0px -7% 0px', threshold: 0 });
@@ -226,7 +233,7 @@ function scrollEffects(main) {
   const draw = () => {
     frame = 0;
     const y = Math.max(0, main.scrollTop);
-    const still = calm();    // fade with the scroll, without moving
+    const still = calm() || webkit;    // fade with the scroll, without moving: Safari would move them a frame behind the scroll
     if (art) {
       // The cover drifts up more slowly than the page, shrinks and fades, as if left behind.
       const gone = Math.min(1, y / (artHeight * 0.95));

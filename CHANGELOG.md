@@ -5,6 +5,9 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Fixed
+- **Smooth Full animations on the Mac, iPhone and iPad.** Measured on an Intel MacBook Pro, a third of frames came late with the full-screen player open, and going back to Home or scrolling was choppy. In Safari's engine the colour behind the app now holds still, pieces of a page fade in as you scroll instead of sliding, and the springy motion uses curves the graphics chip can run by itself. Pages still slide in and the player still grows out of the mini player.
+
 ## [0.5.3] — 2026-11-03
 
 ### Added

@@ -1156,6 +1156,17 @@ body.linked .pb-artist { display: none; }
   .playerbar { grid-template-columns: minmax(200px, 1fr) minmax(220px, 1.1fr) auto; gap: 10px; }
 }
 
+/* ------------------------------------------------------------ WebKit */
+/* Safari's engine: the Mac app, iPhone and iPad (js/glass.js sets .webkit). Measured on an Intel
+   MacBook Pro, a turning background made one frame in three late while the full-screen player was
+   open, and spring curves can't be handed to the graphics chip there. So the colour behind the app
+   holds still, and springs become curves it can run by itself. */
+.webkit { --spring: cubic-bezier(.34, 1.3, .64, 1); --spring-soft: cubic-bezier(.22, 1, .36, 1); }
+.webkit .amb, .webkit .np-bg i { animation: none; transform: scale(var(--amb-s, 22)); }
+.webkit .np-bg i + i { display: none; }
+.webkit .card .art img { transition: opacity .35s ease; }
+.webkit .card .art img:not(.ld) { transform: none; }
+
 /* ------------------------------------------------------------ Android */
 /* A blur has to be redrawn for every frame of a scroll, for every piece of glass over the page, and
    on Android that's the most expensive thing on screen. The two capsules at the bottom keep it, more
