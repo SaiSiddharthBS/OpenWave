@@ -156,9 +156,19 @@ export async function cdp(wsUrl) {
   };
   const send = (method, params = {}) => new Promise((ok, fail) => { const id = ++seq; pending.set(id, { ok, fail }); ws.send(JSON.stringify({ id, method, params })); });
   const ev = async (expr) => {
-    const r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
-    if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
-    return r.result.value;
+    for (let tries = 1; ; tries++) {
+      let r;
+      try {
+        r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
+      } catch (e) {
+        // A page that's just reloading or navigating has no context to run in for a moment, which a
+        // slow machine catches more often. That's the test's timing, not the app: wait and ask again.
+        if (tries < 4 && /context|navigated|Target closed/i.test(e.message)) { await sleep(400); continue; }
+        throw e;
+      }
+      if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description || r.exceptionDetails.text);
+      return r.result.value;
+    }
   };
   return { send, ev, on: (m, f) => handlers.set(m, f), close: () => ws.close() };
 }

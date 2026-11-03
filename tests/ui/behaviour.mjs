@@ -9,6 +9,7 @@ import { join } from 'node:path';
 import { catalogue, cdp, DATASETS, fake, seed, sleep, startChrome, startEngine, vid } from './harness.mjs';
 
 const failures = [];
+const annotate = (title, msg) => { if (process.env.GITHUB_ACTIONS) console.log(`::error title=${title}::${msg.replace(/\n/g, ' | ').slice(0, 900)}`); };
 const check = (ok, what) => { console.log(`  ${ok ? '✓' : '✗'} ${what}`); if (!ok) failures.push(what); };
 
 const dir = mkdtempSync(join(tmpdir(), 'openwave-behaviour-'));
@@ -171,4 +172,4 @@ try {
   await sleep(300);
   rmSync(dir, { recursive: true, force: true });
 }
-if (failures.length) { console.log(`\n${failures.length} check(s) failed.`); process.exitCode = 1; } else console.log('\nEverything behaves.');
+if (failures.length) { console.log(`\n${failures.length} check(s) failed.`); annotate('Behaviour', failures.join('; ')); process.exitCode = 1; } else console.log('\nEverything behaves.');

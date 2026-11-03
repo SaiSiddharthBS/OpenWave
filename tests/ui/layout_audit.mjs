@@ -7,7 +7,8 @@
 // Environment: OPENWAVE_PYTHON (default: .venv/bin/python, else python3), CHROME (path to
 // Chrome/Chromium), AUDIT_OUT (folder for screenshots of failures; default: a temp folder),
 // AUDIT_ALL=1 (save a screenshot of every screen, to look over by eye), AUDIT_ONLY (comma-separated
-// sizes and/or data sets to run, e.g. "phone-360,realistic").
+// sizes and/or data sets to run, e.g. "phone-360,realistic"), AUDIT_CPU (run the processor this many
+// times slower, to find checks that only pass on a fast machine).
 // No network is needed: YouTube answers are replaced with made-up data, and the library
 // (profiles, likes, playlists, history) runs on a real engine with a throwaway data folder.
 
@@ -16,6 +17,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { catalogue, cdp, DATASETS, fake, seed, sleep, startChrome, startEngine, vid } from './harness.mjs';
 import { CHECK, STUCK } from './overflow.mjs';
+
+// On GitHub, failures are also written as annotations: shown on the run's page, and readable
+// without signing in, unlike the log.
+const annotate = (title, msg) => { if (process.env.GITHUB_ACTIONS) console.log(`::error title=${title}::${msg.replace(/\n/g, ' | ').slice(0, 900)}`); };
 
 // ------------------------------------------------------------------ the check
 
@@ -121,6 +126,8 @@ async function audit(dataset, out) {
 
     for (const vp of VIEWPORTS.filter(wanted)) {
       await page.send('Emulation.setDeviceMetricsOverride', { width: vp.width, height: vp.height, deviceScaleFactor: 2, mobile: vp.mobile });
+      // AUDIT_CPU=3: a processor three times slower, like a busy CI machine, to find checks that only pass on a fast one.
+      if (process.env.AUDIT_CPU) await page.send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.AUDIT_CPU) });
       await page.send('Emulation.setTouchEmulationEnabled', { enabled: vp.mobile, maxTouchPoints: 5 });
       await page.send('Emulation.setEmitTouchEventsForMouse', { enabled: vp.mobile });
       // A fresh load per size (media queries for pointer type are read at load), then start a song.
@@ -128,38 +135,44 @@ async function audit(dataset, out) {
       await page.send('Page.navigate', { url: `${engine.base}/?size=${vp.name}#/play/${vid(1)}` });
       await sleep(2500);
       for (const sc of SCREENS) {
-        await page.ev(`document.querySelector('.np')?.hidden === false && document.querySelector('[data-act=close-np]')?.click(); document.getElementById('menu')?.setAttribute('hidden', ''); document.getElementById('dialog').open && document.getElementById('dialog').close(); true`);
-        await sleep(300);
-        await page.ev(`location.hash = ${JSON.stringify(typeof sc.hash === 'function' ? sc.hash(d) : sc.hash)}; true`);
-        await sleep(600);
-        // Check the finished screen, not its loading placeholders.
-        for (let i = 0; i < 30 && await page.ev(`!!document.querySelector('#view .skeleton')`); i++) await sleep(200);
-        await sleep(500);
-        let stepError = null;
-        for (const step of sc.steps || []) {
-          try { await page.ev(step); } catch (e) { stepError = e.message.split('\n')[0]; }
-          await sleep(700);
+        try {
+          await page.ev(`document.querySelector('.np')?.hidden === false && document.querySelector('[data-act=close-np]')?.click(); document.getElementById('menu')?.setAttribute('hidden', ''); document.getElementById('dialog').open && document.getElementById('dialog').close(); true`);
+          await sleep(300);
+          await page.ev(`location.hash = ${JSON.stringify(typeof sc.hash === 'function' ? sc.hash(d) : sc.hash)}; true`);
+          await sleep(600);
+          // Check the finished screen, not its loading placeholders.
+          for (let i = 0; i < 30 && await page.ev(`!!document.querySelector('#view .skeleton')`); i++) await sleep(200);
+          await sleep(500);
+          let stepError = null;
+          for (const step of sc.steps || []) {
+            try { await page.ev(step); } catch (e) { stepError = e.message.split('\n')[0]; }
+            await sleep(700);
+          }
+          // Give slower screens (e.g. lyrics loading) up to 5 s to finish before judging them.
+          let missing = stepError || await page.ev(opened(sc));
+          for (let i = 0; missing && !stepError && i < 20; i++) { await sleep(250); missing = await page.ev(opened(sc)); }
+          const found = missing ? [{ what: 'open', at: `the screen did not open: ${missing}`, left: 0, right: 0, text: '' }] : await page.ev(CHECK);
+          // Nothing may stay faded out waiting to animate in, here or at the bottom of the page.
+          for (const y of ['0', '1e6']) {
+            if (missing) break;
+            await page.ev(`document.querySelector('#main').scrollTop = ${y}; true`);
+            await sleep(350);
+            const stuck = await page.ev(STUCK);
+            if (stuck) found.push({ what: 'hidden', at: `${stuck} piece(s) of the page never animated in (scrolled to ${y})`, left: 0, right: 0, text: '' });
+          }
+          await page.ev(`document.querySelector('#main').scrollTop = 0; true`);
+          if (found.length || process.env.AUDIT_ALL) {
+            const shot = join(out, `${dataset}-${vp.name}-${sc.name}.png`);
+            const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
+            writeFileSync(shot, Buffer.from(data, 'base64'));
+            if (found.length) failures.push({ dataset, viewport: vp.name, screen: sc.name, found, shot });
+          }
+          process.stdout.write(found.length ? 'x' : '.');
+        } catch (e) {
+          // The check itself stopped (not the app's layout): say where and why, and go on with the rest.
+          failures.push({ dataset, viewport: vp.name, screen: sc.name, found: [{ what: 'error', at: `the check stopped: ${e.message.split('\n')[0]}`, left: 0, right: 0, text: '' }] });
+          process.stdout.write('E');
         }
-        // Give slower screens (e.g. lyrics loading) up to 5 s to finish before judging them.
-        let missing = stepError || await page.ev(opened(sc));
-        for (let i = 0; missing && !stepError && i < 20; i++) { await sleep(250); missing = await page.ev(opened(sc)); }
-        const found = missing ? [{ what: 'open', at: `the screen did not open: ${missing}`, left: 0, right: 0, text: '' }] : await page.ev(CHECK);
-        // Nothing may stay faded out waiting to animate in, here or at the bottom of the page.
-        for (const y of ['0', '1e6']) {
-          if (missing) break;
-          await page.ev(`document.querySelector('#main').scrollTop = ${y}; true`);
-          await sleep(350);
-          const stuck = await page.ev(STUCK);
-          if (stuck) found.push({ what: 'hidden', at: `${stuck} piece(s) of the page never animated in (scrolled to ${y})`, left: 0, right: 0, text: '' });
-        }
-        await page.ev(`document.querySelector('#main').scrollTop = 0; true`);
-        if (found.length || process.env.AUDIT_ALL) {
-          const shot = join(out, `${dataset}-${vp.name}-${sc.name}.png`);
-          const { data } = await page.send('Page.captureScreenshot', { format: 'png' });
-          writeFileSync(shot, Buffer.from(data, 'base64'));
-          if (found.length) failures.push({ dataset, viewport: vp.name, screen: sc.name, found, shot });
-        }
-        process.stdout.write(found.length ? 'x' : '.');
       }
     }
     page.close();
@@ -177,7 +190,11 @@ mkdirSync(out, { recursive: true });
 const failures = [];
 for (const dataset of Object.keys(DATASETS).filter(wanted)) {
   process.stdout.write(`${dataset}: `);
-  failures.push(...await audit(dataset, out));
+  try {
+    failures.push(...await audit(dataset, out));
+  } catch (e) {
+    failures.push({ dataset, viewport: '-', screen: 'start-up', found: [{ what: 'error', at: `couldn't start: ${e.message.split('\n')[0]}`, left: 0, right: 0, text: '' }] });
+  }
   process.stdout.write('\n');
 }
 const total = Object.keys(DATASETS).filter(wanted).length * VIEWPORTS.filter(wanted).length * SCREENS.length;
@@ -189,6 +206,7 @@ if (!failures.length) {
     console.log(`${f.dataset} · ${f.viewport} · ${f.screen}`);
     for (const x of f.found.slice(0, 6)) console.log(`   ${x.what.padEnd(4)} ${x.at}  [${x.left}…${x.right}px]${x.text ? `  "${x.text}"` : ''}`);
     if (f.found.length > 6) console.log(`   … and ${f.found.length - 6} more`);
+    annotate('Layout audit', `${f.dataset} · ${f.viewport} · ${f.screen}: ${f.found.slice(0, 4).map((x) => `${x.what} ${x.at}${x.text ? ` "${x.text}"` : ''}`).join('; ')}`);
   }
   process.exitCode = 1;
 }

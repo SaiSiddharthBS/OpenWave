@@ -213,6 +213,6 @@ try {
   rmSync(dir, { recursive: true, force: true });
 }
 for (const p of new Set(problems)) console.log(`Not smooth: ${p}`);
-if (problems.length) process.exitCode = 1;
+if (problems.length) { process.exitCode = 1; if (process.env.GITHUB_ACTIONS) console.log(`::error title=Motion audit::${[...new Set(problems)].join('; ').slice(0, 900)}`); }
 else console.log('\nThe bars move with transforms and opacity only, and Full animations starts on.');
 if (process.env.MOTION_JSON) writeFileSync(process.env.MOTION_JSON, JSON.stringify(results, null, 1));

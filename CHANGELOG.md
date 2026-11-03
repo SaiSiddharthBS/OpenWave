@@ -5,6 +5,9 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Fixed
+- The screen-layout test no longer stops when a slow test machine briefly loses touch with its browser, and its failures now say which screen and why. A UI test that fails is retried once, and stays red if it fails again.
+
 ## [0.5.5] — 2026-11-03
 
 ### Changed
