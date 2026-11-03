@@ -38,6 +38,7 @@ ASK_FOR = 20              # seconds to wait for YouTube's radio
 
 _building: set[str] = set()
 _tasks: set[asyncio.Task] = set()
+_asking: asyncio.Semaphore | None = None   # at most two radios at a time, so a search or a song starting never waits behind them
 
 
 def _artist(track: dict) -> tuple[str, str] | None:
@@ -195,8 +196,11 @@ def build(taste: dict, seed: str, radios: dict[int, list[dict]] | None = None) -
 
 
 async def _radio(video_id: str) -> list[dict]:
+    global _asking
+    _asking = _asking or asyncio.Semaphore(2)
     try:
-        return (await asyncio.wait_for(music.up_next(video_id), ASK_FOR))["tracks"]
+        async with _asking:
+            return (await asyncio.wait_for(music.up_next(video_id), ASK_FOR))["tracks"]
     except Exception as e:  # YouTube, the network or a timeout: the mix just stays as it is
         log.info("no radio for %s: %s", video_id, e)
         return []
