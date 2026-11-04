@@ -90,6 +90,64 @@ try {
   await page.ev(`document.activeElement.blur(); location.hash = '#/home'; true`);
   await sleep(900);
 
+  console.log('The top bar, the sidebar and Settings');
+  await size(1280, 820, false);
+  await page.ev(`location.hash = '#/home'; true`);
+  await sleep(1200);
+  check(!(await page.ev(`!!document.querySelector('.side-nav a[href="#/search"]')`)), 'the sidebar has no Search: the box at the top is search');
+  const centred = await page.ev(`(() => { const b = document.querySelector('.searchbar').getBoundingClientRect(), m = document.querySelector('#main').getBoundingClientRect();
+    return { off: Math.round(b.left + b.width / 2 - (m.left + m.width / 2)), width: Math.round(b.width) }; })()`);
+  check(Math.abs(centred.off) <= 2 && centred.width >= 400, `the search box is in the middle of the page and wide (${centred.off}px off, ${centred.width}px)`);
+  check(await page.ev(`getComputedStyle(document.querySelector('.top-actions')).display === 'none' && !!document.querySelector('.side-foot .side-me') && document.querySelector('[data-bind=me-name]').textContent.length > 0`),
+    'you and Settings are at the foot of the sidebar, not in the top bar');
+  const menuText = async (sel) => {
+    await page.ev(`document.querySelector('${sel}').click(); true`);
+    await sleep(500);
+    const items = await page.ev(`[...document.querySelectorAll('#menu [data-mi]')].map((b) => b.textContent.trim())`);
+    await page.ev(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); document.querySelector('#menu').hidden = true; true`);
+    await sleep(200);
+    return items;
+  };
+  const computerMenu = await menuText('.side-me');
+  check(JSON.stringify(computerMenu) === JSON.stringify(['Import playlists…', 'Switch profile']), `the profile menu repeats nothing (${computerMenu.join(', ')})`);
+  await page.ev(`document.querySelector('#search-input').focus(); true`);
+  await type('abc');
+  check(await page.ev(`!document.querySelector('#search-clear').hidden`), 'a clear button shows once something is typed');
+  await page.ev(`document.querySelector('#search-clear').click(); true`);
+  await sleep(300);
+  check(await page.ev(`document.querySelector('#search-input').value === '' && document.activeElement === document.querySelector('#search-input') && document.querySelector('#search-clear').hidden`),
+    'and clears the box, keeping it ready to type');
+  await page.ev(`document.activeElement.blur(); location.hash = '#/settings'; true`);
+  await sleep(1500);
+  check(!(await page.ev(`!!document.querySelector('.settings select')`)), 'Settings has no browser dropdowns');
+  await page.ev(`document.querySelector('[data-select=quality]').click(); true`);
+  await sleep(500);
+  const choices = await page.ev(`[...document.querySelectorAll('#menu [data-mi]')].map((b) => b.textContent.trim() + (b.classList.contains('pick-on') ? ' ✓' : ''))`);
+  check(choices.length === 3 && choices.filter((c) => c.endsWith('✓')).length === 1, `Audio quality opens our own menu, with a tick on the one in use (${choices.join(', ')})`);
+  await page.ev(`[...document.querySelectorAll('#menu [data-mi]')].find((b) => b.textContent.trim() === 'High').click(); true`);
+  await sleep(400);
+  check((await page.ev(`document.querySelector('[data-select=quality]').textContent.trim()`)) === 'High', 'choosing High shows it');
+  await page.send('Page.reload');
+  await sleep(3000);
+  await page.ev(`location.hash = '#/settings'; true`);
+  await sleep(1500);
+  check((await page.ev(`document.querySelector('[data-select=quality]').textContent.trim()`)) === 'High', 'and it\'s kept after a restart');
+  await page.ev(`document.querySelector('[data-select=crossfade]').click(); true`);
+  await sleep(400);
+  await page.ev(`[...document.querySelectorAll('#menu [data-mi]')].find((b) => b.textContent.trim() === '4 seconds').click(); true`);
+  await sleep(300);
+  check((await page.ev(`document.querySelector('[data-select=crossfade]').textContent.trim()`)) === '4 seconds', 'Crossfade works the same way');
+  await size(390, 844, true);
+  await sleep(500);
+  await page.ev(`location.hash = '#/home'; true`);
+  await sleep(1000);
+  const phoneMenu = await menuText('#profile-chip');
+  check(JSON.stringify(phoneMenu) === JSON.stringify(['Your insights', 'Import playlists…', 'Switch profile']), `on a phone it also has Insights, which a phone has no sidebar for (${phoneMenu.join(', ')})`);
+  check(await page.ev(`document.querySelector('meta[name=apple-mobile-web-app-status-bar-style]').content === 'default'`), 'the iPhone app asks for a solid status bar (see app.css)');
+  await size(1280, 820, false);
+  await page.ev(`location.hash = '#/home'; true`);
+  await sleep(800);
+
   console.log('The player\'s title');
   for (const [name, w, h, mobile] of [['a phone', 390, 844, true], ['a small phone', 320, 568, true], ['an upright tablet', 768, 1024, true], ['a window', 1280, 820, false]]) {
     await size(w, h, mobile);

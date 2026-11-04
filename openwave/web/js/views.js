@@ -439,8 +439,12 @@ export async function settings() {
   try { health = await (await fetch('/api/health')).json(); } catch { /* offline */ }
   const [update, link, phones] = await Promise.all([checkForUpdate(3000), REMOTE || !onTheComputer() ? null : linkSettings(), phonesStatus()]);
   const sw = (key) => `<button class="switch ${s[key] ? 'on' : ''}" data-setting-toggle="${key}" role="switch" aria-checked="${!!s[key]}" aria-label="${key}"></button>`;
-  const select = (key, options, type = '') => `<select class="select" data-setting="${key}" ${type ? `data-type="${type}"` : ''}>
-    ${options.map(([v, l]) => `<option value="${v}" ${String(s[key]) === String(v) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
+  // Our own dropdown (js/app.js opens it): the browser's own looks out of place on the glass.
+  const select = (key, options, type = '') => {
+    const now = options.find(([v]) => String(s[key]) === String(v)) || options[0];
+    return `<button class="select" data-select="${key}" data-type="${type}" data-options="${esc(JSON.stringify(options))}" aria-haspopup="menu" aria-label="${esc(key)}">
+      <span>${esc(now[1])}</span>${icon('down')}</button>`;
+  };
   return {
     html: `<div class="settings"><h1>Settings</h1>
       ${p ? `<h2>Profile</h2>

@@ -9,7 +9,7 @@
   <meta name="color-scheme" content="dark">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="OpenWave">
   <meta name="openwave-mode" content="engine">
   <link rel="manifest" href="manifest.webmanifest">
@@ -77,7 +77,6 @@
     <nav class="side-nav">
       <span class="nav-lens"></span>
       <a href="#/home" data-route="home"><svg><use href="#i-home"/></svg>Home</a>
-      <a href="#/search" data-route="search"><svg><use href="#i-search"/></svg>Search</a>
       <a href="#/library" data-route="library"><svg><use href="#i-library"/></svg>Your Library</a>
       <a href="#/downloads" data-route="downloads"><svg><use href="#i-download"/></svg>Downloads</a>
       <a href="#/insights" data-route="insights"><svg><use href="#i-chart"/></svg>Insights</a>
@@ -89,6 +88,12 @@
         <button class="icon-btn sm" data-act="new-playlist" title="New playlist" aria-label="New playlist"><svg><use href="#i-plus"/></svg></button>
       </div>
       <div class="side-list" id="side-list"></div>
+    </div>
+    <div class="side-foot">
+      <button class="side-me" data-act="profile-menu" aria-label="Profile">
+        <span class="side-me-pic" data-bind="me-pic"></span><span class="ellipsis" data-bind="me-name"></span>
+      </button>
+      <a class="icon-btn" href="#/settings" data-route="settings" title="Settings" aria-label="Settings"><svg><use href="#i-settings"/></svg></a>
     </div>
   </aside>
 
@@ -103,6 +108,7 @@
       <form class="searchbar" id="search-form" role="search" autocomplete="off">
         <svg><use href="#i-search"/></svg>
         <input id="search-input" type="search" enterkeyhint="search" placeholder="What do you want to listen to?" aria-label="Search">
+        <button type="button" class="search-clear" id="search-clear" aria-label="Clear search" hidden><svg><use href="#i-close"/></svg></button>
         <div class="suggest" id="suggest" hidden></div>
       </form>
       <div class="top-actions">

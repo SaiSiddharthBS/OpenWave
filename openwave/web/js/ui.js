@@ -156,7 +156,7 @@ export function openMenu(anchor, items, head = '') {
   closeMenu();
   const m = $('#menu');
   m.innerHTML = head + items.map((it, i) =>
-    it === 'sep' ? '<hr>' : `<button data-mi="${i}" role="menuitem">${icon(it.icon)}<span>${esc(it.label)}</span></button>`).join('');
+    it === 'sep' ? '<hr>' : `<button data-mi="${i}" role="menuitem"${it.cls ? ` class="${it.cls}"` : ''}>${icon(it.icon)}<span>${esc(it.label)}</span></button>`).join('');
   m.hidden = false;
   const r = anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : { left: anchor.x, right: anchor.x, top: anchor.y, bottom: anchor.y };
   const mw = m.offsetWidth;

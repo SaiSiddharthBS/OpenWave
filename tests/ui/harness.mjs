@@ -154,7 +154,14 @@ export async function cdp(wsUrl) {
     if (m.id && pending.has(m.id)) { const { ok, fail } = pending.get(m.id); pending.delete(m.id); m.error ? fail(new Error(m.error.message)) : ok(m.result); }
     else if (m.method) handlers.get(m.method)?.(m.params);
   };
-  const send = (method, params = {}) => new Promise((ok, fail) => { const id = ++seq; pending.set(id, { ok, fail }); ws.send(JSON.stringify({ id, method, params })); });
+  // A reply that never comes would leave a check waiting forever: after 30 s it's an error instead,
+  // which says which command it was.
+  const send = (method, params = {}) => new Promise((ok, fail) => {
+    const id = ++seq;
+    const timer = setTimeout(() => { pending.delete(id); fail(new Error(`no reply to ${method} after 30 s`)); }, 30000);
+    pending.set(id, { ok: (v) => { clearTimeout(timer); ok(v); }, fail: (e) => { clearTimeout(timer); fail(e); } });
+    ws.send(JSON.stringify({ id, method, params }));
+  });
   const ev = async (expr) => {
     for (let tries = 1; ; tries++) {
       let r;

@@ -83,6 +83,7 @@ async function render({ keepScroll = false } = {}) {
   closeMenu();
   if (!live) hideSuggest();
   if (name === 'search' && document.activeElement !== searchInput) searchInput.value = params.get('q') || '';
+  showClear();
 
   document.body.classList.toggle('kind-detail', sk === 'detail');
   topbar.classList.remove('solid');
@@ -198,14 +199,17 @@ store.on(async (what) => {
 function renderProfileChip() {
   const chip = $('#profile-chip');
   if (chip) chip.innerHTML = store.profile ? avatar(store.profile, 30) : icon('person');
+  $$('[data-bind="me-pic"]').forEach((el) => { el.innerHTML = store.profile ? avatar(store.profile, 30) : icon('person'); });
+  $$('[data-bind="me-name"]').forEach((el) => { el.textContent = store.profile?.name || 'Profile'; });
 }
 
+// Only what isn't a tap away already: Settings has its own button beside this, and on a computer the
+// sidebar has Insights (a phone has no sidebar, so it's here).
 function profileMenu(anchor) {
   const p = store.profile;
   openMenu(anchor, [
-    { icon: 'chart', label: 'Your insights', run: () => go('#/insights') },
+    ...(matchMedia('(max-width: 860px)').matches ? [{ icon: 'chart', label: 'Your insights', run: () => go('#/insights') }] : []),
     { icon: 'download', label: 'Import playlists…', run: () => openImport() },
-    { icon: 'settings', label: 'Settings', run: () => go('#/settings') },
     'sep',
     { icon: 'person', label: 'Switch profile', run: async () => { await switchProfile(); renderProfileChip(); render(); } },
   ], p ? `<div class="menu-head">${avatar(p, 40)}<div class="ellipsis"><b class="ellipsis">${esc(p.name)}</b><small>${store.pending ? 'Syncing…' : 'Synced'}</small></div></div>` : '');
@@ -246,7 +250,20 @@ function submitSearch(q) {
   if (matchMedia('(max-width: 860px)').matches) searchInput.blur();
 }
 
+const searchClear = $('#search-clear');
+const showClear = () => { searchClear.hidden = !searchInput.value; };
+searchClear.addEventListener('mousedown', (e) => e.preventDefault());   // keep the box focused
+searchClear.addEventListener('click', () => {
+  searchInput.value = '';
+  showClear();
+  hideSuggest();
+  clearTimeout(liveTimer);
+  searchInput.focus();
+  if (document.body.classList.contains('route-search') && location.hash !== '#/search') go('#/search', { replace: true });
+});
+
 searchInput.addEventListener('input', () => {
+  showClear();
   const q = searchInput.value.trim();
   clearTimeout(suggestTimer);
   clearTimeout(liveTimer);
@@ -277,6 +294,7 @@ searchInput.addEventListener('keydown', (e) => {
     items.forEach((b, i) => b.classList.toggle('on', i === suggestIndex));
     searchInput.value = items[suggestIndex].dataset.suggest;
   } else if (e.key === 'Escape') {
+    if ($('#suggest').hidden && searchInput.value) searchClear.click();
     hideSuggest();
   }
 });
@@ -727,12 +745,30 @@ document.addEventListener('contextmenu', (e) => {
   trackMenu({ x: e.clientX, y: e.clientY }, d.track, d);
 });
 
+function chooseSetting(key, value) {
+  store.setting(key, value);
+  if (key === 'quality') toast('Applies from the next track');
+}
+
+// Our own dropdowns (views.js): a menu of the choices, with a tick on the one in use.
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-select]');
+  if (!b) return;
+  const key = b.dataset.select;
+  const options = JSON.parse(b.dataset.options);
+  const now = String(store.settings[key]);
+  openMenu(b, options.map(([v, label]) => ({
+    icon: 'check', label, cls: String(v) === now ? 'pick-on' : 'pick-off',
+    run: () => {
+      chooseSetting(key, b.dataset.type === 'number' ? +v : v);
+      b.querySelector('span').textContent = label;
+    },
+  })));
+});
+
 document.addEventListener('change', (e) => {
   const sel = e.target.closest('[data-setting]');
-  if (sel) {
-    store.setting(sel.dataset.setting, sel.dataset.type === 'number' ? +sel.value : sel.value);
-    if (sel.dataset.setting === 'quality') toast('Applies from the next track');
-  }
+  if (sel) chooseSetting(sel.dataset.setting, sel.dataset.type === 'number' ? +sel.value : sel.value);
 });
 
 // ================================================================== offline downloads

@@ -55,13 +55,9 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-/* iOS 26 lays out a Home Screen app one status bar too short, which leaves a strip at the bottom of the
-   screen that nothing is drawn in (WebKit bug 301108). Asking for the page to be that much taller
-   gives it the whole screen. min() keeps it from growing where the bug isn't: there the large
-   viewport is already the whole screen. */
-@media (display-mode: standalone) {
-  html { min-height: min(100lvh, calc(100% + env(safe-area-inset-top, 0px))); }
-}
+/* On iPhone, the Home Screen app has a solid status bar in the app's own colour (index.html: "default",
+   coloured by theme-color). With a see-through one, iOS 26 lays the app out one status bar too short and
+   leaves an empty strip at the bottom of the screen (WebKit bug 301108). */
 body {
   margin: 0;
   background: var(--bg);
@@ -209,7 +205,7 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
   position: relative; flex: 1; min-width: 0; max-width: 460px;
   display: flex; align-items: center; gap: 8px;
   border-radius: 999px; padding: 0 14px; height: 40px;
-  transition: background-color .25s, box-shadow .25s, max-width .55s var(--spring-soft);
+  transition: background-color .25s, box-shadow .25s;
 }
 .searchbar:focus-within { background-color: var(--glass-fill-strong); box-shadow: var(--glass-rim), var(--glass-drop), 0 0 0 3px rgba(155, 152, 255, .3); max-width: 560px; }
 .searchbar > svg { color: var(--muted); width: 18px; height: 18px; }
@@ -494,8 +490,15 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
 .setting b { font-weight: 550; }
 .setting > .btn, .setting > .btn-row .btn { flex: none; white-space: nowrap; }
 .setting > .btn-row { flex: none; justify-content: flex-end; }
-.select { background: var(--glass-control); border: 0; border-radius: 12px; padding: 8px 12px; color: var(--text); box-shadow: inset 0 1px 0 rgba(255,255,255,.1); }
-.select option { background: #20212f; }
+.select { display: inline-flex; align-items: center; justify-content: space-between; gap: 10px; min-width: 150px; height: 38px;
+  background: var(--glass-control); border: 0; border-radius: 12px; padding: 0 10px 0 14px; color: var(--text); font-weight: 550;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.1); transition: background-color .2s; }
+.select:hover { background: var(--hover); }
+.select svg { width: 16px; height: 16px; color: var(--muted); flex: none; }
+/* Our own dropdowns (js/app.js): the menu's chosen line has a tick, the others the room for one. */
+.menu .pick-off svg { visibility: hidden; }
+.menu .pick-on { color: var(--text); }
+.menu .pick-on svg { color: var(--accent); }
 .switch { position: relative; width: 52px; height: 30px; border-radius: 999px; background: rgba(255,255,255,.18); transition: background-color .3s; flex: none; }
 .switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 28px; height: 24px; border-radius: 999px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.3); transition: transform .55s var(--spring), width .3s var(--ease); }
 .switch:active::after { width: 33px; }
@@ -789,6 +792,28 @@ body.offline .offline-pill { display: flex !important; }
 
 /* ------------------------------------------------------------ profiles */
 .top-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+
+/* Search: our own clear button; the browser's is hidden (invisible on the glass in Safari's engine). */
+.searchbar input::-webkit-search-cancel-button, .searchbar input::-webkit-search-decoration { -webkit-appearance: none; appearance: none; display: none; }
+.search-clear { flex: none; display: grid; place-items: center; width: 24px; height: 24px; margin-right: -4px; border-radius: 50%; color: var(--text); background: rgba(255,255,255,.16); }
+.search-clear:hover { background: rgba(255,255,255,.26); }
+.search-clear svg { width: 12px; height: 12px; }
+
+/* You, at the foot of the sidebar: the profile menu, and Settings beside it. */
+.side-foot { flex: none; display: flex; align-items: center; gap: 4px; padding: 8px 2px 2px; border-top: 1px solid var(--line); }
+.side-me { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 14px; font-weight: 600; text-align: left; transition: background-color .2s; }
+.side-me:hover { background: var(--hover); }
+.side-me-pic { flex: none; display: grid; place-items: center; }
+.side-foot .icon-btn.on { color: var(--accent); }
+
+/* On a computer the search box sits in the middle of the page, between the back and forward buttons
+   and an empty side of the same width, and you're at the foot of the sidebar instead of up here. */
+@media (min-width: 861px) {
+  .topbar { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 560px) minmax(0, 1fr); }
+  .topbar .nav-arrows { grid-column: 1; justify-self: start; }
+  .topbar .searchbar, .topbar .searchbar:focus-within { grid-column: 2; width: 100%; max-width: none; }
+  .topbar .top-actions { display: none; }
+}
 .topbar > .icon-btn:last-child { margin-left: 0; }
 .profile-chip { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: var(--text); transition: transform .5s var(--spring); }
 .profile-chip:active { transform: scale(.88); }
