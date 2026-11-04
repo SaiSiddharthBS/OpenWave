@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.5.6] — 2026-11-04
+
 ### Changed
 - **The full-screen player opens and closes without a stutter.** Everything is drawn and set up while the player is still invisible, in the moment after you tap, and only then starts to move, and every part of the animation now ends together. The very first opening is prepared ahead, while the first song loads. Measured on an Intel MacBook Pro, every frame of the motion now takes 15 to 19 ms.
 - On phones and upright tablets, the sleep timer and devices buttons sit in the row under the controls, either side of Up next and Lyrics, so "Playing from" is centred at the top with one button on each side.
