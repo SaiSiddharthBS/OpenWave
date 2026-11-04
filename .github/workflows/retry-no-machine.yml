@@ -48,6 +48,7 @@ jobs:
               && [ "$(gh api "repos/$GH_REPO/actions/runs/$id" --jq .head_branch)" = "$newest" ]; then again=true; fi
             if [ "$again" = "true" ]; then
               echo "Starting run $id again"
-              gh run rerun "$id" --failed
+              # GitHub can refuse while it's having trouble itself (as on 2026-11-04): ask again shortly.
+              gh run rerun "$id" --failed || { sleep 120; gh run rerun "$id" --failed; } || echo "Couldn't start run $id again"
             fi
           done
