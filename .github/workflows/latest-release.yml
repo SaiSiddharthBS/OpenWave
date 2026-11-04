@@ -1,0 +1,29 @@
+# The release GitHub calls "latest" (where downloads, the Mac installer and update checks go) must
+# always be the highest version. GitHub marks whichever was published last, so an older release
+# published late would take its place. This puts it back after every release.
+name: Latest release
+
+on:
+  workflow_run:
+    workflows: ["Release"]
+    types: [completed]
+  push:
+    branches: [main]
+    paths: [".github/workflows/latest-release.yml"]
+
+permissions:
+  contents: write
+
+jobs:
+  latest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark the highest version as latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          highest=$(gh release list --exclude-drafts --exclude-pre-releases --limit 100 --json tagName --jq '.[].tagName' | sort -V | tail -1)
+          current=$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name)
+          echo "highest $highest, marked latest $current"
+          if [ -n "$highest" ] && [ "$highest" != "$current" ]; then gh release edit "$highest" --latest; echo "marked $highest as latest"; fi

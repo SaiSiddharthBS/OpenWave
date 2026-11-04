@@ -31,8 +31,8 @@ jobs:
           runs="$THIS_RUN"
           since=$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)
           recent="map(select(.createdAt > \"$since\")) | .[].databaseId"
-          [ -n "$runs" ] || runs="$(gh run list --branch main --status failure --limit 20 --json databaseId,createdAt --jq "$recent")
-            $(gh run list --workflow Release --status failure --limit 5 --json databaseId,createdAt --jq "$recent")"
+          [ -n "$runs" ] || runs=$(gh run list --branch main --status failure --limit 20 --json databaseId,createdAt --jq "$recent")
+          newest=$(gh api "repos/$GH_REPO/tags?per_page=100" --jq '.[].name' | grep '^v' | sort -V | tail -1)
           for id in $runs; do
             attempt=$(gh api "repos/$GH_REPO/actions/runs/$id" --jq .run_attempt)
             if [ "$attempt" -ge 4 ]; then continue; fi
@@ -41,7 +41,11 @@ jobs:
             again=false
             if [ -z "$failed" ] && [ "$unstarted" = "true" ]; then again=true; fi
             if [ "$failed" = "layout" ] && [ "$attempt" = "1" ]; then again=true; fi
-            if [ -n "$failed" ] && [ "$attempt" = "1" ] && [ "$(gh api "repos/$GH_REPO/actions/runs/$id" --jq .name)" = "Release" ]; then again=true; fi
+            # A release only straight after it failed (never one found later), and only the newest version:
+            # an older release published now would become the one everyone downloads.
+            if [ -n "$failed" ] && [ "$attempt" = "1" ] && [ "$id" = "$THIS_RUN" ] \
+              && [ "$(gh api "repos/$GH_REPO/actions/runs/$id" --jq .name)" = "Release" ] \
+              && [ "$(gh api "repos/$GH_REPO/actions/runs/$id" --jq .head_branch)" = "$newest" ]; then again=true; fi
             if [ "$again" = "true" ]; then
               echo "Starting run $id again"
               gh run rerun "$id" --failed
