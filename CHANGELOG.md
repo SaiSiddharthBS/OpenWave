@@ -5,6 +5,9 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Fixed
+- In the Mac app, the window's close, minimise and zoom buttons sat on the sidebar's top-left corner. The sidebar now starts just below them.
+
 ## [0.5.6] — 2026-11-04
 
 ### Changed

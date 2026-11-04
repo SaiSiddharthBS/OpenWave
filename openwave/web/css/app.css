@@ -881,10 +881,10 @@ body.offline .offline-pill { display: flex !important; }
 .native-mac-app .nav-arrows { display: flex; } /* phones use the back button/gesture instead */
 .native-app body { -webkit-user-select: none; user-select: none; }
 .native-app input, .native-app textarea, .native-app .lyrics, .native-app .about { -webkit-user-select: text; user-select: text; }
-/* Mac app: the traffic lights sit inside the sidebar's glass, which keeps its gap and rounded corners
-   on every side like the rest of the glass, and the top strip drags the window. */
+/* Mac app: the window's close, minimise and zoom buttons sit in the top strip (which drags the window),
+   and the sidebar's glass starts just below them, with its gap and rounded corners on every side. */
 .native-mac { --top-pad: 22px; }
-.native-mac .sidebar { padding-top: 44px; }
+.native-mac .sidebar { margin-top: 34px; }
 .native-mac .np-head { padding-top: 34px; }
 .native-mac .profiles-screen { padding-top: 48px; }
 @media (max-width: 860px) {
