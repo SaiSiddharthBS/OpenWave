@@ -1,7 +1,8 @@
 # GitHub sometimes runs out of Apple Silicon machines and cancels a job before it has started, which
 # marks the commit as failed although nothing was tested. This starts such a run again. Otherwise a
-# job that ran and failed is retried only if it's the UI tests (they drive a real browser and engine,
-# and a busy machine can trip them) and only once: a real failure fails again and stays red.
+# job that ran and failed is retried only once, and only where a busy or broken machine can trip it:
+# the UI tests (a real browser and engine) and a release (which also boots an Android emulator). A
+# real failure fails again and stays red.
 name: Retry when no machine was free
 
 on:
@@ -28,8 +29,10 @@ jobs:
           THIS_RUN: ${{ github.event.workflow_run.id }}
         run: |
           runs="$THIS_RUN"
-          [ -n "$runs" ] || runs=$(gh run list --branch main --status failure --limit 20 --json databaseId,createdAt \
-            --jq "map(select(.createdAt > \"$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)\")) | .[].databaseId")
+          since=$(date -u -d '2 days ago' +%Y-%m-%dT%H:%M:%SZ)
+          recent="map(select(.createdAt > \"$since\")) | .[].databaseId"
+          [ -n "$runs" ] || runs="$(gh run list --branch main --status failure --limit 20 --json databaseId,createdAt --jq "$recent")
+            $(gh run list --workflow Release --status failure --limit 5 --json databaseId,createdAt --jq "$recent")"
           for id in $runs; do
             attempt=$(gh api "repos/$GH_REPO/actions/runs/$id" --jq .run_attempt)
             if [ "$attempt" -ge 4 ]; then continue; fi
@@ -38,6 +41,7 @@ jobs:
             again=false
             if [ -z "$failed" ] && [ "$unstarted" = "true" ]; then again=true; fi
             if [ "$failed" = "layout" ] && [ "$attempt" = "1" ]; then again=true; fi
+            if [ -n "$failed" ] && [ "$attempt" = "1" ] && [ "$(gh api "repos/$GH_REPO/actions/runs/$id" --jq .name)" = "Release" ]; then again=true; fi
             if [ "$again" = "true" ]; then
               echo "Starting run $id again"
               gh run rerun "$id" --failed
