@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.5.7] — 2026-11-04
+
 ### Changed
 - **A cleaner top bar on computers.** The search box sits in the middle of the page and is wider, with a clear button inside it (and Escape clears it too). Search is no longer repeated in the sidebar.
 - **You're at the foot of the sidebar**, with Settings beside you. The profile menu only has what isn't a tap away already: Import playlists and Switch profile (and Your insights on a phone, which has no sidebar).
