@@ -4,51 +4,55 @@
 
 <h1>OpenWave</h1>
 
-<p><b>An open-source music player for every device you own.</b></p>
+<h3>One music app. Every device you own.</h3>
 
-<p>Search YouTube Music's public catalogue, play it gaplessly, and take your library, playlists<br>and listening sessions across your Mac, PC and phone.</p>
+<p>A complete music player for YouTube Music's public catalogue, with native apps for macOS, Windows,<br>Linux and Android, an iPhone app that pairs by QR code, and a library that lives on hardware you control.</p>
 
 <p>
 <a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest"><img alt="Latest release" src="https://img.shields.io/github/v/release/SaiSiddharthBS/OpenWave?label=release&color=7b7bff"></a>
 <a href="https://github.com/SaiSiddharthBS/OpenWave/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/SaiSiddharthBS/OpenWave/actions/workflows/ci.yml/badge.svg"></a>
+<a href="https://github.com/SaiSiddharthBS/OpenWave/releases"><img alt="Downloads" src="https://img.shields.io/github/downloads/SaiSiddharthBS/OpenWave/total?color=2fc8ff"></a>
 <a href="LICENSE"><img alt="License: GPL-3.0" src="https://img.shields.io/badge/license-GPL--3.0-7b7bff"></a>
-<img alt="Platforms" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Android%20%7C%20iPhone%20%7C%20Docker-2fc8ff">
+<img alt="Platforms" src="https://img.shields.io/badge/platforms-macOS%20%7C%20Windows%20%7C%20Linux%20%7C%20Android%20%7C%20iPhone%20%7C%20Docker-c45cff">
 </p>
 
 <p>
 <a href="https://saisiddharthbs.github.io/OpenWave/"><b>Website</b></a> ·
 <a href="#download"><b>Download</b></a> ·
-<a href="#features">Features</a> ·
-<a href="#architecture">Architecture</a> ·
+<a href="#what-it-does">Features</a> ·
+<a href="#how-its-built">Architecture</a> ·
+<a href="#engineering">Engineering</a> ·
 <a href="#self-hosting">Self-hosting</a> ·
-<a href="#faq">FAQ</a> ·
-<a href="https://saisiddharthbs.github.io/OpenWave/stats.html">Stats</a>
+<a href="#faq">FAQ</a>
 </p>
 
-<img src="docs/screenshots/hero.png" alt="OpenWave on a Mac, with a phone listening to the same song in sync" width="100%">
+<img src="docs/screenshots/hero.png" alt="OpenWave on a Mac and an iPhone, playing the same song" width="100%">
 
 </div>
 
 <br>
 
-## Overview
+## Why OpenWave
 
-OpenWave is an open-source, non-commercial music client for YouTube Music's public catalogue. It is an engineering project first: one engine, native apps on five platforms, a synced personal library, and devices that play together. It has no accounts, no tracking and no monetisation of any kind, and it hosts no content.
+Music lives on several devices, but most players treat each device as its own island, or tie every one of them to an account in someone else's cloud. OpenWave takes a different route: **one engine you run yourself, and every device a window onto it.**
 
-- **One engine, every platform.** A single Python engine powers native apps for macOS, Windows, Linux and Android, a web app for iPhone that pairs with your computer by QR code and works from anywhere, and a Docker image for home servers. Shared services keep the core listening and library experience consistent.
-- **Your library is yours.** Profiles, likes, playlists and listening history live in a SQLite database on your own device or server. Nothing is sent to a cloud service (except an end-to-end encrypted copy of a playlist you choose to share), and the apps never report usage.
-- **Built like a product, not a script.** Gapless playback, personal mixes, synced lyrics, offline downloads, playlist import from other services, shared playlists with friends anywhere, multi-device control and listen-together sessions, in-app updates, and release checksums.
+- **One library, everywhere.** Your profile, likes, playlists and listening history live in a SQLite database on your own Mac, PC or home server, and every device you pair sees the same library within seconds, at home or away.
+- **No accounts, no telemetry.** There is nothing to sign up for. A phone pairs with your computer by scanning a QR code, and talks to it over a direct, end-to-end encrypted connection. The apps never report usage.
+- **A product, not a script.** Gapless playback, crossfade, synced lyrics, offline downloads, Daily Mixes learned from your own listening, shared playlists, playback across devices, listening together in sync, and apps that update themselves.
+- **Built to last.** Each release is built, tested and published by CI across six targets from one tag, with checksums, an Android emulator run and a 572-screen layout audit.
 
 <table>
-  <tr><td><b>License</b></td><td>GPL-3.0. The project is offered free, with no accounts or monetisation.</td></tr>
-  <tr><td><b>Account</b></td><td>None. Profiles are local, with an optional PIN.</td></tr>
-  <tr><td><b>Platforms</b></td><td>macOS 13+ (Apple Silicon and Intel), Windows 10/11, Linux x86-64, Android 7+ (64-bit), iPhone (Home Screen web app, paired with your computer), Docker (amd64, arm64)</td></tr>
-  <tr><td><b>Latest release</b></td><td><a href="https://github.com/SaiSiddharthBS/OpenWave/releases/latest">Current installers</a>, SHA-256 checksums and a Docker image</td></tr>
+  <tr><td><b>Platforms</b></td><td>macOS 13+ (Apple Silicon and Intel), Windows 10/11, Linux x86-64, Android 7+, iPhone (Home Screen app), Docker (amd64, arm64)</td></tr>
+  <tr><td><b>Engine</b></td><td>Python and FastAPI, one codebase on every platform, including on the phone itself on Android</td></tr>
+  <tr><td><b>Apps</b></td><td>One shared interface in plain HTML, CSS and ES modules, in native shells written in Swift and Kotlin</td></tr>
+  <tr><td><b>Quality</b></td><td>101 engine tests, 572 layout checks at 13 screen sizes, 71 behaviour checks, a motion audit, an end-to-end pairing test and an Android emulator test, on every push</td></tr>
+  <tr><td><b>Account</b></td><td>None. Profiles are local, with an optional PIN</td></tr>
+  <tr><td><b>License</b></td><td>GPL-3.0. Open source and non-commercial</td></tr>
 </table>
 
 ## Download
 
-**macOS, in one command.** Picks the Apple Silicon or Intel build, verifies its checksum, and installs it to Applications. macOS may still ask you to confirm an unsigned app at first launch.
+**macOS, in one command.** Picks the Apple Silicon or Intel build, verifies its checksum and installs it to Applications.
 
 ```bash
 curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash
@@ -60,110 +64,98 @@ curl -fsSL https://saisiddharthbs.github.io/OpenWave/install.sh | bash
 | **macOS**, Intel | [OpenWave-macOS-Intel.dmg](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-macOS-Intel.dmg) | As above. |
 | **Windows** 10/11 | [OpenWave-Windows-Setup.exe](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Windows-Setup.exe) | On "Windows protected your PC", choose **More info → Run anyway**. No administrator rights needed. |
 | **Linux** x86-64 | [OpenWave-Linux-x86_64.AppImage](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Linux-x86_64.AppImage) | `chmod +x` the file, then open it. |
-| **Android** 7+ | [OpenWave-Android.apk](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk) | Open the file and allow your browser to install apps. For automatic updates, add this repository to [Obtainium](https://github.com/ImranR98/Obtainium). |
+| **Android** 7+ | [OpenWave-Android.apk](https://github.com/SaiSiddharthBS/OpenWave/releases/latest/download/OpenWave-Android.apk) | Open the file and allow your browser to install apps. For store-style updates, add this repository to [Obtainium](https://github.com/ImranR98/Obtainium). |
 | **iPhone** | Pairs with OpenWave on your Mac, PC or server | Scan a QR code: see [iPhone](#iphone). |
 | **Home server** | [Docker image](#self-hosting) for amd64 and arm64 | Open `http://<server>:8787` on any device. |
 
-Every app is self-contained, with nothing else to install. Installers are attached to each [GitHub release](https://github.com/SaiSiddharthBS/OpenWave/releases) together with `SHA256SUMS.txt`.
+Every app is self-contained, with nothing else to install. Each [release](https://github.com/SaiSiddharthBS/OpenWave/releases) carries `SHA256SUMS.txt`.
 
-**Updates.** Every app checks for new releases and installs them in one step. On the Mac, the app downloads the update, verifies its checksum, replaces itself and restarts. YouTube support (yt-dlp and ytmusicapi) also updates itself in the background between releases, so playback keeps working when YouTube changes.
-
-## Features
+## What it does
 
 ### Listening
 
-- **Search almost any song** on YouTube Music: songs, albums, artists and playlists. Paste a YouTube or YouTube Music link to open it directly.
-- **Songs, never videos.** OpenWave always plays the studio audio track. Music videos are swapped for their song version automatically, so there is no film dialogue, intro or skit in the middle of your music.
-- **Gapless playback** with optional **crossfade** (up to 12 seconds). The next song is buffered while the current one plays, so skipping is instant.
-- **Endless autoplay.** When the queue ends, similar music keeps playing, and songs you heard recently are left out.
-- **Synced lyrics** that scroll with the song. Select a line to jump to it.
-- **Offline downloads** of songs, albums and playlists, stored on the device.
-- **Sleep timer** from 5 to 90 minutes, or to the end of the song, with a gentle fade-out.
-- **Adaptive audio.** OpenWave picks the best format the device plays well (Opus or AAC, up to about 160 kbps), with a data-saver option.
-- **A glass design that moves with your music.** The sidebar, player and tab bar float as glass over the colours of the song playing, pages arrive piece by piece as you scroll, and the artwork flies between the mini player and the full-screen player, the same on every device. Settings → Appearance has **Reduce glass** for older devices and **Full animations**, which is on everywhere and can be turned off for gentle fades.
-- **Daily Mixes.** Three new mixes every day, one mood each, from what you actually finish, skip and play together. Every profile has its own.
-- **Made for tablets.** A layout of their own, upright or on their side, on iPad and Android tablets.
-- **Updates that find you.** A notification on Android, even when the app is closed, a one-click update on the Mac, and the iPhone app updates itself.
-- **Fast by design.** Home appears instantly from cache, songs begin loading while your finger is still on them, and the song version of a music video is found in well under a second and remembered.
+<img src="docs/screenshots/now-playing.png" alt="The full-screen player, with synced lyrics" width="100%">
+
+- **Search almost any song** on YouTube Music: songs, albums, artists and playlists, with suggestions as you type. Paste a YouTube or YouTube Music link to open it directly.
+- **Songs, never videos.** OpenWave always plays the studio audio track. Music videos are swapped for their song version automatically.
+- **Gapless playback** with optional **crossfade** of up to 12 seconds. The next song is buffered while the current one plays, so skipping is instant.
+- **Endless autoplay.** When the queue ends, similar music keeps playing, leaving out what you heard recently.
+- **Synced lyrics** that follow the song. Select a line to jump to it.
+- **Offline downloads** of songs, albums and playlists, and a **sleep timer** that fades out.
+- **Adaptive audio.** The best format the device plays well (Opus or AAC, up to about 160 kbps), with a data-saver option.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/now-playing.png" alt="Now playing with synced lyrics"><p align="center"><sub>Now playing, with synced lyrics</sub></p></td>
-    <td width="50%"><img src="docs/screenshots/artist.png" alt="Artist page"><p align="center"><sub>Artist pages, radio and follow</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/artist.png" alt="An artist page"><p align="center"><sub>Artist pages, with radio and follow</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/album.png" alt="An album"><p align="center"><sub>Albums</sub></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/search.png" alt="Search results"><p align="center"><sub>Search, with the box in the middle of the page</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/playlist.png" alt="A playlist"><p align="center"><sub>Your playlists, with drag to reorder, downloads and sharing</sub></p></td>
   </tr>
 </table>
 
-### Your library, personalised
+### Made for you
 
-- **Profiles** for everyone in the household, each with its own likes, playlists, history and settings, and an optional PIN. On a paired phone, a profile can be kept **only on that phone**: it isn't listed on, and can't be opened from, the computer or anyone else's phone, with no PIN to remember.
-- **Sync** across every device that uses the same OpenWave. Changes apply instantly where you make them, queue up while offline, and reach your other devices within seconds.
-- **Liked songs, playlists you can reorder by dragging, saved albums and followed artists.**
-- **Made for you.** Personal mixes built from what you actually play, plus two smart playlists: **On Repeat** (your most-played songs this month) and **Rediscover** (favourites you haven't played in a while).
+<img src="docs/screenshots/home.png" alt="Home, with Daily Mixes and On Repeat" width="100%">
+
+- **Daily Mixes.** Three new mixes every day, one mood each. A song you finish counts for more than one you stop halfway, songs you keep skipping are left out, recent listening counts most, and artists you play in the same sitting share a mix. Each mix is part songs you love and part songs you haven't heard. It's all worked out on your own engine, from your own history.
+- **On Repeat** and **Rediscover**: the songs you can't stop playing this month, and favourites you haven't played in a while.
 - **Insights.** Minutes listened, top artists, top songs and when you listen, for the last week, month, year or all time, with a shareable image card.
-- **Shared playlists** with friends and family on their own devices, anywhere (see [below](#shared-playlists-one-playlist-everyones-devices)).
-- **Share** any song, album, playlist or artist as a link anyone can open, or share your own playlist as a song list a friend can import.
+- **Profiles** for everyone in the household, each with its own likes, playlists, history, mixes and settings, and an optional PIN. On a paired phone, a profile can be kept **only on that phone**.
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/home.png" alt="Home with shortcuts and personal mixes"><p align="center"><sub>Home: shortcuts, personal mixes and recent music</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/daily-mix.png" alt="A Daily Mix"><p align="center"><sub>A Daily Mix: new every day, from what you actually play</sub></p></td>
     <td width="50%"><img src="docs/screenshots/insights.png" alt="Listening insights"><p align="center"><sub>Insights</sub></p></td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/screenshots/on-repeat.png" alt="On Repeat smart playlist"><p align="center"><sub>On Repeat, built only from your own listening</sub></p></td>
-    <td width="50%"><img src="docs/screenshots/profiles.png" alt="Profile picker"><p align="center"><sub>A profile for everyone, synced everywhere</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/on-repeat.png" alt="On Repeat"><p align="center"><sub>On Repeat, built only from your own listening</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/library.png" alt="Your Library"><p align="center"><sub>Your Library</sub></p></td>
   </tr>
 </table>
 
-### Shared playlists: one playlist, everyone's devices
+### Every device
 
-Invite friends and family to a playlist with a link, and edit it together from your own phones and computers, wherever you each are. No shared Wi-Fi, accounts or servers are needed.
+<img src="docs/screenshots/every-device.png" alt="OpenWave on a Mac, an iPad and an iPhone" width="100%">
 
-- **Everyone edits.** Add, remove and reorder songs from your own OpenWave; each song shows a tag for who added it. Changes reach everyone in a few seconds, and edits made offline sync as soon as you are back online.
-- **Invite with a link.** Tap the people button on any of your playlists, then **Send invite**. Friends paste the link in **Library → Join**.
-- **The owner stays in charge.** Only the owner can rename the playlist, remove someone or delete it for everyone. A removed person keeps a copy of the songs but is locked out with a new key, and old invite links stop working.
-- **Private.** The playlist is end-to-end encrypted with a key that exists only in the invite link. It syncs through public Nostr relays, which never see song names or who you are ([details](#privacy-and-security)).
-
-<table>
-  <tr>
-    <td width="62%"><img src="docs/screenshots/shared-playlist.png" alt="A shared playlist showing who added each song"><p align="center"><sub>A shared playlist: each song shows who added it</sub></p></td>
-    <td width="38%"><img src="docs/screenshots/shared-with.png" alt="The Shared with panel"><p align="center"><sub>Who's in it, and the invite link</sub></p></td>
-  </tr>
-</table>
+- **The same app on every screen.** Phones get a tab bar and a full-screen player you swipe down to close; tablets get a layout of their own, upright or on their side; computers get a sidebar and keyboard shortcuts. The interface, the motion and the library are the same everywhere.
+- **Sync** across every device that uses the same engine. Changes apply instantly where you make them, queue up while offline, and reach your other devices within seconds.
+- **Play on another device, or listen together.** Move the music to another OpenWave on the Wi-Fi and continue from the same second, or start a session that everyone joins from their own phone, kept in step to within a few hundredths of a second. A device has to be approved once, on its own screen, before it can be controlled.
+- **Shared playlists** with friends and family on their own devices, anywhere: everyone adds, removes and reorders songs, each song shows who added it, and the playlist is end-to-end encrypted with a key that exists only in the invite link.
+- **Updates that find you.** Every app checks for new versions while it's open; Android posts a notification even when the app is closed, the Mac app installs an update in one click, and the iPhone app updates itself.
 
 <p align="center">
-  <img src="docs/screenshots/mobile-shared.png" width="260" alt="The same shared playlist on a friend's phone">
+  <img src="docs/screenshots/mobile-home.png" width="200" alt="Home on a phone">
   &nbsp;
-  <img src="docs/screenshots/mobile-join.png" width="260" alt="Joining a shared playlist from an invite link">
+  <img src="docs/screenshots/mobile-now-playing.png" width="200" alt="The player on a phone">
+  &nbsp;
+  <img src="docs/screenshots/mobile-lyrics.png" width="200" alt="Lyrics on a phone">
+  &nbsp;
+  <img src="docs/screenshots/mobile-daily-mix.png" width="200" alt="A Daily Mix on a phone">
 </p>
-<p align="center"><sub>The same playlist on a friend's phone, and joining from an invite link.</sub></p>
-
-### Devices: play anywhere, listen together
-
-OpenWave apps on the same Wi-Fi find each other automatically, with no account and no server in between.
-
-- **Play on another device.** Open the devices menu in the player and pick a device: the music moves there and continues from the same second. The device you are holding becomes the remote, with play, pause, skip, seek, volume, the queue, and anything you choose to play. One tap brings the music back.
-- **Listen together.** Start a listening session and anyone on the Wi-Fi can join from their own phone or computer. Everyone hears the same song at the same moment, kept within a few hundredths of a second, and anyone in the session can pause, skip or add songs.
-- **Private by default.** A device has to be approved once, with a prompt on its own screen, before another device can control it or join its session. Approved devices can be removed at any time, and any device can be hidden from the network.
 
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/devices.png" alt="Devices menu"><p align="center"><sub>Every OpenWave on your Wi-Fi, one tap away</sub></p></td>
-    <td width="50%"><img src="docs/screenshots/pairing.png" alt="Pairing prompt"><p align="center"><sub>Devices must be approved once before they can connect</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/shared-with.png" alt="A shared playlist's members"><p align="center"><sub>A shared playlist: who's in it, and the invite link</sub></p></td>
   </tr>
 </table>
 
 <p align="center">
-  <img src="docs/screenshots/mobile-devices.png" width="260" alt="Devices menu on a phone">
+  <img src="docs/screenshots/mobile-together.png" width="200" alt="A phone listening together with a Mac">
   &nbsp;
-  <img src="docs/screenshots/mobile-together.png" width="260" alt="A phone listening together with a Mac">
+  <img src="docs/screenshots/mobile-remote.png" width="200" alt="A phone as the remote for another computer">
   &nbsp;
-  <img src="docs/screenshots/mobile-remote.png" width="260" alt="A phone acting as the remote for the living-room computer">
+  <img src="docs/screenshots/mobile-shared.png" width="200" alt="A shared playlist on a friend's phone">
+  &nbsp;
+  <img src="docs/screenshots/mobile-join.png" width="200" alt="Joining a shared playlist">
 </p>
-<p align="center"><sub>Left to right: choosing a device, a phone in a listening session with a Mac, and a phone acting as the remote for the living-room computer.</sub></p>
+<p align="center"><sub>Listening together with a Mac, a phone as the remote, and a shared playlist on a friend's phone.</sub></p>
 
 ### Bring your playlists
 
-Go to **Library → Import** (or press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>I</kbd> on a Mac). There is no song limit.
+**Library → Import** (or <kbd>⌘</kbd><kbd>⇧</kbd><kbd>I</kbd> on a Mac). There is no song limit.
 
 | Service | Paste a link | Import a file (every song, every playlist) |
 |---|---|---|
@@ -175,7 +167,7 @@ Go to **Library → Import** (or press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>I</kbd> 
 | **Amazon Music, Tidal, SoundCloud and others** | — | [TuneMyMusic](https://www.tunemymusic.com) *Export to file*, or a Soundiiz CSV |
 | **Anything else** | — | A pasted list with one `Artist - Title` per line |
 
-OpenWave matches each song on YouTube Music by title, artist and length, and builds the playlist for you. A file with several playlists becomes several playlists. In testing, Spotify's "Today's Top Hits" imported 50 of 50 songs.
+OpenWave matches each song on YouTube Music by title, artist and length, and builds the playlist for you. In testing, Spotify's "Today's Top Hits" imported 50 of 50 songs.
 
 <p align="center"><img src="docs/screenshots/import.png" width="80%" alt="Importing a Spotify playlist"></p>
 
@@ -184,11 +176,29 @@ OpenWave matches each song on YouTube Music by title, artist and length, and bui
 <br>
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/library.png" alt="Your Library"><p align="center"><sub>Your Library</sub></p></td>
-    <td width="50%"><img src="docs/screenshots/playlist.png" alt="A playlist"><p align="center"><sub>A playlist, with downloads and editing</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/settings.png" alt="Settings, with OpenWave's own menus"><p align="center"><sub>Settings</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/profile-menu.png" alt="The profile menu at the foot of the sidebar"><p align="center"><sub>You, at the foot of the sidebar</sub></p></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/tablet-home.png" alt="Home on an iPad"><p align="center"><sub>An iPad, upright</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/tablet-album.png" alt="An album on an iPad"><p align="center"><sub>Albums on an iPad</sub></p></td>
   </tr>
 </table>
-<p align="center"><img src="docs/screenshots/share-card.png" width="360" alt="Shareable insights card"><br><sub>The shareable insights card</sub></p>
+<p align="center">
+  <img src="docs/screenshots/mobile-library.png" width="200" alt="Library on a phone">
+  &nbsp;
+  <img src="docs/screenshots/mobile-search.png" width="200" alt="Search on a phone">
+  &nbsp;
+  <img src="docs/screenshots/mobile-playlist.png" width="200" alt="A playlist on a phone">
+  &nbsp;
+  <img src="docs/screenshots/mobile-insights.png" width="200" alt="Insights on a phone">
+</p>
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/profiles.png" alt="Choosing a profile"><p align="center"><sub>A profile for everyone in the household</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/share-card.png" alt="The shareable insights card"><p align="center"><sub>The shareable insights card</sub></p></td>
+  </tr>
+</table>
 </details>
 
 ## Platforms
@@ -200,81 +210,61 @@ OpenWave matches each song on YouTube Music by title, artist and length, and bui
 A native Swift app (AppKit and SwiftUI) that runs its own engine, with nothing to install or configure.
 
 - **System integration:** media keys, Control Center and lock-screen controls with artwork, AirPods controls, song notifications and a Dock menu.
-- **Menu-bar mini player**, so you can control the music without opening the window. Closing the window keeps the music playing.
+- **Menu-bar mini player**, so the music is a click away without opening the window. Closing the window keeps the music playing.
 - **Keyboard shortcuts:** <kbd>⌘</kbd><kbd>→</kbd> / <kbd>⌘</kbd><kbd>←</kbd> next and previous, <kbd>⌘</kbd><kbd>L</kbd> like, <kbd>⌘</kbd><kbd>F</kbd> search, <kbd>⌘</kbd><kbd>1</kbd>–<kbd>5</kbd> sections, <kbd>⌘</kbd><kbd>⇧</kbd><kbd>I</kbd> import.
-- **Phone access** from Settings → Phone: scan a QR code and your iPhone plays from this Mac anywhere ([OpenWave Connect](#iphone)), or use Tailscale or the home Wi-Fi.
 - **Self-installing updates**, verified by SHA-256 before the app replaces itself.
 - **Deep links** such as `openwave://play/<videoId>`, and launch at login.
 
 <p align="center"><img src="docs/screenshots/mac-miniplayer.png" width="300" alt="Menu-bar mini player"><br><sub>The menu-bar mini player</sub></p>
 
-> **About the macOS security prompt.** OpenWave is not notarised with a paid Apple Developer ID. macOS may ask for confirmation at first launch, depending on how the app was downloaded and installed. The install script verifies the published checksum; it is not a substitute for reviewing a downloaded app before running it. Signed and notarised builds remain on the [roadmap](#roadmap).
+> **About the macOS security prompt.** OpenWave is not notarised with a paid Apple Developer ID, so macOS may ask for confirmation at first launch. The install script verifies the published checksum; signed and notarised builds are on the [roadmap](#roadmap).
 
 ### Android
 
 A native Kotlin app that runs the complete engine on the phone through [Chaquopy](https://chaquo.com/chaquopy/). No computer is needed.
 
 - Media notification, lock-screen, headphone and Bluetooth controls; pauses for calls and when headphones are unplugged; keeps playing in the background.
-- **Home-screen widget** with artwork and playback controls.
-- Native-feeling navigation: page transitions, swipe the player down to close, swipe the artwork to change songs, long-press for a song's menu, haptic feedback and a back button that behaves as expected.
-- Open YouTube and YouTube Music links shared from other apps.
-- **Library location:** keep the library on the phone, or play from OpenWave on your computer with the same profiles and playlists. From anywhere: on the computer choose **Settings → Phones → Add a phone**, scan the code with the phone's camera and share the link to OpenWave (or paste it in the app's **Settings → Library → Connect to computer**). On the same Wi-Fi or through Tailscale, the computer's address works too. **Use this phone** switches back at any time, and **Play from your computer** returns to the computer it paired with.
+- **Home-screen widget** with artwork and playback controls, and the screen's fastest refresh rate.
+- Native-feeling navigation: swipe the player down to close, swipe the artwork to change songs, long-press for a song's menu, haptics and a back button that behaves as expected.
+- **Library location:** keep the library on the phone, or play from OpenWave on your computer with the same profiles and playlists, from anywhere (on the computer, **Settings → Phones → Add a phone**).
 
-<p align="center">
-  <img src="docs/screenshots/mobile-home.png" width="200" alt="Home on a phone">
-  &nbsp;
-  <img src="docs/screenshots/mobile-now-playing.png" width="200" alt="Now playing on a phone">
-  &nbsp;
-  <img src="docs/screenshots/mobile-lyrics.png" width="200" alt="Lyrics on a phone">
-  &nbsp;
-  <img src="docs/screenshots/android-widget.png" width="200" alt="Android home-screen widget">
-</p>
+<p align="center"><img src="docs/screenshots/android-widget.png" width="220" alt="Android home-screen widget"></p>
 
 ### iPhone
 
-Apple does not allow apps like OpenWave on the App Store, so the iPhone plays from OpenWave on a computer you already have: a Mac, a Windows or Linux PC, or a home server. It gets the same profiles, playlists and likes, and runs from the Home Screen like an app. Pairing takes a minute, with no accounts and nothing to install:
+Apple does not allow apps like OpenWave on the App Store, so the iPhone plays from OpenWave on a computer you already have: a Mac, a Windows or Linux PC, or a home server. It gets the same profiles, playlists and likes, and runs from the Home Screen like an app.
 
-1. On the computer, open **Settings → Phones → Add a phone** (in the Mac app, also **OpenWave → Settings… → Phone**). A QR code appears.
+1. On the computer, open **Settings → Phones → Add a phone**. A QR code appears.
 2. Point the iPhone's camera at it and open the link.
 3. Tap **Share → Add to Home Screen**, then open OpenWave from the Home Screen.
 
 <p align="center">
-  <img src="docs/screenshots/connect-pair.png" width="440" alt="Settings → Phones → Add a phone, with a QR code">
+  <img src="docs/screenshots/connect-pair.png" width="560" alt="Settings → Phones → Add a phone, with a QR code">
   &nbsp;
   <img src="docs/screenshots/mobile-connect-add.png" width="200" alt="The iPhone suggesting Add to Home Screen">
 </p>
 
-It works at home, at work and on mobile data, with no port forwarding, VPN or sign-in. OpenWave Connect finds a direct, encrypted path from the phone to the computer ([how it works](#privacy-and-security)). Songs keep playing with the screen locked, the Lock Screen shows controls and artwork, and downloaded songs play even when the computer is off. The computer needs to be on, with OpenWave open, for everything else. Paired phones are listed in Settings → Phones, where each can be removed. For a family, each person can open their own phone's **Settings → Profile → Only on this phone** (or tick it when creating their profile there), so their profile opens only on their phone. If that phone is ever removed from the computer, the profile can be opened elsewhere again, with a note telling its owner why, so nothing is ever locked away. For a Windows PC that's always on, Settings → Phones → **Start with Windows** opens OpenWave in the background whenever you sign in, so the phone can reach it without anyone opening the app.
+It works at home, at work and on mobile data, with no port forwarding, VPN or sign-in: OpenWave Connect finds a direct, encrypted path from the phone to the computer ([how it works](#privacy-and-security)). Songs keep playing with the screen locked, the Lock Screen shows controls and artwork, and downloaded songs play even when the computer is off. Paired phones are listed in Settings → Phones, where each can be removed. For a Windows PC that's always on, **Start with Windows** opens OpenWave in the background whenever you sign in.
 
-<p align="center"><img src="docs/screenshots/connect-phones.png" width="560" alt="Settings → Phones listing a paired iPhone"></p>
+<p align="center"><img src="docs/screenshots/connect-phones.png" width="720" alt="Settings → Phones with two paired phones"></p>
 
-A few networks (some workplaces, and some mobile carriers) block direct connections between devices; there the phone says it couldn't connect. These options work everywhere:
+A few networks (some workplaces and mobile carriers) block direct connections between devices. Two options work everywhere:
 
-- **With Tailscale.** Install [Tailscale](https://tailscale.com/download) (free) on the computer and the iPhone, signed in to the same account. In OpenWave on the computer, open **Settings → Phones → With Tailscale → Turn on** and scan the code, then **Share → Add to Home Screen** on the iPhone. The computer gets a private HTTPS address that only your own devices can open; downloads play offline. On a Docker server, run `tailscale serve --bg --https=8443 http://127.0.0.1:8787` on the server itself.
-- **At home only.** In the Mac app, Settings → Phone → **At home**, then scan the code on the same Wi-Fi. Offline downloads need one of the options above, because browsers only allow them over HTTPS.
-
-<p align="center">
-  <img src="docs/screenshots/mobile-library.png" width="200" alt="Library on a phone">
-  &nbsp;
-  <img src="docs/screenshots/mobile-search.png" width="200" alt="Search on a phone">
-  &nbsp;
-  <img src="docs/screenshots/mobile-playlist.png" width="200" alt="A playlist on a phone">
-  &nbsp;
-  <img src="docs/screenshots/mobile-insights.png" width="200" alt="Insights on a phone">
-</p>
+- **With Tailscale.** Install [Tailscale](https://tailscale.com/download) on the computer and the iPhone, signed in to the same account, then **Settings → Phones → With Tailscale → Turn on** and scan the code. On a Docker server, run `tailscale serve --bg --https=8443 http://127.0.0.1:8787` on the server.
+- **At home only.** In the Mac app, Settings → Phone → **At home**, then scan the code on the same Wi-Fi.
 
 ### Windows and Linux
 
-One-click apps that bundle the same engine with a small launcher (`openwave/launcher.py`), which opens OpenWave in its own window using Microsoft Edge on Windows or Chrome/Chromium on Linux. They include in-app updates and self-updating YouTube support.
+One-click apps that bundle the same engine with a small launcher, which opens OpenWave in its own window (Microsoft Edge on Windows, Chrome or Chromium on Linux), with in-app updates and self-updating YouTube support.
 
-## Architecture
+## How it's built
 
 ```mermaid
 flowchart LR
   subgraph Clients
     UI["Shared web interface<br/>gapless player · offline store · sync outbox"]
     Mac["macOS app<br/>Swift + WKWebView"]
-    And["Android app<br/>Kotlin + WebView"]
+    And["Android app<br/>Kotlin + WebView + Chaquopy"]
     Desk["Windows / Linux<br/>app window"]
     Web["iPhone and browsers"]
   end
@@ -282,6 +272,7 @@ flowchart LR
     Music["music.py<br/>catalogue, radio, lyrics"]
     Stream["youtube.py + app.py<br/>stream resolution, range proxy"]
     Lib["library.py<br/>SQLite: profiles, playlists, plays"]
+    Mixes["mixes.py<br/>Daily Mixes from your listening"]
     Imp["importer.py<br/>playlist import and matching"]
     Link["link.py<br/>devices, remote, listen together"]
   end
@@ -295,6 +286,7 @@ flowchart LR
   UI -->|catalogue API| Music
   UI -->|audio| Stream
   UI -->|library sync| Lib
+  Lib --> Mixes
   Music --> YTM
   Stream --> YT
   Link <-->|UDP discovery, paired HTTP| Peers
@@ -305,11 +297,31 @@ flowchart LR
 ```
 
 - **One engine, many shells.** The engine is a FastAPI application. Each platform wraps the same web interface in a native shell (Swift on macOS, Kotlin on Android, an app window on Windows and Linux) that adds system integration such as media keys, notifications and widgets.
-- **Streaming.** YouTube ties stream URLs to the address that requested them, so the engine proxies audio with HTTP range requests. Client devices never contact Google directly. Long songs are fetched from YouTube in pieces behind the scenes and resumed from the exact byte if the connection drops.
-- **Library and sync.** Each profile's library is a set of operations applied to SQLite. Clients apply changes optimistically, keep an outbox while offline, and sync it when they reconnect; other devices poll a version number and pick changes up within seconds.
-- **Devices.** Engines on the same network discover each other with a UDP broadcast, and talk over a separate, small listener (ports 47880–47889) that only serves the device routes. Pairing issues a bearer token whose hash is stored on the approving device. Only "what's playing" is shared; each device streams its own audio, and listeners stay in step by playing marginally faster or slower rather than skipping.
-- **Songs, not videos.** When YouTube returns a music video, the engine looks up its audio-track version, and radios are started from songs.
-- **OpenWave Connect.** A phone away from home runs the same web interface, published on GitHub Pages in a "connect" mode. Its requests travel over a WebRTC data channel to `connect.py`, which hands each one to the engine's own API in-process, so the phone gets exactly what a browser at home gets. The two sides meet by posting encrypted offers and answers to Nostr relays as short-lived events. Songs arrive whole and play from memory, with the next one fetched while the current one plays, which keeps music going with the screen locked. WebRTC comes from a vendored copy of [aiortc](https://github.com/aiortc/aiortc) (data channels only, without its video dependencies).
+- **Streaming.** YouTube ties stream URLs to the address that requested them, so the engine proxies audio with HTTP range requests; client devices never contact Google directly. Long songs are fetched in pieces and resumed from the exact byte if the connection drops.
+- **Library and sync.** Each profile's library is a log of operations applied to SQLite. Clients apply changes optimistically, keep an outbox while offline and sync it on reconnect; other devices notice a new version and pull within seconds.
+- **Daily Mixes.** `mixes.py` reads a profile's plays as taste: completion, skips and recency weight each song, and artists played in the same sitting are grouped. A day's mixes are ready at once from your own songs; new songs from YouTube's radio join them in the background, so Home never waits on the network.
+- **Devices.** Engines discover each other with a UDP broadcast and talk over a separate listener that serves only the device routes. Pairing issues a bearer token whose hash is stored on the approving device. Listeners stay in step by playing marginally faster or slower rather than skipping.
+- **OpenWave Connect.** A phone away from home runs the same interface from GitHub Pages in a "connect" mode. Its requests travel over a WebRTC data channel to `connect.py`, which hands each one to the engine's own API in-process. The two sides meet by posting encrypted offers and answers to Nostr relays. WebRTC comes from a vendored, data-channel-only copy of [aiortc](https://github.com/aiortc/aiortc).
+
+## Engineering
+
+OpenWave is developed with the discipline of a product team, and the machinery does the checking.
+
+- **Six targets from one tag.** `scripts/release.sh` turns the changelog into a version and tags it; CI then builds the Mac app for Apple Silicon and Intel, the Windows installer, the Linux AppImage, the signed Android app and the multi-architecture Docker image, runs the Android app on an emulator, and publishes them as one release with SHA-256 checksums and notes. A failed build is retried once, and the newest version is always the one marked latest.
+- **Tests on every push.**
+
+  | Suite | What it checks |
+  |---|---|
+  | Engine tests (`pytest`, 101) | Profiles, sync, sharing, import, Daily Mixes, phone pairing, updates, on two FastAPI and pydantic versions |
+  | Layout audit (`tests/ui/layout_audit.mjs`) | Every screen at 13 sizes, from a 320-pixel phone to a wide desktop, with real and deliberately extreme names: 572 checks that nothing is cut off or pushed past the edge |
+  | Behaviour (`tests/ui/behaviour.mjs`, 71 checks) | Things a person does: search suggestions that stay, the player landing in the mini player, centred titles, menus, dropdowns, update cards and notifications |
+  | Motion audit (`tests/ui/motion_audit.mjs`) | Scrolls and flings with the processor slowed down, and fails if an animation needs anything but the graphics chip |
+  | Connect end to end (`tests/ui/connect_e2e.mjs`) | A phone pairs with an engine by QR link, uses the app through the connection, reconnects, and is removed |
+  | Android emulator (`android/ci/emulator-test.sh`) | The installed app starts its engine, plays, and drives the media notification |
+
+- **Measured performance.** Motion is tuned against frame timings measured on real hardware: in Safari's engine the full-screen player is drawn and set up while still invisible, then animated entirely on the graphics chip, with every part of the animation ending together.
+- **Self-healing playback.** YouTube support (yt-dlp and ytmusicapi) updates itself between releases, so playback keeps working when YouTube changes.
+- **Reproducible visuals.** Every image in this README comes from `scripts/screenshots.mjs` (a demo profile with real songs and a month of listening) and `scripts/compose_shots.mjs`.
 
 ## Self-hosting
 
@@ -366,7 +378,7 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 | `GET /api/audio/{videoId}` | The song (audio-track) version of any video |
 | `GET/POST /api/profiles` · `POST /api/profiles/{id}/login` | Profiles and sign-in |
 | `GET /api/me/library` · `POST /api/me/ops` · `GET /api/me/version` | Library sync |
-| `GET /api/me/stats` · `/api/me/mixes` · `/api/me/smart` · `/api/me/radio/{videoId}` | Insights, mixes, On Repeat and Rediscover, personal radio |
+| `GET /api/me/daily` · `/api/me/stats` · `/api/me/mixes` · `/api/me/smart` · `/api/me/radio/{videoId}` | Daily Mixes, insights, mixes, On Repeat and Rediscover, personal radio |
 | `POST /api/import/parse` · `/api/import/match` | Playlist import |
 | `/api/link/*` | Devices, remote control and listening sessions |
 | `GET /api/app-update` | Whether a newer release exists, and the right file for this device |
@@ -378,10 +390,9 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 
 - **No telemetry.** The apps never report usage, crashes or identifiers. The public [Stats page](https://saisiddharthbs.github.io/OpenWave/stats.html) is built only from GitHub's public numbers: downloads per file, version and day, and stars.
 - **Local data.** Libraries live in SQLite on the device or server you run. Client devices talk only to your engine, never to Google; that includes artwork and lyrics.
-- **Shared playlists are end-to-end encrypted.** OpenWave runs no servers, so a shared playlist syncs through a few free, public [Nostr](https://nostr.com) relays. Each member's OpenWave publishes its copy encrypted with a key that exists only in the invite link (after the `#`, which browsers never send to a server). Relays see only encrypted data, a random identity per profile and your IP address, never song names or who you are. Owner-only changes are signed by the owner. Nothing is sent to a relay unless you share or join a playlist. Self-hosters can choose relays with `OPENWAVE_RELAYS` (or `off`).
-- **Device pairing.** Devices on the network can see each other's names, but cannot play anything or join a session until approved on the target device's own screen. Only playback state crosses the network: no audio, and no library data.
-- **Phones connect directly and privately (OpenWave Connect).** The QR code holds a pairing code that works for 15 minutes. A phone that uses it makes its own key pair and sends only the public half; from then on the phone and the computer share a key that neither ever sends (ECDH), so a photo of the QR code is useless later. To find each other, they exchange short end-to-end encrypted messages through public Nostr relays, which pass them on without storing them and see only encrypted data and IP addresses; public STUN servers (Cloudflare, Google) tell each device its own public address. After that, the phone talks to the computer over a direct, encrypted WebRTC connection: music, artwork and library data never pass through anyone else. The app itself is a static page on GitHub Pages, and the pairing code sits after the `#` in its address, which browsers never send to a server. A paired phone can do what a browser at home can do and no more, and it can't pair other phones. Settings → Phones lists every paired phone with a Remove button, and `OPENWAVE_CONNECT=0` turns the feature off.
-- **Tailscale access stays private.** The Tailscale option makes the address reachable only by devices signed in to your own Tailscale account, over HTTPS.
+- **Shared playlists are end-to-end encrypted.** OpenWave runs no servers, so a shared playlist syncs through a few public [Nostr](https://nostr.com) relays. Each member's copy is encrypted with a key that exists only in the invite link (after the `#`, which browsers never send to a server). Relays see only encrypted data, a random identity per profile and your IP address. Owner-only changes are signed by the owner.
+- **Device pairing.** Devices on the network can see each other's names, but can't play anything or join a session until approved on the target device's own screen. Only playback state crosses the network.
+- **Phones connect directly and privately.** The QR code holds a pairing code that works for 15 minutes. The phone makes its own key pair and sends only the public half; from then on phone and computer share a key that neither ever sends (ECDH), so a photo of the code is useless later. They find each other through short end-to-end encrypted messages on public Nostr relays, then talk over a direct, encrypted WebRTC connection: music, artwork and library data never pass through anyone else. A paired phone can do what a browser at home can do and no more, and can't pair other phones.
 - **Verified releases.** Every installer ships with a SHA-256 checksum, which the Mac installer and the Mac app's updater verify before installing. Android releases are signed with a single, stable key.
 
 ## Development
@@ -389,38 +400,41 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 ```bash
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/python -m openwave --no-browser      # http://localhost:8787
-.venv/bin/pytest                               # 40 tests
+.venv/bin/pytest                               # 101 tests
+node tests/ui/layout_audit.mjs                 # and the other suites in tests/ui (Node 22+ and Chrome)
 ```
 
 The web interface in `openwave/web/` is plain HTML, CSS and ES modules with no build step: edit and reload.
 
 | Path | Contents |
 |---|---|
-| `openwave/` | The engine: API, streaming, library, import, devices, updates |
+| `openwave/` | The engine: API, streaming, library, Daily Mixes, import, devices, Connect, updates |
 | `openwave/web/` | The interface shared by every platform |
 | `macos/` | Native macOS app (Swift) and `build.sh` |
 | `android/` | Native Android app (Kotlin, Chaquopy) |
 | `packaging/` | Windows installer and Linux AppImage |
 | `site/` | Website, Mac installer script and Stats page, deployed to GitHub Pages |
-| `scripts/` | Start scripts, release tooling and statistics collection |
-| `.github/workflows/` | CI, platform builds, releases, Pages and daily statistics |
+| `scripts/` | Start scripts, release tooling, screenshots and statistics |
+| `tests/` | Engine tests, and the browser suites in `tests/ui/` |
+| `.github/workflows/` | CI, platform builds, releases, Pages, retries and daily statistics |
 
-**Continuous integration.** Every push and pull request runs the test suite; pull requests that touch the engine or an app also build the Mac and Android apps and test the Android app on an emulator. Tagging a release builds the macOS (Apple Silicon and Intel), Windows, Linux and Android apps and the multi-architecture Docker image, and publishes them as one release with checksums and notes. See [MAINTAINING.md](MAINTAINING.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [MAINTAINING.md](MAINTAINING.md).
 
 ## Roadmap
 
-- [x] Native apps for macOS, Windows, Linux and Android
-- [x] Profiles, sync, personal mixes and insights
+- [x] Native apps for macOS, Windows, Linux and Android, and an iPhone app
+- [x] Profiles, sync, insights and smart playlists
+- [x] Daily Mixes learned from each profile's own listening
 - [x] Playlist import from Spotify, Apple Music, YouTube Music, Deezer, JioSaavn and export files
-- [x] In-app updates on every platform
 - [x] Play on another device and listen together on the same Wi-Fi
-- [x] iPhone access from anywhere through Tailscale
+- [x] Shared playlists with friends and family, anywhere
 - [x] iPhone access from anywhere with a QR code and no accounts (OpenWave Connect)
+- [x] Tablet layouts, and update notifications on every platform
+- [ ] My devices: one profile kept in step across several computers
 - [ ] Listen together over the internet
 - [ ] Distribution on F-Droid and IzzyOnDroid
 - [ ] Notarised macOS and signed Windows builds
 - [ ] Equaliser and loudness normalisation
-- [x] Shared playlists with friends and family on any device, anywhere
 - [ ] Translations
 
 Release history is in [CHANGELOG.md](CHANGELOG.md). Ideas and requests are welcome in [issues](https://github.com/SaiSiddharthBS/OpenWave/issues).
@@ -430,7 +444,7 @@ Release history is in [CHANGELOG.md](CHANGELOG.md). Ideas and requests are welco
 <details>
 <summary><b>Is OpenWave a commercial product?</b></summary>
 
-No. It is free and open-source software under the GPL-3.0, with nothing to buy and no paid tier, and it will not be monetised.
+No. It is open-source software under the GPL-3.0, with nothing to buy and no paid tier, and it will not be monetised.
 </details>
 
 <details>
@@ -442,7 +456,7 @@ No. Profiles are names with an optional PIN, stored on your own device or server
 <details>
 <summary><b>Why isn't it on the App Store or Google Play?</b></summary>
 
-Both stores reject apps that play YouTube content, which is why projects such as NewPipe are distributed directly. OpenWave is downloaded from GitHub or [the website](https://saisiddharthbs.github.io/OpenWave/), and its source is open for anyone to review. On Android, [Obtainium](https://github.com/ImranR98/Obtainium) provides store-style automatic updates.
+Both stores reject apps that play YouTube content, which is why projects such as NewPipe are distributed directly. OpenWave is downloaded from GitHub or [the website](https://saisiddharthbs.github.io/OpenWave/), and its source is open for anyone to review.
 </details>
 
 <details>
@@ -460,7 +474,7 @@ YouTube changes occasionally. The desktop apps update their YouTube support auto
 <details>
 <summary><b>Can someone else on my Wi-Fi take over my music?</b></summary>
 
-No. Other devices can see your device's name, but a device must be approved once, on your screen, before it can play anything or join your session. Remove devices at any time in **Settings → Devices**, or turn off **Show this device on Wi-Fi** to hide it. The Mac and Android apps start visible; Windows, Linux, Docker and the server start hidden.
+No. Other devices can see your device's name, but a device must be approved once, on your screen, before it can play anything or join your session. Remove devices at any time in **Settings → Devices**, or turn off **Show this device on Wi-Fi**.
 </details>
 
 <details>
@@ -475,7 +489,7 @@ Contributions of every kind are welcome: code, design, translations, documentati
 
 ## Acknowledgements
 
-OpenWave is built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ytmusicapi](https://github.com/sigma67/ytmusicapi), [FastAPI](https://fastapi.tiangolo.com), [Deno](https://deno.com), [PyInstaller](https://pyinstaller.org) and [Chaquopy](https://chaquo.com/chaquopy/), and inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
+OpenWave is built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ytmusicapi](https://github.com/sigma67/ytmusicapi), [FastAPI](https://fastapi.tiangolo.com), [aiortc](https://github.com/aiortc/aiortc), [Deno](https://deno.com), [PyInstaller](https://pyinstaller.org) and [Chaquopy](https://chaquo.com/chaquopy/), and inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
 
 ## Legal and responsible use
 

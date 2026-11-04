@@ -22,6 +22,12 @@ python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 The frontend in `openwave/web/` is plain HTML/CSS/ES modules with no build step: edit and reload.
 If you change files the service worker caches, bump `VERSION` in `openwave/web/sw.js`.
 
+**Screenshots.** The README's images are made, not taken by hand: `node scripts/screenshots.mjs` starts
+a throwaway engine with a demo profile (real songs, playlists and a month of listening; it needs the
+internet) and captures every screen at desktop, tablet and phone sizes into `docs/screenshots/`, and
+`node scripts/compose_shots.mjs` builds the hero image, the Mac window, the line-up of devices and the
+social preview from them. Pass a comma-separated list of names to retake only those.
+
 `node tests/ui/behaviour.mjs` does what a person does and checks what a layout check can't see: search
 suggestions that stay, the player closing into the mini player, update cards and notifications.
 
