@@ -201,8 +201,12 @@
     </div>
     <button class="np-device" data-bind="device" data-act="devices" hidden></button>
     <div class="np-sheet-btns">
-      <button data-act="sheet-queue"><svg><use href="#i-queue"/></svg>Up next</button>
-      <button data-act="sheet-lyrics"><svg><use href="#i-lyrics"/></svg>Lyrics</button>
+      <button class="icon-btn toggle" data-act="sleep" title="Sleep timer" aria-label="Sleep timer"><svg><use href="#i-moon"/></svg></button>
+      <div class="np-sheet-mid">
+        <button data-act="sheet-queue"><svg><use href="#i-queue"/></svg>Up next</button>
+        <button data-act="sheet-lyrics"><svg><use href="#i-lyrics"/></svg>Lyrics</button>
+      </div>
+      <button class="icon-btn toggle link-only" data-act="devices" title="Devices" aria-label="Devices"><svg><use href="#i-devices"/></svg></button>
     </div>
   </div>
 </section>

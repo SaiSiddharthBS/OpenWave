@@ -90,6 +90,31 @@ try {
   await page.ev(`document.activeElement.blur(); location.hash = '#/home'; true`);
   await sleep(900);
 
+  console.log('The player\'s title');
+  for (const [name, w, h, mobile] of [['a phone', 390, 844, true], ['a small phone', 320, 568, true], ['an upright tablet', 768, 1024, true], ['a window', 1280, 820, false]]) {
+    await size(w, h, mobile);
+    await sleep(300);
+    await page.ev(`document.querySelector('[data-act=open-np]').click(); true`);
+    await sleep(1100);
+    for (const linked of [false, true]) {
+      await page.ev(`document.documentElement.classList.toggle('has-link', ${linked}); true`);
+      await sleep(100);
+      const off = await page.ev(`(() => { const r = document.querySelector('.np-from small').getBoundingClientRect(); return Math.round(r.left + r.width / 2 - innerWidth / 2); })()`);
+      check(Math.abs(off) <= 1, `on ${name}${linked ? ', with the devices button,' : ''} "Playing from" is centred (${off}px off)`);
+      const room = await page.ev(`Math.round(document.querySelector('.np-from').getBoundingClientRect().width)`);
+      check(room >= 110, `  with room for the name of what's playing (${room}px)`);
+      if (mobile) {
+        const mid = await page.ev(`(() => { const r = document.querySelector('.np-sheet-mid').getBoundingClientRect(); return Math.round(r.left + r.width / 2 - innerWidth / 2); })()`);
+        check(Math.abs(mid) <= 1, `  and Up next and Lyrics are centred below (${mid}px off)`);
+        const lines = await page.ev(`[...document.querySelectorAll('.np-sheet-mid button')].map((b) => Math.round(b.getBoundingClientRect().height))`);
+        check(lines.every((h) => h < 44), `  each on one line (${lines.join(', ')}px tall)`);
+      }
+    }
+    await page.ev(`document.documentElement.classList.remove('has-link'); document.querySelector('[data-act=close-np]').click(); true`);
+    await sleep(900);
+  }
+  await size(1280, 820, false);
+
   console.log('Closing the player');
   for (const [name, w, h, mobile] of [['a window', 1280, 820, false], ['a wide window', 1600, 1000, false], ['a phone', 390, 844, true]]) {
     await size(w, h, mobile);

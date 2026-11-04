@@ -319,7 +319,7 @@ let barMoves = [];
  * page's layout on every frame, and that's what made this choppy. `measure` runs once the bar is in
  * its new place, before anything moves.
  */
-export function resizeBar(change, time = { duration: 560, easing: SPRING_SOFT }, measure = () => {}) {
+export function resizeBar(change, time = { duration: 560, easing: SPRING_SOFT }, measure = () => {}, hold = false) {
   const bar = $('#playerbar');
   const glass = bar.querySelector('.pb-glass');
   barMoves.forEach((a) => a.cancel());
@@ -337,6 +337,7 @@ export function resizeBar(change, time = { duration: 560, easing: SPRING_SOFT },
     const dx = was[i] - el.getBoundingClientRect().left;
     if (Math.abs(dx) >= 1) barMoves.push(el.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], options));
   });
+  if (hold) barMoves.forEach((a) => a.pause());
   return found;
 }
 
@@ -356,19 +357,32 @@ const land = () => { flying.forEach((a) => a.cancel()); flying = []; };
 const underPlayer = () => $$('#ambient, .app, #playerbar, .tabbar');
 export const uncover = () => underPlayer().forEach((el) => el.classList.remove('covered'));
 
-/** The full-screen player has just been shown: grow it out of the mini player. */
-export function npOpened(np) {
+const OPEN_FOR = 640;   // ms: the artwork's flight out of the mini player, and everything else with it
+
+/** Start everything that was set up held still (`hold` below, and resizeBar's). */
+export function startMoving() {
+  [...barMoves, ...flying].forEach((a) => { if (a.playState === 'paused') a.play(); });
+}
+
+/** The full-screen player has just been shown: grow it out of the mini player. `hold`: set it all up,
+ * but don't start moving until startMoving(), so the drawing happens before anything moves. */
+export function npOpened(np, hold = false) {
   land();
-  if (calm()) { flying = [np.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease' })]; return; }
+  if (calm()) { flying = [np.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease' })]; if (hold) flying[0].pause(); return; }
   const art = $('.np-art');
   const small = miniArt();
-  const rise = { duration: 420, easing: 'cubic-bezier(.2, .8, .2, 1)' };
-  flying = [np.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 260, easing: 'ease' })];
-  if (small) flying.push(art.animate([{ transform: overMini(art, small) }, {}], { duration: 640, easing: SPRING }));
-  else flying.push(art.animate([{ transform: 'scale(.9)' }, {}], { duration: 520, easing: SPRING }));
+  // Everything runs for the artwork's whole flight and ends with it: an animation that ends while
+  // the artwork is still moving costs WebKit a frame (measured on an Intel MacBook Pro). The fade and
+  // the rise still finish early in that time, through their keyframes.
+  const whole = { duration: OPEN_FOR };
+  flying = [np.animate([{ opacity: 0, easing: 'ease' }, { opacity: 1, offset: 260 / OPEN_FOR }, { opacity: 1 }], whole)];
+  if (small) flying.push(art.animate([{ transform: overMini(art, small) }, {}], { duration: OPEN_FOR, easing: SPRING }));
+  else flying.push(art.animate([{ transform: 'scale(.9)' }, {}], { duration: OPEN_FOR, easing: SPRING }));
   for (const el of $$('.np-head, .np-controls, .np-panel', np)) {
-    flying.push(el.animate([{ opacity: 0, transform: 'translateY(16px)' }, {}], rise));
+    flying.push(el.animate([{ opacity: 0, transform: 'translateY(16px)', easing: 'cubic-bezier(.2, .8, .2, 1)' },
+      { opacity: 1, transform: 'none', offset: 420 / OPEN_FOR }, { opacity: 1, transform: 'none' }], whole));
   }
+  if (hold) flying.forEach((a) => a.pause());
   // Once it has landed, nothing has to draw the glass and the page hidden underneath it.
   const now = flying;
   Promise.all(now.map((a) => a.finished)).then(() => { if (now === flying && !np.hidden) underPlayer().forEach((el) => el.classList.add('covered')); }).catch(() => {});
@@ -391,7 +405,9 @@ export function npClosing(np, change) {
     ? [art.animate([{}, { transform: overMini(art, small) }], time),
       np.animate([{ opacity: 1 }, { opacity: 1, offset: .55 }, { opacity: 0 }], time)]
     : [np.animate([{}, { transform: 'translateY(100%)' }], time)];
-  for (const el of $$('.np-head, .np-controls, .np-panel', np)) flying.push(el.animate([{}, { opacity: 0 }], { duration: 160, fill: 'forwards' }));
+  // Gone in the first half, but still running to the end with everything else: an animation that ends
+  // while the artwork is in flight costs WebKit a frame (measured on an Intel MacBook Pro).
+  for (const el of $$('.np-head, .np-controls, .np-panel', np)) flying.push(el.animate([{}, { opacity: 0, offset: 0.45 }, { opacity: 0 }], time));
   return Promise.race([flying[0].finished, new Promise((r) => { setTimeout(r, 420); })]).catch(() => {});
 }
 

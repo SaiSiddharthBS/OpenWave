@@ -55,6 +55,13 @@
 
 * { box-sizing: border-box; }
 html, body { height: 100%; }
+/* iOS 26 lays out a Home Screen app one status bar too short, which leaves a strip at the bottom of the
+   screen that nothing is drawn in (WebKit bug 301108). Asking for the page to be that much taller
+   gives it the whole screen. min() keeps it from growing where the bug isn't: there the large
+   viewport is already the whole screen. */
+@media (display-mode: standalone) {
+  html { min-height: min(100lvh, calc(100% + env(safe-area-inset-top, 0px))); }
+}
 body {
   margin: 0;
   background: var(--bg);
@@ -513,9 +520,19 @@ svg { width: 22px; height: 22px; fill: currentColor; flex: none; }
 .np-bg::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,11,20,.12), rgba(10,11,20,.42)); }
 .lite-glass .np-bg i { display: none; }
 @media (prefers-reduced-transparency: reduce) { .np-bg i { display: none; } }
+.np.priming { opacity: .001 !important; pointer-events: none; }   /* drawn once before it moves (js/app.js) */
+/* What moves when the player opens has its own layer from the start, so it's drawn while priming and
+   not again when it starts moving. */
+.np-art, .np-head, .np-controls, .np-panel { will-change: transform, opacity; }
 .np-head { position: relative; display: flex; align-items: center; gap: 12px; padding: calc(16px + var(--safe-t)) 24px 16px; }
 .np-head .icon-btn:not(.round) { color: var(--text); }
 .np-from { flex: 1; min-width: 0; text-align: center; display: flex; flex-direction: column; }
+/* "Playing from" sits in the middle of the screen, not of the space left between the buttons: the
+   close button keeps as much room beside it as the buttons on the right take (three, or two when the
+   devices button isn't shown). */
+.np-head { --np-end: calc(3 * 40px + 2 * 12px); }
+html:not(.has-link) .np-head { --np-end: calc(2 * 40px + 12px); }
+.np-head [data-act=close-np] { margin-right: calc(var(--np-end) - 40px); }
 .np-from small, .np-from b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .np-from small { color: rgba(255,255,255,.66); font-size: 11.5px; }
 .np-from b { font-weight: 600; font-size: 13.5px; }
@@ -715,11 +732,21 @@ body.paused .np-art { transform: scale(.86); box-shadow: 0 16px 44px rgba(0,0,0,
   .np-controls .controls .icon-btn.toggle { color: rgba(255,255,255,.62); }
   .np-controls .controls .icon-btn.toggle svg { width: 22px; height: 22px; }
   .np-controls .controls .icon-btn.toggle.on { color: #fff; }
-  .np-sheet-btns { display: flex; justify-content: center; gap: 8px; }
-  .np-sheet-btns button { display: flex; align-items: center; gap: 7px; color: rgba(255,255,255,.76); font-weight: 550; font-size: 13px; padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,.1); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); transition: background-color .25s, transform .5s var(--spring); }
-  .np-sheet-btns button:active { transform: scale(.93); }
-  .np-sheet-btns button.on { color: #0a0b14; background: #fff; }
-  .np-sheet-btns svg { width: 18px; height: 18px; }
+  /* The sleep timer and the devices button live here on phones, either side of Up next and Lyrics, so the
+     top row has one button on each side of "Playing from". The devices button's place is kept when it's
+     hidden, so the two in the middle stay centred. */
+  .np-sheet-btns { display: grid; grid-template-columns: 40px minmax(0, 1fr) 40px; align-items: center; gap: 8px; }
+  .np-sheet-btns .icon-btn { color: rgba(255,255,255,.76); }
+  .np-sheet-btns .icon-btn.toggle.on { color: var(--accent); }
+  .np-sheet-btns [data-act=devices] { grid-column: 3; }
+  .np-sheet-mid { display: flex; justify-content: center; gap: 8px; min-width: 0; }
+  .np-sheet-mid button { white-space: nowrap; }
+  .np-head [data-act=sleep], .np-head [data-act=devices] { display: none; }
+  html .np-head, html:not(.has-link) .np-head { --np-end: 40px; }
+  .np-sheet-mid button { display: flex; align-items: center; gap: 7px; color: rgba(255,255,255,.76); font-weight: 550; font-size: 13px; padding: 8px 16px; border-radius: 999px; background: rgba(255,255,255,.1); box-shadow: inset 0 1px 0 rgba(255,255,255,.12); transition: background-color .25s, transform .5s var(--spring); }
+  .np-sheet-mid button:active { transform: scale(.93); }
+  .np-sheet-mid button.on { color: #0a0b14; background: #fff; }
+  .np-sheet-mid svg { width: 18px; height: 18px; }
   .lyrics { font-size: 24px; }
   .lyrics p { filter: none; }
 }
@@ -854,9 +881,10 @@ body.offline .offline-pill { display: flex !important; }
 .native-mac-app .nav-arrows { display: flex; } /* phones use the back button/gesture instead */
 .native-app body { -webkit-user-select: none; user-select: none; }
 .native-app input, .native-app textarea, .native-app .lyrics, .native-app .about { -webkit-user-select: text; user-select: text; }
-/* Mac app: the sidebar runs up into the window's corner so the traffic lights sit inside it, and the top strip drags the window. */
+/* Mac app: the traffic lights sit inside the sidebar's glass, which keeps its gap and rounded corners
+   on every side like the rest of the glass, and the top strip drags the window. */
 .native-mac { --top-pad: 22px; }
-.native-mac .sidebar { margin: 0 0 var(--gutter) 0; padding-top: 44px; border-radius: 0 26px 26px 0; }
+.native-mac .sidebar { padding-top: 44px; }
 .native-mac .np-head { padding-top: 34px; }
 .native-mac .profiles-screen { padding-top: 48px; }
 @media (max-width: 860px) {
@@ -1098,7 +1126,8 @@ body.linked .pb-artist { display: none; }
 .connect-paste .btn { align-self: flex-start; }
 .connect-error { color: var(--danger) !important; margin: 0 !important; }
 .connect-card .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
-.connect-status { position: fixed; z-index: 230; top: calc(var(--safe-t) + 10px); left: 50%; transform: translateX(-50%);
+/* Just under the top bar, so it never covers the buttons in it. */
+.connect-status { position: fixed; z-index: 230; top: calc(var(--topbar-h) + 4px); left: 50%; transform: translateX(-50%);
   width: max-content; max-width: min(520px, calc(100vw - 32px)); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center;
   padding: 9px 16px; border-radius: 22px; font-size: 13px; }
 .connect-status > .ellipsis { min-width: 0; max-width: 100%; }
@@ -1106,6 +1135,14 @@ body.linked .pb-artist { display: none; }
 .connect-msg { min-width: 0; text-align: center; }
 .connect-status .btn { padding: 6px 12px; height: auto; font-size: 13px; }
 .connect-spin { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent-3); animation: spin .8s linear infinite; }
+
+/* The smallest phones: the row under the controls tightens so its labels stay on one line. */
+@media (max-width: 359.98px) {
+  .np-sheet-btns { grid-template-columns: 34px minmax(0, 1fr) 34px; gap: 4px; }
+  .np-sheet-btns .icon-btn { width: 34px; height: 34px; }
+  .np-sheet-mid { gap: 6px; }
+  .np-sheet-mid button { padding: 8px 11px; gap: 5px; font-size: 12.5px; }
+}
 
 /* ------------------------------------------------------------ tablets */
 /* Held upright: the phone's layout, with the room used. The tabs and the mini player share one row,

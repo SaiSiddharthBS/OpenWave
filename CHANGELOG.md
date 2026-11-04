@@ -5,7 +5,15 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Changed
+- **The full-screen player opens and closes without a stutter.** Everything is drawn and set up while the player is still invisible, in the moment after you tap, and only then starts to move, and every part of the animation now ends together. The very first opening is prepared ahead, while the first song loads. Measured on an Intel MacBook Pro, every frame of the motion now takes 15 to 19 ms.
+- On phones and upright tablets, the sleep timer and devices buttons sit in the row under the controls, either side of Up next and Lyrics, so "Playing from" is centred at the top with one button on each side.
+
 ### Fixed
+- In the Mac app, the sidebar's glass was cut off at the left edge of the window. It now has the same gap and rounded corners on every side as the rest of the glass.
+- "Playing from" at the top of the full-screen player was off-centre on Android and other phones.
+- **iPhone Home Screen app reaches the bottom of the screen.** iOS 26 lays out Home Screen apps one status bar too short (WebKit bug 301108), which left an empty strip below the tab bar. Close the app fully and open it again after updating; there's no need to add it to the Home Screen again.
+- On a phone, "Connecting to…" no longer covers the buttons in the top bar: it sits just under it.
 - The screen-layout test no longer stops when a slow test machine briefly loses touch with its browser, and its failures now say which screen and why. A UI test that fails is retried once, and stays red if it fails again.
 
 ## [0.5.5] — 2026-11-03

@@ -320,6 +320,9 @@ async function main() {
     ok(await phone.ev(`document.querySelector('#connect-status')?.dataset.state === 'offline'`), '…and it stays on screen instead of going back to Connecting');
     ok(await phone.ev(`(() => { const b = document.querySelector('#connect-status [data-retry]'); if (!b) return false; const r = b.getBoundingClientRect();
       return document.querySelector('#connect-status').contains(document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2)); })()`), '…on top of everything else, where it can be tapped');
+    ok(await phone.ev(`(() => { const s = document.querySelector('#connect-status').getBoundingClientRect();
+      return [...document.querySelectorAll('#topbar button, #topbar a, #topbar .profile-chip')].every((b) => { const r = b.getBoundingClientRect();
+        return !r.width || r.bottom <= s.top || r.top >= s.bottom || r.right <= s.left || r.left >= s.right; }); })()`), '…without covering any button in the top bar');
     await layout(phone, out, 'status-offline', PHONE);
     await shot(phone, out, 'status-offline');
     if (process.env.E2E_YOUTUBE === '1') {

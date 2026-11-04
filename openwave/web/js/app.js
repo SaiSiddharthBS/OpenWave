@@ -15,7 +15,7 @@ import { initUpdates, checkForUpdate, startUpdate } from './update.js';
 import { initLink, openDevices, linkLabel, linkEvents, setVisible, rename, forget } from './link.js';
 import { startSharing, openSharing, openJoin, showNotices, isInvite } from './sharing.js';
 import { REMOTE, computer } from './remote.js';
-import { fullMotion, glassReduced, initGlass, moveLenses, npClosed, npClosing, npOpened, pageShown, resizeBar, setAmbient, setFullMotion, setGlassReduced } from './glass.js';
+import { fullMotion, glassReduced, initGlass, moveLenses, npClosed, npClosing, npOpened, pageShown, resizeBar, setAmbient, setFullMotion, setGlassReduced, startMoving } from './glass.js';
 import { openPairing, removePhone, forgetComputer, switchTailscale, showTailscaleCode, switchStartup } from './phones.js';
 import {
   $, $$, esc, icon, fmtTime, getList, registerList, trackRow, toast, openMenu, closeMenu, askText,
@@ -165,7 +165,7 @@ function goBack() {
   if (dialog.open) { dialog.close('cancel'); return true; }
   if ($('#profiles:not([hidden])')) return false;
   if (np.classList.contains('show-panel')) { np.classList.remove('show-panel'); $$('.np-sheet-btns button').forEach((b) => b.classList.remove('on')); return true; }
-  if (!np.hidden) { closeNP(); return true; }
+  if (npShowing()) { closeNP(); return true; }
   const here = location.hash || '#/home';
   while (trail.length > 1) {
     trail.pop();
@@ -826,7 +826,7 @@ document.addEventListener('keydown', (e) => {
   else if (k === 's') player.toggleShuffle();
   else if (k === 'r') player.cycleRepeat();
   else if (k === '/') { e.preventDefault(); searchInput.focus(); }
-  else if (k === 'Escape' && !np.hidden) closeNP();
+  else if (k === 'Escape' && npShowing()) closeNP();
 });
 
 // ================================================================== player bindings
@@ -948,20 +948,57 @@ function bindLink() {
 linkEvents.addEventListener('change', bindLink);
 
 // ================================================================== now playing
-function openNP(tab) {
+let opening = 0;
+/** Is the full-screen player on screen (and not just being drawn invisibly, below)? */
+const npShowing = () => !np.hidden && !np.classList.contains('warming');
+// The very first time, the player costs more to draw (its artwork and layers are new), so it's drawn
+// once, invisibly, while nothing else is happening soon after the first song loads.
+let warmed = false;
+async function warmPlayer() {
+  if (warmed || !np.hidden || !player.current) return;
+  warmed = true;
+  np.classList.add('priming', 'warming');
+  np.hidden = false;
+  // Long enough for the artwork and the first thumbnails in Up next to arrive and be unpacked.
+  await Promise.race([Promise.all([$('.np-art').decode?.(), new Promise((r) => setTimeout(r, 700))]).catch(() => {}), new Promise((r) => setTimeout(r, 3000))]);
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  if (!np.classList.contains('warming')) return;   // opened for real meanwhile
+  np.classList.remove('priming', 'warming');
+  np.hidden = true;
+}
+player.addEventListener('track', () => {
+  if (!warmed) setTimeout(() => (window.requestIdleCallback || setTimeout)(() => warmPlayer()), 1500);
+});
+
+async function openNP(tab) {
+  const me = ++opening;
+  const wasHidden = np.hidden || np.classList.contains('warming');
+  np.classList.remove('warming');
   np.classList.remove('closing');
   np.style.transform = '';
   np.hidden = false;
-  resizeBar(() => $('#playerbar').classList.add('wide'));
   if (tab) showTab(tab);
   else if ($('#np-lyrics').hidden) { if (queueStale) renderQueue(); } else loadLyrics();
   bindTime();
-  npOpened(np);
+  if (!wasHidden) return;
+  // Drawing the whole player, and the bar at its new width, takes a slower computer a few frames.
+  // Everything is set up and drawn first, held still with the player invisible, and only then starts
+  // moving, so the animation itself only ever gets quick frames.
+  np.classList.add('priming');
+  resizeBar(() => $('#playerbar').classList.add('wide'), { duration: 640, easing: 'cubic-bezier(.22, 1, .36, 1)' }, undefined, true);
+  npOpened(np, true);
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  if (me !== opening || np.hidden) return;   // closed again meanwhile
+  np.classList.remove('priming');
+  startMoving();
 }
 
 /** Close the full-screen player, shrinking it into the mini player (from where the finger left it, after a swipe). */
 function closeNP({ from = 0 } = {}) {
+  if (np.classList.contains('warming')) { np.classList.remove('priming', 'warming'); np.hidden = true; return; }
   if (np.hidden || np.classList.contains('closing')) return;
+  opening++;
+  np.classList.remove('priming');
   np.classList.remove('show-panel');
   np.classList.add('closing');
   np.style.transform = from ? `translateY(${from}px)` : '';
@@ -976,7 +1013,7 @@ function closeNP({ from = 0 } = {}) {
 
 function toggleNP(tab) {
   const showing = tab === 'lyrics' ? !$('#np-lyrics').hidden : !$('#np-queue').hidden;
-  if (!np.hidden && showing) closeNP(); else openNP(tab);
+  if (npShowing() && showing) closeNP(); else openNP(tab);
 }
 
 function toggleSheet(tab) {
