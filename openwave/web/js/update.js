@@ -48,6 +48,7 @@ export async function checkForUpdate(timeout = 8000) {
 // The Mac app installs the update itself; the others hand the link to the system browser, which downloads the file.
 export const startUpdate = (info) => {
   if (mac) mac.postMessage({ type: 'installUpdate' });
+  else if (window.pywebview?.api?.open) window.pywebview.api.open(info.download);   // the Windows app: the browser downloads it
   else location.href = info.download;
 };
 

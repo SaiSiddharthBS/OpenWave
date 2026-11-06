@@ -109,6 +109,34 @@ jobs:
             Stop-Process $p -Force -ErrorAction SilentlyContinue
             Get-Process msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
           }
+      - name: Check media keys and Windows' media controls (reported, not yet required)
+        shell: powershell
+        run: |
+          $env:OPENWAVE_DATA = "$env:RUNNER_TEMP\owdata4"
+          $env:OPENWAVE_SELFTEST = "$PWD\packaging\windows\selftest.js"
+          New-Item -ItemType Directory -Force $env:OPENWAVE_DATA | Out-Null
+          $p = Start-Process dist/OpenWave/OpenWave.exe -PassThru
+          try {
+            Start-Sleep 25
+            $report = Get-Content "$env:OPENWAVE_DATA\selftest.txt" -ErrorAction SilentlyContinue
+            "page says: $($report -join ' | ')"
+            Add-Type -AssemblyName System.Runtime.WindowsRuntime
+            $asTask = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object { $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]
+            function Await($op, $type) { $t = $asTask.MakeGenericMethod($type).Invoke($null, @($op)); $t.Wait(-1) | Out-Null; $t.Result }
+            [Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager, Windows.Media.Control, ContentType = WindowsRuntime] | Out-Null
+            $mgr = Await ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager]::RequestAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionManager])
+            $found = $false
+            foreach ($s in $mgr.GetSessions()) {
+              $props = Await ($s.TryGetMediaPropertiesAsync()) ([Windows.Media.Control.GlobalSystemMediaTransportControlsSessionMediaProperties])
+              "media session: $($s.SourceAppUserModelId) - '$($props.Title)' by '$($props.Artist)'"
+              if ($props.Title -eq 'OpenWave media test') { $found = $true }
+            }
+            if ($found) { "OpenWave shows in Windows' media controls" } else { "::warning title=Media controls::OpenWave did not show in Windows' media controls on this machine (page: $($report -join ' | '))" }
+          } catch { "::warning title=Media controls::the check could not run: $_" }
+          finally {
+            Stop-Process $p -Force -ErrorAction SilentlyContinue
+            Get-Process msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+          }
       - uses: actions/upload-artifact@v4
         if: always()
         with:

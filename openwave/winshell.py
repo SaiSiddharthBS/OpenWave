@@ -42,6 +42,35 @@ def _size(webview) -> tuple[int, int]:
         return 1280, 820
 
 
+class Bridge:
+    """What the page can ask of the window (window.pywebview.api in update.js and native.js)."""
+
+    def open(self, url: str) -> bool:
+        """Open a web address in the browser: other sites, and update downloads, so nothing gets
+        stuck inside OpenWave's window."""
+        if not isinstance(url, str) or not url.startswith(("https://", "http://")):
+            return False
+        import webbrowser
+
+        return webbrowser.open(url)
+
+    def selftest_report(self, text: str) -> None:
+        """Only for the Windows build's check (OPENWAVE_SELFTEST): what the page found."""
+        if os.getenv("OPENWAVE_SELFTEST") and os.getenv("OPENWAVE_DATA"):
+            with open(Path(os.environ["OPENWAVE_DATA"]) / "selftest.txt", "a", encoding="utf-8") as f:
+                f.write(f"{text}\n")
+
+
+def _self_test(window) -> None:
+    """Run a script in the page once it has loaded (OPENWAVE_SELFTEST: a file), for the Windows build's check."""
+    path = os.getenv("OPENWAVE_SELFTEST")
+    if path:
+        try:
+            window.evaluate_js(Path(path).read_text(encoding="utf-8"))
+        except Exception as e:  # noqa: BLE001
+            log.warning("self-test script failed: %s", e)
+
+
 def open_window(url: str, data: Path) -> bool:
     """Show OpenWave and return when its window is closed: True, or False if WebView2 couldn't start."""
     try:
@@ -49,14 +78,17 @@ def open_window(url: str, data: Path) -> bool:
     except Exception as e:  # noqa: BLE001 - not bundled, or its .NET part didn't load
         log.warning("WebView2 window unavailable: %s", e)
         return False
-    # Songs start by themselves (the next one in the queue, or a tap on another device), as in a browser
-    # app window.
-    os.environ.setdefault("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS", "--autoplay-policy=no-user-gesture-required")
+    # Songs start by themselves (the next one in the queue, or a tap on another device), and the
+    # keyboard's media keys and Windows' media controls reach OpenWave, as in a browser app window.
+    os.environ.setdefault("WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS",
+                          "--autoplay-policy=no-user-gesture-required --enable-features=HardwareMediaKeyHandling")
     try:
         webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True
         width, height = _size(webview)
-        window = webview.create_window("OpenWave", url, width=width, height=height, min_size=(400, 560), background_color="#0A0B14", text_select=True)
+        window = webview.create_window("OpenWave", url, width=width, height=height, min_size=(400, 560),
+                                       background_color="#0A0B14", text_select=True, js_api=Bridge())
         window.events.shown += lambda: _dark_title_bar(window)
+        window.events.loaded += lambda: _self_test(window)
         webview.start(gui="edgechromium", private_mode=False, storage_path=str(data / "webview2"))
         return True
     except Exception as e:  # noqa: BLE001 - no WebView2 runtime, or it failed to start

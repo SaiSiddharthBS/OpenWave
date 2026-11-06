@@ -42,6 +42,18 @@ export async function shareFile(name, blob) {
   return true;
 }
 
+// The Windows app's own window (WebView2, openwave/winshell.py): a link to another site opens in the
+// browser, so the window always stays on OpenWave.
+document.addEventListener('click', (e) => {
+  const a = e.target.closest?.('a[href]');
+  const api = window.pywebview?.api;
+  if (!a || !api?.open || e.defaultPrevented) return;
+  const to = new URL(a.href, location.href);
+  if (to.origin === location.origin || !/^https?:$/.test(to.protocol)) return;
+  e.preventDefault();
+  api.open(to.href);
+});
+
 export function initNative(commands) {
   if (!isNative) return;
   document.documentElement.classList.add('native-app', mac ? 'native-mac-app' : 'native-android');
