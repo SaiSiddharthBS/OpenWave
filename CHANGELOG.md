@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.5.8] — 2026-11-06
+
 ### Fixed
 - **Songs no longer show twice their length and then go silent.** Safari's engine (the Mac app, iPhone and iPad) reports double the length of some songs' audio, for example Lungi Dance (9:10 instead of 4:35), and then plays silence for the second half. OpenWave already corrected this, but only for one audio format, and only when the song's list included its length. Every song is now checked against YouTube's own length as it starts, so it shows the right length and moves on at its real end.
 
