@@ -109,7 +109,7 @@ jobs:
             Stop-Process $p -Force -ErrorAction SilentlyContinue
             Get-Process msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
           }
-      - name: Check media keys and Windows' media controls (reported, not yet required)
+      - name: Check media keys and Windows' media controls
         shell: powershell
         run: |
           $env:OPENWAVE_DATA = "$env:RUNNER_TEMP\owdata4"
@@ -131,8 +131,9 @@ jobs:
               "media session: $($s.SourceAppUserModelId) - '$($props.Title)' by '$($props.Artist)'"
               if ($props.Title -eq 'OpenWave media test') { $found = $true }
             }
-            if ($found) { "OpenWave shows in Windows' media controls" } else { "::warning title=Media controls::OpenWave did not show in Windows' media controls on this machine (page: $($report -join ' | '))" }
-          } catch { "::warning title=Media controls::the check could not run: $_" }
+            if (-not $found) { throw "OpenWave did not show in Windows' media controls (page: $($report -join ' | '))" }
+            "OpenWave shows in Windows' media controls"
+          }
           finally {
             Stop-Process $p -Force -ErrorAction SilentlyContinue
             Get-Process msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
