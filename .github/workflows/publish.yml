@@ -46,6 +46,15 @@ jobs:
           sha256sum "${files[@]}" > SHA256SUMS.txt
           cat SHA256SUMS.txt
           python3 ../scripts/release_notes.py "$TAG" SHA256SUMS.txt > ../notes.md
+          # A copy of each app for updates only (OpenWave-Android-update.apk, …): the apps update from
+          # these, so the Stats page can count real downloads (new installs and reinstalls) alone.
+          for f in OpenWave-*.dmg OpenWave-*.exe OpenWave-*.AppImage OpenWave-*.apk; do
+            [ -e "$f" ] || continue
+            u="${f%.*}-update.${f##*.}"
+            cp "$f" "$u"
+            sha256sum "$u" > "$u.sha256"
+          done
+          ls -la
       - name: Publish
         run: |
           title="OpenWave ${TAG#v}"

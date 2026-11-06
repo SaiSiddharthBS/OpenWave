@@ -41,6 +41,7 @@ class UpdateCheck : JobService() {
         private const val PREFS = "updates"
         private const val TOLD = "told"
         private const val APK = "OpenWave-Android.apk"
+        private const val UPDATE_APK = "OpenWave-Android-update.apk"   // only for updates, so the Stats page counts only installs
         private const val LATEST = "https://api.github.com/repos/SaiSiddharthBS/OpenWave/releases/latest"
 
         fun schedule(context: Context) {
@@ -70,8 +71,10 @@ class UpdateCheck : JobService() {
             val release = fetchLatest()
             val version = release.getString("tag_name").trimStart('v', 'V')
             val assets = release.getJSONArray("assets")
-            val apk = (0 until assets.length()).map { assets.getJSONObject(it) }
-                .firstOrNull { it.optString("name") == APK }?.getString("browser_download_url") ?: return
+            val files = (0 until assets.length()).map { assets.getJSONObject(it) }
+            // Releases before 0.5.8 have no update copy: those use the normal file.
+            val apk = (files.firstOrNull { it.optString("name") == UPDATE_APK } ?: files.firstOrNull { it.optString("name") == APK })
+                ?.getString("browser_download_url") ?: return
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             if (!isNewer(version, BuildConfig.VERSION_NAME) || prefs.getString(TOLD, null) == version) return
             notify(context, version, apk)

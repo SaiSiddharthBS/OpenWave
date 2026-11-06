@@ -11,8 +11,10 @@ enum Updates {
     private static let api = URL(string: "https://api.github.com/repos/SaiSiddharthBS/OpenWave/releases/latest")!
     #if arch(arm64)
     private static let dmgName = "OpenWave-macOS-AppleSilicon.dmg"
+    private static let updateName = "OpenWave-macOS-AppleSilicon-update.dmg"
     #else
     private static let dmgName = "OpenWave-macOS-Intel.dmg"
+    private static let updateName = "OpenWave-macOS-Intel-update.dmg"
     #endif
 
     /// The page looks for updates while the app is open (update.js) and shows a card with an Update
@@ -40,7 +42,10 @@ enum Updates {
             let url = { (name: String) in
                 assets.first { $0["name"] as? String == name }.flatMap { $0["browser_download_url"] as? String }.flatMap(URL.init(string:))
             }
-            let dmg = url(dmgName), checksum = url(dmgName + ".sha256")
+            // Updates download the release's update copy, so the Stats page counts only installs.
+            // Releases before 0.5.8 have none: those use the normal file.
+            let file = url(updateName) != nil ? updateName : dmgName
+            let dmg = url(file), checksum = url(file + ".sha256")
             DispatchQueue.main.async {
                 let current = Bundle.main.shortVersion
                 if let tag, let page, isNewer(tag, than: current) {

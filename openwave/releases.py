@@ -30,6 +30,13 @@ DOWNLOADS = {
 _cache: dict = {"at": 0.0, "release": None}
 
 
+def update_file(name: str) -> str:
+    """The release's copy of a file that's only for updates: OpenWave-Android.apk → OpenWave-Android-update.apk.
+    Updates download it instead of the file new users download, so the Stats page counts only installs."""
+    stem, dot, ext = name.rpartition(".")
+    return f"{stem}-update.{ext}" if dot else f"{name}-update"
+
+
 def parse_version(v: str) -> tuple[int, ...]:
     parts = []
     for p in v.strip().lstrip("vV").split("."):
@@ -94,6 +101,8 @@ async def check(client: httpx.AsyncClient, client_hint: str | None = None, curre
         return result
     result.update(latest=release["version"], page=release["page"], newer=is_newer(release["version"], current))
     if target and result["newer"]:
-        result["download"] = release["assets"].get(DOWNLOADS[target])
+        name = DOWNLOADS[target]
+        # Releases before 0.5.8 have no update copies: those offer the normal file.
+        result["download"] = release["assets"].get(update_file(name)) or release["assets"].get(name)
         result["available"] = result["download"] is not None
     return result

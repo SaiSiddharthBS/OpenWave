@@ -160,6 +160,15 @@ async def audio(video_id: str, title: str = "", artist: str = ""):
     return info
 
 
+@app.get("/api/length/{video_id}")
+async def length(video_id: str):
+    """How long a song really is, from YouTube's own details for its stream. WebKit (Safari, the Mac
+    app) reports twice the length of some AAC files and then plays silence, and some lists leave the
+    length out, so the player checks with this. Usually free: playing a song resolves its stream anyway."""
+    info = await _guard(youtube.resolve(_check_id(video_id)))
+    return {"seconds": info.get("duration") or 0}
+
+
 @app.get("/api/track/{video_id}")
 async def track(video_id: str):
     info = await _guard(music.track_info(_check_id(video_id)))

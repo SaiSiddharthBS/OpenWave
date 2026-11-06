@@ -202,6 +202,14 @@ def test_app_update_offers_the_right_download(monkeypatch):
     monkeypatch.setattr(releases, "FROZEN", True)
     monkeypatch.setattr(releases.sys, "platform", "win32")
     assert asyncio.run(releases.check(None))["download"].endswith("OpenWave-Windows-Setup.exe")
+    # A release with update copies: updates download those, so only installs are counted.
+    assert releases.update_file("OpenWave-Android.apk") == "OpenWave-Android-update.apk"
+    assert releases.update_file("OpenWave-Linux-x86_64.AppImage") == "OpenWave-Linux-x86_64-update.AppImage"
+    newer = {**release, "assets": {**release["assets"], **{releases.update_file(f): f"https://example/dl/{releases.update_file(f)}" for f in files}}}
+    monkeypatch.setattr(releases, "_cache", {"at": 1e18, "release": newer})
+    assert asyncio.run(releases.check(None))["download"].endswith("OpenWave-Windows-Setup-update.exe")
+    assert asyncio.run(releases.check(None, "android"))["download"].endswith("OpenWave-Android-update.apk")
+    monkeypatch.setattr(releases, "_cache", {"at": 1e18, "release": release})
     monkeypatch.setattr(releases.sys, "platform", "darwin")  # no Mac files in this release
     assert not asyncio.run(releases.check(None))["available"]
 
@@ -284,3 +292,17 @@ def test_shared_youtube_music_links_open_the_right_page():
     assert music.parse_youtube_url("https://music.youtube.com/browse/VLPL4fGSI1pDJn6puJdseH2Rt9sMvt9E2M4i") == ("playlist", "PL4fGSI1pDJn6puJdseH2Rt9sMvt9E2M4i")
     assert music.parse_youtube_url("https://music.youtube.com/channel/UCDPM_n1atn2ijUwHd0NNRQw") == ("artist", "UCDPM_n1atn2ijUwHd0NNRQw")
     assert music.parse_youtube_url("https://music.youtube.com/watch?v=dQw4w9WgXcQ") == ("video", "dQw4w9WgXcQ")
+
+
+def test_the_real_length_comes_from_youtubes_details(monkeypatch):
+    """WebKit can report twice a song's length; the player checks with /api/length."""
+    from fastapi.testclient import TestClient
+
+    from openwave import app as appmod, youtube
+
+    async def resolve(video_id, force=False, robust=False):
+        return {"id": video_id, "duration": 275, "formats": {}, "expires": 0}
+    monkeypatch.setattr(youtube, "resolve", resolve)
+    with TestClient(appmod.app) as c:
+        assert c.get("/api/length/dQw4w9WgXcQ").json() == {"seconds": 275}
+        assert c.get("/api/length/not-an-id").status_code in (400, 422)

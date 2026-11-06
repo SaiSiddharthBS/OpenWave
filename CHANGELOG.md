@@ -5,6 +5,12 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Fixed
+- **Songs no longer show twice their length and then go silent.** Safari's engine (the Mac app, iPhone and iPad) reports double the length of some songs' audio, for example Lungi Dance (9:10 instead of 4:35), and then plays silence for the second half. OpenWave already corrected this, but only for one audio format, and only when the song's list included its length. Every song is now checked against YouTube's own length as it starts, so it shows the right length and moves on at its real end.
+
+### Changed
+- **The Stats page counts real downloads only.** Every release now also has a copy of each app just for updates, and the apps (and the Mac install script, on a Mac that already has an older OpenWave) update from that copy. New installs and reinstalls still count; updates don't. Releases before 0.5.8 had no such copy, so their numbers still include updates.
+
 ## [0.5.7] — 2026-11-04
 
 ### Changed

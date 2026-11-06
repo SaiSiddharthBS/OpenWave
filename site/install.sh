@@ -20,7 +20,22 @@ if [ "$(sysctl -n hw.optional.arm64 2>/dev/null || echo 0)" = "1" ]; then
 else
   FILE="OpenWave-macOS-Intel.dmg"; KIND="Intel"
 fi
-URL="https://github.com/$REPO/releases/latest/download/$FILE"
+URL="https://github.com/$REPO/releases/latest/download"
+
+# An older OpenWave already on this Mac means this is an update, which comes from the release's
+# update copy so that the Stats page only counts installs. A first install or a reinstall of the
+# same version is a real download.
+INSTALLED=""
+for app in /Applications/OpenWave.app "$HOME/Applications/OpenWave.app"; do
+  INSTALLED="$(/usr/libexec/PlistBuddy -c 'Print CFBundleShortVersionString' "$app/Contents/Info.plist" 2>/dev/null || true)"
+  [ -n "$INSTALLED" ] && break
+done
+LATEST="$(curl -fsSI "https://github.com/$REPO/releases/latest" 2>/dev/null | tr -d '\r' | sed -n 's#^[Ll]ocation: .*/tag/[vV]\{0,1\}##p' | tail -1 || true)"
+GET="$FILE"
+if [ -n "$INSTALLED" ] && [ -n "$LATEST" ] && [ "$INSTALLED" != "$LATEST" ] \
+  && [ "$(printf '%s\n%s\n' "$INSTALLED" "$LATEST" | sort -V | head -1)" = "$INSTALLED" ]; then
+  GET="${FILE%.dmg}-update.dmg"
+fi
 
 TMP="$(mktemp -d)"
 MNT="$TMP/mount"
@@ -28,13 +43,15 @@ cleanup() { hdiutil detach "$MNT" -quiet 2>/dev/null || true; rm -rf "$TMP"; }
 trap cleanup EXIT
 
 say "Downloading OpenWave for $KIND Macs…"
-curl -fL --progress-bar -o "$TMP/$FILE" "$URL"
-curl -fsSL -o "$TMP/$FILE.sha256" "$URL.sha256"
-(cd "$TMP" && shasum -a 256 -c "$FILE.sha256" >/dev/null) || { echo "The download didn't match its checksum. Please try again."; exit 1; }
+# Releases before 0.5.8 have no update copy: then the normal file is used.
+if [ "$GET" != "$FILE" ] && ! curl -fsSIL -o /dev/null "$URL/$GET"; then GET="$FILE"; fi
+curl -fL --progress-bar -o "$TMP/$GET" "$URL/$GET"
+curl -fsSL -o "$TMP/$GET.sha256" "$URL/$GET.sha256"
+(cd "$TMP" && shasum -a 256 -c "$GET.sha256" >/dev/null) || { echo "The download didn't match its checksum. Please try again."; exit 1; }
 
 say "Installing…"
 mkdir -p "$MNT"
-hdiutil attach -nobrowse -noautoopen -quiet -mountpoint "$MNT" "$TMP/$FILE"
+hdiutil attach -nobrowse -noautoopen -quiet -mountpoint "$MNT" "$TMP/$GET"
 if [ -w /Applications ]; then DEST="/Applications/OpenWave.app"; else mkdir -p "$HOME/Applications"; DEST="$HOME/Applications/OpenWave.app"; fi
 if pgrep -xq OpenWave; then
   osascript -e 'quit app "OpenWave"' >/dev/null 2>&1 || true

@@ -93,6 +93,7 @@ export function fake(cat, url) {
   if (p.startsWith('/api/lyrics/')) return json(cat.lyrics);
   if (p.startsWith('/api/audio/') || p.startsWith('/api/track/')) return json(cat.song(Number(p.slice(-8)) || 1));
   if (p.startsWith('/api/prefetch/')) return json({ ok: true });
+  if (p.startsWith('/api/length/')) return json({ seconds: cat.song(Number(p.slice(-8)) || 1).duration });
   if (p === '/api/img') return { type: 'image/png', body: PNG };
   if (p.startsWith('/api/stream/')) return { type: 'audio/wav', body: WAV };
   if (p === '/api/app-update') return json({});

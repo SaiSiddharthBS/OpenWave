@@ -37,6 +37,10 @@ try {
       const html = (await (await fetch(`${engine.base}/`)).text()).replace('<head>', `<head><meta name="openwave-version" content="${answers.webVersion}">`);
       return page.send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'text/html' }], body: Buffer.from(html).toString('base64') }).catch(() => {});
     }
+    if (url.pathname.startsWith('/api/length/') && answers.length) {
+      const body = Buffer.from(JSON.stringify({ seconds: answers.length })).toString('base64');
+      return page.send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body }).catch(() => {});
+    }
     if (url.pathname === '/api/suggest') {
       const body = Buffer.from(JSON.stringify(answers.suggest)).toString('base64');
       return page.send('Fetch.fulfillRequest', { requestId, responseCode: 200, responseHeaders: [{ name: 'Content-Type', value: 'application/json' }], body }).catch(() => {});
@@ -207,6 +211,12 @@ try {
   await sleep(2500);
   const times = await page.ev(`[...document.querySelectorAll('[data-bind=dur]')].map((e) => e.textContent)`);
   check(times.length && times.every((t) => t !== '0:00'), `an unknown length doesn't show as 0:00 (${times[0]})`);
+  // Playing it asks the engine for the real length (WebKit can report double, then play silence).
+  await page.ev(`document.querySelector('#playerbar [data-act=toggle]').click(); true`);
+  await sleep(2500);
+  const saved = await page.ev(`(() => { const k = Object.keys(localStorage).find((n) => /queue/i.test(n)); const q = JSON.parse(localStorage.getItem(k)); return q.queue[q.index]; })()`);
+  const expected = cat.song(Number(saved.videoId.slice(-8))).duration;
+  check(saved.duration === expected, `once it plays, it keeps the song's real length from the engine (${saved.duration} s, engine says ${expected} s)`);
 
 
   console.log('Updates');
@@ -241,12 +251,37 @@ try {
   answers.webVersion = '1.0.0';
   await page.send('Page.navigate', { url: `${engine.base}/?webapp=1` });
   await sleep(3000);
-  const greeted = `document.querySelector('#toast')?.textContent || ''`;
+  // Every message the page shows, in order, so a later one can't hide it.
+  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `addEventListener('DOMContentLoaded', () => {
+    const t = document.querySelector('#toast'); window.__toasts = [];
+    new MutationObserver(() => window.__toasts.push(t.textContent)).observe(t, { childList: true, characterData: true, subtree: true }); });` });
+  const greeted = `(window.__toasts || []).join(' | ')`;
   check(!(await page.ev(greeted)).includes('updated'), 'the web app says nothing the first time');
   answers.webVersion = '1.0.1';
   await page.send('Page.navigate', { url: `${engine.base}/?webapp=2` });
   await sleep(2000);
   check((await page.ev(greeted)).includes('updated to 1.0.1'), 'and says so when it has updated itself');
+
+  console.log('A song whose length WebKit reads as double');
+  // As in Safari: no Opus, and every file reported as twice its real length, which then plays on in
+  // silence. The test songs are two seconds long, and the engine says so.
+  answers.length = 2;
+  answers.update = null;
+  await page.send('Page.addScriptToEvaluateOnNewDocument', { source: `
+    const can = HTMLMediaElement.prototype.canPlayType;
+    HTMLMediaElement.prototype.canPlayType = function (t) { return /opus/.test(t) ? '' : can.call(this, t); };
+    const real = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, 'duration').get;
+    Object.defineProperty(HTMLMediaElement.prototype, 'duration', { get() { const d = real.call(this); return Number.isFinite(d) ? d * 2 : d; } });` });
+  await page.send('Page.navigate', { url: `${engine.base}/?doubled#/play/${vid(1)}` });
+  await sleep(1500);
+  const before = await page.ev(`document.querySelector('[data-bind=title]')?.textContent`);
+  await sleep(1300);
+  const length = await page.ev(`[...document.querySelectorAll('[data-bind=dur]')].map((e) => e.textContent)[0]`);
+  check(length === '0:02', `it shows the real length, not double (${length})`);
+  await sleep(2600);
+  const after = await page.ev(`document.querySelector('[data-bind=title]')?.textContent`);
+  const at = await page.ev(`document.querySelector('[data-bind=cur]')?.textContent`);
+  check(before !== after || at === '0:00' || at === '0:01', `and moves on at the real end instead of playing silence (now "${after}" at ${at})`);
 
   page.close();
 } finally {

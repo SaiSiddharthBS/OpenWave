@@ -80,14 +80,15 @@ class Player extends EventTarget {
   }
 
   /**
-   * WebKit reports exactly double the real length for YouTube's AAC files, then plays silence.
-   * (A genuinely longer file — e.g. a music video's audio — is not ~2x, and Opus is unaffected.)
+   * WebKit reports exactly double the real length for some of YouTube's files, then plays silence:
+   * AAC, and in Safari 18 (the Mac app on macOS 15) Opus too. A genuinely longer file, such as a music
+   * video's audio, is not about twice the song's real length, which comes from the engine (checkLength).
    */
   misreadLength() {
     const known = this.current?.duration || 0;
     if (!known || !this.loaded || !Number.isFinite(this.el.duration)) return false;
     const ratio = this.el.duration / known;
-    return ratio > 1.9 && ratio < 2.1 && !this.el.src.includes('codec=opus');
+    return ratio > 1.9 && ratio < 2.1;
   }
   get upcoming() { return this.queue.slice(this.index + 1); }
   get dualDeck() { return !IOS; }
@@ -108,12 +109,7 @@ class Player extends EventTarget {
       el.addEventListener('waiting', mine(() => this.setLoading(true)));
       el.addEventListener('playing', mine(() => { this.setLoading(false); this.errors = 0; this.prefetchNext(); }));
       el.addEventListener('canplay', mine(() => this.setLoading(false)));
-      el.addEventListener('loadedmetadata', mine(() => {
-        // Some lists leave out a song's length: remember it, for when the song is restored at the next start.
-        if (this.current && !this.current.duration && Number.isFinite(el.duration) && !this.misreadLength()) this.current.duration = Math.round(el.duration);
-        this.emit('time');
-        this.positionState();
-      }));
+      el.addEventListener('loadedmetadata', mine(() => { this.emit('time'); this.positionState(); }));
       el.addEventListener('seeking', mine(() => { this.cancelFade(); this.lastPos = null; }));
       el.addEventListener('ended', mine(() => this.onEnded()));
       el.addEventListener('error', mine(() => { if (el.getAttribute('src')) this.onError(); }));
@@ -178,7 +174,24 @@ class Player extends EventTarget {
   }
 
   // ---------------------------------------------------------------- listening accounting
+  /**
+   * The song's real length, from the engine. The audio's own length can't be trusted: WebKit reports
+   * twice the length of some AAC files and then plays silence (misreadLength), which can only be
+   * caught when the real length is known, and some lists don't say it.
+   */
+  async checkLength(t) {
+    try {
+      const { seconds } = await get.length(t.videoId);
+      if (!(seconds > 0) || t !== this.current || Math.abs((t.duration || 0) - seconds) < 2) return;
+      t.duration = Math.round(seconds);
+      this.saveQueue(true);
+      this.emit('time');
+      this.positionState();
+    } catch { /* offline, or an older engine: keep what the list said */ }
+  }
+
   beginTrack(t) {
+    this.checkLength(t);
     this.forcedEnd = false;
     this.resumes = 0;
     this.listenTrack = t;

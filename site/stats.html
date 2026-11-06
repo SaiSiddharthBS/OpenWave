@@ -107,7 +107,7 @@
     <h2>What these numbers mean</h2>
     <ul>
       <li><b>Downloads are not users.</b> One person can download twice (a new phone, a reinstall), and a file shared over WhatsApp counts once, however many people install it.</li>
-      <li><b>Updates count too.</b> When an app updates itself, it downloads the new version from GitHub, so later versions include people who updated.</li>
+      <li><b>Updates aren't counted.</b> The apps update from their own copy of each release, so these are new installs and reinstalls only. Releases before 0.5.8 had no such copy, so their numbers also include updates.</li>
       <li><b>Not counted:</b> Docker pulls and people running the server from source. Installs through Obtainium are counted, since it downloads the same files.</li>
       <li>Downloads, stars and forks are saved once a day by a <a href="https://github.com/SaiSiddharthBS/OpenWave/blob/main/.github/workflows/stats.yml">GitHub workflow</a>; the totals at the top are live.</li>
     </ul>
@@ -127,6 +127,9 @@ const APPS = [ // which app a release file is; the order is the order they're li
   ['Linux', /AppImage|\.deb$|\.tar\.gz$/i],
 ];
 const appOf = (file) => APPS.find(([, re]) => re.test(file))?.[0] || 'Other';
+// Real downloads only: the release files people install from, not the copies the apps update from
+// (OpenWave-Android-update.apk, …) or the checksums.
+const counted = (name) => !/\.(sha256|txt)$/i.test(name) && !/-update\.[^.]+$/i.test(name);
 const fmt = (n) => n.toLocaleString('en');
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const day = (iso) => new Date(`${iso}T00:00:00Z`).toLocaleDateString('en', { day: 'numeric', month: 'short', timeZone: 'UTC' });
@@ -270,13 +273,14 @@ async function main() {
     starHistory().catch(() => []),
   ]);
   const published = releases.filter((r) => !r.draft).sort((a, b) => new Date(a.published_at) - new Date(b.published_at));
-  const files = published.flatMap((r) => r.assets.filter((a) => !/\.(sha256|txt)$/.test(a.name)).map((a) => ({ version: r.tag_name, name: a.name, app: appOf(a.name), count: a.download_count })));
+  const files = published.flatMap((r) => r.assets.filter((a) => counted(a.name)).map((a) => ({ version: r.tag_name, name: a.name, app: appOf(a.name), count: a.download_count })));
   const total = files.reduce((s, f) => s + f.count, 0);
   const latest = published.at(-1);
   const latestCount = files.filter((f) => f.version === latest?.tag_name).reduce((s, f) => s + f.count, 0);
 
   // Downloads per day: the difference between one day's saved total and the next.
-  const days = (history?.days || []).map((d) => ({ date: d.date, total: Object.values(d.downloads || {}).reduce((s, v) => s + Object.values(v).reduce((a, b) => a + b, 0), 0) }));
+  const days = (history?.days || []).map((d) => ({ date: d.date,
+    total: Object.values(d.downloads || {}).reduce((s, v) => s + Object.entries(v).reduce((a, [name, n]) => a + (counted(name) ? n : 0), 0), 0) }));
   const perDay = days.slice(1).map((d, i) => ({ date: d.date, value: Math.max(0, d.total - days[i].total) }));
   const week = perDay.slice(-7).reduce((s, d) => s + d.value, 0);
   const daysOld = latest ? Math.max(0, Math.round((Date.now() - new Date(latest.published_at)) / 86400000)) : 0;

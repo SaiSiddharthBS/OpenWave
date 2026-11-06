@@ -6,7 +6,8 @@ token that may read traffic (the optional STATS_TOKEN secret), it also keeps Git
 and clones, which GitHub itself only remembers for two weeks.
 
 Only public counts from GitHub are used: the apps never report anything, so these numbers say how
-many times OpenWave was downloaded, not how many people use it.
+many times OpenWave was downloaded, not how many people use it. Every file is kept, the update
+copies (…-update.apk and so on) too; the Stats page counts only the files people install from.
 """
 
 from __future__ import annotations
@@ -85,8 +86,8 @@ def main(path: str) -> None:
     history["updated"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
     with open(path, "w") as f:
         json.dump(history, f, indent=1)
-    total = sum(sum(files.values()) for files in snapshot["downloads"].values())
-    print(f"{today}: {total} downloads, {snapshot['stars']} stars, {len(history['days'])} days kept")
+    total = sum(n for files in snapshot["downloads"].values() for name, n in files.items() if "-update." not in name)
+    print(f"{today}: {total} downloads (updates not counted), {snapshot['stars']} stars, {len(history['days'])} days kept")
 
 
 if __name__ == "__main__":

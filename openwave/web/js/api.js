@@ -42,6 +42,7 @@ export const get = {
   artist: (id) => api(`/api/artist/${enc(id)}`, { ttl: 1800 }),
   next: (id, playlistId) => api(`/api/next/${id}${playlistId ? `?playlistId=${enc(playlistId)}` : ''}`, { ttl: 600 }),
   lyrics: (id) => api(`/api/lyrics/${id}`, { ttl: 3600 }),
+  length: (id) => api(`/api/length/${id}`, { ttl: 86400 }),
   audio: (id, title = '', artist = '') => api(`/api/audio/${id}${title ? `?title=${enc(title)}&artist=${enc(artist)}` : ''}`, { ttl: 86400 }),
   prefetch: (id, mv = false, title = '', artist = '') => fetch(`/api/prefetch/${id}${mv ? `?mv=1&title=${enc(title)}&artist=${enc(artist)}` : ''}`, { method: 'POST' }).catch(() => {}),
 };
