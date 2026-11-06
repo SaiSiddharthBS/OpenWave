@@ -255,7 +255,7 @@ A few networks (some workplaces and mobile carriers) block direct connections be
 
 ### Windows and Linux
 
-One-click apps that bundle the same engine with a small launcher, which opens OpenWave in its own window (Microsoft Edge on Windows, Chrome or Chromium on Linux), with in-app updates and self-updating YouTube support.
+One-click apps that bundle the same engine with a small launcher. On Windows, OpenWave opens in its own window, with its own taskbar button, using WebView2 (the Edge engine built into Windows 10 and 11); on Linux, in an app window of Chrome or Chromium. Both have in-app updates and self-updating YouTube support.
 
 ## How it's built
 
@@ -296,7 +296,7 @@ flowchart LR
   Conn -->|same API, in-process| Engine
 ```
 
-- **One engine, many shells.** The engine is a FastAPI application. Each platform wraps the same web interface in a native shell (Swift on macOS, Kotlin on Android, an app window on Windows and Linux) that adds system integration such as media keys, notifications and widgets.
+- **One engine, many shells.** The engine is a FastAPI application. Each platform wraps the same web interface in a native shell (Swift on macOS, Kotlin on Android, a WebView2 window on Windows, a Chromium app window on Linux) that adds system integration such as media keys, notifications and widgets.
 - **Streaming.** YouTube ties stream URLs to the address that requested them, so the engine proxies audio with HTTP range requests; client devices never contact Google directly. Long songs are fetched in pieces and resumed from the exact byte if the connection drops.
 - **Library and sync.** Each profile's library is a log of operations applied to SQLite. Clients apply changes optimistically, keep an outbox while offline and sync it on reconnect; other devices notice a new version and pull within seconds.
 - **Daily Mixes.** `mixes.py` reads a profile's plays as taste: completion, skips and recency weight each song, and artists played in the same sitting are grouped. A day's mixes are ready at once from your own songs; new songs from YouTube's radio join them in the background, so Home never waits on the network.
@@ -489,7 +489,7 @@ Contributions of every kind are welcome: code, design, translations, documentati
 
 ## Acknowledgements
 
-OpenWave is built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ytmusicapi](https://github.com/sigma67/ytmusicapi), [FastAPI](https://fastapi.tiangolo.com), [aiortc](https://github.com/aiortc/aiortc), [Deno](https://deno.com), [PyInstaller](https://pyinstaller.org) and [Chaquopy](https://chaquo.com/chaquopy/), and inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
+OpenWave is built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ytmusicapi](https://github.com/sigma67/ytmusicapi), [FastAPI](https://fastapi.tiangolo.com), [aiortc](https://github.com/aiortc/aiortc), [Deno](https://deno.com), [PyInstaller](https://pyinstaller.org), [pywebview](https://pywebview.flowrl.com) and [Chaquopy](https://chaquo.com/chaquopy/), and inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
 
 ## Legal and responsible use
 
