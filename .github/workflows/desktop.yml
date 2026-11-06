@@ -28,7 +28,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install
-        run: pip install . pyinstaller
+        run: pip install ".[windows]" pyinstaller
       - name: Fetch Deno
         shell: pwsh
         run: |
@@ -41,6 +41,7 @@ jobs:
             --add-data "openwave/web;openwave/web" --collect-all yt_dlp_ejs --collect-data ytmusicapi `
             --collect-submodules yt_dlp --collect-submodules uvicorn `
             --collect-submodules openwave._vendor.aiortc --collect-submodules aioice --collect-submodules dns --exclude-module av `
+            --collect-all webview --collect-all clr_loader --collect-all pythonnet --hidden-import clr `
             packaging/launcher_entry.py
           New-Item -ItemType Directory -Force dist/OpenWave/bin | Out-Null
           Copy-Item deno/deno.exe dist/OpenWave/bin/deno.exe
@@ -78,6 +79,42 @@ jobs:
             $st = Invoke-RestMethod -Method Post http://127.0.0.1:47878/api/connect/startup -Headers $json -Body '{"on":false}'
             if ($st.on -or (Get-ItemProperty $run -Name OpenWave -ErrorAction SilentlyContinue)) { throw "Start with Windows did not turn off" }
           } finally { Stop-Process $p -Force }
+      - name: Smoke test the app's own window (WebView2)
+        shell: pwsh
+        run: |
+          $env:OPENWAVE_DATA = "$env:RUNNER_TEMP\owdata3"
+          $p = Start-Process dist/OpenWave/OpenWave.exe -PassThru
+          try {
+            $up = $false
+            for ($i = 0; $i -lt 60; $i++) { try { Invoke-RestMethod http://127.0.0.1:47878/api/health | Out-Null; $up = $true; break } catch { Start-Sleep 1 } }
+            if (-not $up) { throw "the engine did not start" }
+            $shown = $false
+            for ($i = 0; $i -lt 60; $i++) {
+              $p.Refresh()
+              if ($p.MainWindowTitle -eq "OpenWave" -and (Get-Process msedgewebview2 -ErrorAction SilentlyContinue)) { $shown = $true; break }
+              Start-Sleep 1
+            }
+            "window: '$($p.MainWindowTitle)'; WebView2 processes: $((Get-Process msedgewebview2 -ErrorAction SilentlyContinue).Count)"
+            if (-not $shown) { throw "OpenWave's own window (WebView2) did not open" }
+            $edge = Get-CimInstance Win32_Process -Filter "Name = 'msedge.exe'" | Where-Object { $_.CommandLine -like '*--app=*127.0.0.1*' }
+            if ($edge) { throw "an Edge app window opened instead of OpenWave's own" }
+            Start-Sleep 6   # let the page draw, then keep a picture of the window
+            Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+            $b = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+            $bmp = New-Object System.Drawing.Bitmap $b.Width, $b.Height
+            [System.Drawing.Graphics]::FromImage($bmp).CopyFromScreen($b.Location, [System.Drawing.Point]::Empty, $b.Size)
+            New-Item -ItemType Directory -Force window-shot | Out-Null
+            $bmp.Save("window-shot/windows-app.png")
+          } finally {
+            Stop-Process $p -Force -ErrorAction SilentlyContinue
+            Get-Process msedgewebview2 -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+          }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-app-window
+          path: window-shot
+          if-no-files-found: ignore
       - name: Installer
         shell: pwsh
         run: |

@@ -111,3 +111,33 @@ def test_linux_needs_the_appimage(linux, monkeypatch):
     monkeypatch.delenv("APPIMAGE")
     assert startup.system() is None
 
+
+
+def test_only_windows_has_its_own_webview2_window(monkeypatch, tmp_path):
+    """Elsewhere, or when asked for the browser window, the launcher opens the Chromium app window."""
+    import sys
+
+    from openwave import launcher, winshell
+
+    monkeypatch.setattr(sys, "platform", "linux")
+    assert launcher.own_window("http://127.0.0.1:1/", tmp_path) is False
+    monkeypatch.setattr(sys, "platform", "win32")
+    opened = []
+    monkeypatch.setattr(winshell, "open_window", lambda url, data: opened.append(url) or True)
+    assert launcher.own_window("http://127.0.0.1:1/", tmp_path) is True and opened == ["http://127.0.0.1:1/"]
+    monkeypatch.setenv("OPENWAVE_BROWSER_WINDOW", "1")
+    assert launcher.own_window("http://127.0.0.1:2/", tmp_path) is False
+
+
+def test_without_webview2_the_window_falls_back(monkeypatch, tmp_path):
+    import builtins
+
+    from openwave import winshell
+
+    real = builtins.__import__
+    def no_webview(name, *a, **k):
+        if name == "webview":
+            raise ImportError("not bundled")
+        return real(name, *a, **k)
+    monkeypatch.setattr(builtins, "__import__", no_webview)
+    assert winshell.open_window("http://127.0.0.1:1/", tmp_path) is False

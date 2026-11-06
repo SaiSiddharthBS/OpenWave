@@ -26,6 +26,8 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "playwright>=1.48"]
+# The Windows app's own window (openwave/winshell.py): WebView2, through pywebview.
+windows = ["pywebview>=5.3"]
 
 [project.scripts]
 openwave = "openwave.__main__:main"

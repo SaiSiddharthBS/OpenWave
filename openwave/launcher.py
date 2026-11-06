@@ -1,6 +1,7 @@
 """Desktop launcher for Windows and Linux: double-click → OpenWave opens in its own app window.
 
-Starts the bundled server on 127.0.0.1, then opens it in a Chromium "app mode" window (Microsoft
+Starts the bundled server on 127.0.0.1, then opens it: on Windows in OpenWave's own WebView2 window
+(winshell.py), and otherwise, or if that can't start, in a Chromium "app mode" window (Microsoft
 Edge ships with every Windows 10/11 PC; Chrome/Chromium/Brave/Edge on Linux). Media keys and the
 system media overlay work through the browser. Closing the window quits OpenWave, unless it starts
 with Windows (startup.py): then it keeps running for your phones, and --background (how Windows
@@ -69,6 +70,15 @@ def find_app_browser() -> list[str] | None:
     return None
 
 
+def own_window(url: str, data: Path) -> bool:
+    """OpenWave's own window (Windows, WebView2), until it's closed. False when there isn't one here."""
+    if sys.platform != "win32" or os.getenv("OPENWAVE_BROWSER_WINDOW"):
+        return False
+    from . import winshell
+
+    return winshell.open_window(url, data)
+
+
 def app_window_command(browser: list[str], url: str, profile_dir: Path) -> list[str]:
     return [
         *browser,
@@ -132,6 +142,8 @@ def main() -> None:
     else:
         # OpenWave is already running: just open another window onto it and leave its owner in charge.
         url = f"http://127.0.0.1:{PREFERRED_PORT}/"
+        if own_window(url, data_dir()):
+            return
         browser = find_app_browser()
         if browser:
             subprocess.Popen(app_window_command(browser, url, data_dir() / "window"))
@@ -142,6 +154,9 @@ def main() -> None:
     browser = find_app_browser()
     if background:
         _keep_running()  # signed in to Windows: ready for phones; the Start menu opens a window onto it
+    elif own_window(url, data_dir()):
+        if startup.enabled():
+            _keep_running()  # the window closed, but phones should keep reaching this computer
     elif browser:
         proc = subprocess.Popen(app_window_command(browser, url, data_dir() / "window"))
         proc.wait()  # the window closed: quit, unless phones should keep reaching this computer
