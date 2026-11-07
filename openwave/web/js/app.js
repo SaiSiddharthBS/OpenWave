@@ -1152,6 +1152,7 @@ initNative({
   next: () => player.next(),
   prev: () => player.prev(),
   seek: (s) => player.seek(+s),
+  jump: (i) => player.jump(+i),
   like: () => ACTIONS['like-current'](),
   shuffle: () => player.toggleShuffle(),
   repeat: () => player.cycleRepeat(),

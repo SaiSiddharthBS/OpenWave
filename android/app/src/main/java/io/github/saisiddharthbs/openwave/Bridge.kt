@@ -17,8 +17,13 @@ data class NowPlaying(
     val position: Double,
     val playing: Boolean,
     val liked: Boolean,
+    val shuffle: Boolean = false,
+    val repeat: String = "off",
     val updatedAt: Long = System.currentTimeMillis(),
 )
+
+/** One song in the car's queue screen; `index` is its place in the page's queue. */
+data class QueueEntry(val index: Int, val title: String, val subtitle: String, val artwork: String?)
 
 /**
  * Two-way link between the page's player and Android: the page posts "nowPlaying" messages,
@@ -34,9 +39,45 @@ object Bridge {
     var track: NowPlaying? = null
         private set
 
+    /** What's coming up (for the car), and where the current song is in it. */
+    var queue: List<QueueEntry> = emptyList()
+        private set
+    var queueTitle = ""
+        private set
+    var queueIndex = -1
+        private set
+    private val queueListeners = mutableSetOf<() -> Unit>()
+    fun observeQueue(listener: () -> Unit) { queueListeners += listener }
+    fun unobserveQueue(listener: () -> Unit) { queueListeners -= listener }
+
+    /** Did the last answer say nobody has chosen a profile on this phone yet? */
+    var needsProfile = false
+        private set
+
+    private val asks = mutableMapOf<Int, (JSONObject?) -> Unit>()
+    private var nextAsk = 1
+
     fun attach(view: WebView) {
         webView = WeakReference(view)
         ready = false
+    }
+
+    fun detach(view: WebView) {
+        if (webView.get() === view) webView = WeakReference(null)
+        ready = false
+    }
+
+    /**
+     * Asks the page a question for the car (js/car.js): browse a folder, search, or play. `done` runs on
+     * the main thread with the answer, or with null if the page doesn't answer in time.
+     */
+    fun ask(op: String, id: String = "", q: String = "", timeoutMs: Long = 45_000, done: (JSONObject?) -> Unit) {
+        main.post {
+            val n = nextAsk++
+            asks[n] = done
+            main.postDelayed({ asks.remove(n)?.invoke(null) }, timeoutMs)
+            command("car", JSONObject().put("req", n).put("op", op).put("id", id).put("q", q).toString())
+        }
     }
 
     fun pageWillLoad() { ready = false }
@@ -67,9 +108,27 @@ object Bridge {
                             position = t.optDouble("position", 0.0),
                             playing = t.optBoolean("playing"),
                             liked = t.optBoolean("liked"),
+                            shuffle = t.optBoolean("shuffle"),
+                            repeat = t.optString("repeat", "off"),
                         )
                     }
                     listeners.toList().forEach { it(track) }
+                }
+                "car" -> {
+                    needsProfile = msg.optString("error") == "profile"
+                    asks.remove(msg.optInt("req"))?.invoke(msg)
+                }
+                "queue" -> {
+                    val q = msg.optJSONObject("queue") ?: return@post
+                    val items = q.optJSONArray("items")
+                    queue = (0 until (items?.length() ?: 0)).mapNotNull { i ->
+                        items!!.optJSONObject(i)?.let {
+                            QueueEntry(it.optInt("i"), it.optString("title"), it.optString("subtitle"), it.optString("art").ifBlank { null })
+                        }
+                    }
+                    queueTitle = q.optString("title")
+                    queueIndex = q.optInt("index", -1)
+                    queueListeners.toList().forEach { it() }
                 }
             }
         }
@@ -77,7 +136,8 @@ object Bridge {
 
     /** Runs a player command in the page (queued until the page says it's ready). */
     fun command(name: String, arg: String? = null) {
-        android.util.Log.i(Engine.TAG, "command $name${arg?.let { " $it" } ?: ""}")
+        // A car's question can hold a search: log only that one was asked.
+        android.util.Log.i(Engine.TAG, "command $name${if (name == "car") "" else arg?.let { " $it" } ?: ""}")
         main.post {
             val view = webView.get()
             if (!ready || view == null) {

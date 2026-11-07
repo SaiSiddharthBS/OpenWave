@@ -43,6 +43,10 @@ jobs:
         env:
           OPENWAVE_PYTHON: python
           CHROME: /usr/bin/google-chrome
+      - run: node tests/ui/car.mjs
+        env:
+          OPENWAVE_PYTHON: python
+          CHROME: /usr/bin/google-chrome
       - run: node tests/ui/motion_audit.mjs
         env:
           OPENWAVE_PYTHON: python

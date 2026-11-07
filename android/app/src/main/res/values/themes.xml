@@ -4,6 +4,9 @@
         <item name="android:windowBackground">@color/ow_background</item>
         <item name="android:statusBarColor">@color/ow_background</item>
         <item name="android:navigationBarColor">@color/ow_background</item>
+        <item name="android:colorPrimary">@color/ow_background</item>
+        <item name="android:colorPrimaryDark">@color/ow_background</item>
+        <!-- Android Auto paints its progress bar and highlights in this -->
         <item name="android:colorAccent">@color/ow_accent</item>
         <item name="android:windowLightStatusBar">false</item>
     </style>

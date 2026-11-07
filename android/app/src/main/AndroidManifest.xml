@@ -10,6 +10,15 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
+    <!-- The car apps OpenWave lets browse its library (PlaybackService.KNOWN_CARS) -->
+    <queries>
+        <package android:name="com.google.android.projection.gearhead" />
+        <package android:name="com.android.car.media" />
+        <package android:name="com.google.android.carassistant" />
+        <package android:name="com.google.android.googlequicksearchbox" />
+        <package android:name="com.android.systemui" />
+    </queries>
+
     <application
         android:name=".OpenWaveApplication"
         android:allowBackup="true"
@@ -19,6 +28,14 @@
         android:networkSecurityConfig="@xml/network_security_config"
         android:supportsRtl="true"
         android:theme="@style/Theme.OpenWave">
+
+        <!-- OpenWave in Android Auto (PlaybackService) -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+        <meta-data
+            android:name="com.google.android.gms.car.notification.SmallIcon"
+            android:resource="@drawable/ic_notification" />
 
         <activity
             android:name=".MainActivity"
@@ -59,7 +76,17 @@
             <intent-filter>
                 <action android:name="android.intent.action.MEDIA_BUTTON" />
             </intent-filter>
+            <!-- Android Auto and cars that run Android browse OpenWave through this -->
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
         </service>
+
+        <!-- Pictures for the car's screens (CarArt): read-only, and only pictures OpenWave made -->
+        <provider
+            android:name=".ArtProvider"
+            android:authorities="${applicationId}.art"
+            android:exported="true" />
 
         <receiver
             android:name="androidx.media.session.MediaButtonReceiver"

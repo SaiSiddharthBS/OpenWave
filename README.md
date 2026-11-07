@@ -224,6 +224,7 @@ A native Swift app (AppKit and SwiftUI) that runs its own engine, with nothing t
 A native Kotlin app that runs the complete engine on the phone through [Chaquopy](https://chaquo.com/chaquopy/). No computer is needed.
 
 - Media notification, lock-screen, headphone and Bluetooth controls; pauses for calls and when headphones are unplugged; keeps playing in the background.
+- **Android Auto:** Home, Mixes, Library and Recent on the car's screen, with artwork, Daily Mix covers, search, voice ("Hey Google, play Road trip on OpenWave"), the queue, and like, shuffle and repeat buttons. It starts by itself when the car asks, with the phone in a pocket. Because OpenWave isn't from the Play Store, turn on **Unknown sources** once in Android Auto's settings (tap the version number ten times to show developer settings).
 - **Home-screen widget** with artwork and playback controls, and the screen's fastest refresh rate.
 - Native-feeling navigation: swipe the player down to close, swipe the artwork to change songs, long-press for a song's menu, haptics and a back button that behaves as expected.
 - **Library location:** keep the library on the phone, or play from OpenWave on your computer with the same profiles and playlists, from anywhere (on the computer, **Settings → Phones → Add a phone**).
@@ -317,6 +318,7 @@ OpenWave is developed with the discipline of a product team, and the machinery d
   | Behaviour (`tests/ui/behaviour.mjs`, 71 checks) | Things a person does: search suggestions that stay, the player landing in the mini player, centred titles, menus, dropdowns, update cards and notifications |
   | Motion audit (`tests/ui/motion_audit.mjs`) | Scrolls and flings with the processor slowed down, and fails if an animation needs anything but the graphics chip |
   | Connect end to end (`tests/ui/connect_e2e.mjs`) | A phone pairs with an engine by QR link, uses the app through the connection, reconnects, and is removed |
+  | Android Auto (`tests/ui/car.mjs`) | What the car asks for: tabs, folders, search, playing, voice, the queue, and a phone with no profile chosen |
   | Android emulator (`android/ci/emulator-test.sh`) | The installed app starts its engine, plays, and drives the media notification |
 
 - **Measured performance.** Motion is tuned against frame timings measured on real hardware: in Safari's engine the full-screen player is drawn and set up while still invisible, then animated entirely on the graphics chip, with every part of the animation ending together.
@@ -430,6 +432,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [MAINTAINING.md](MAINTAINING.md).
 - [x] Shared playlists with friends and family, anywhere
 - [x] iPhone access from anywhere with a QR code and no accounts (OpenWave Connect)
 - [x] Tablet layouts, and update notifications on every platform
+- [x] Android Auto
 - [ ] My devices: one profile kept in step across several computers
 - [ ] Listen together over the internet
 - [ ] Distribution on F-Droid and IzzyOnDroid

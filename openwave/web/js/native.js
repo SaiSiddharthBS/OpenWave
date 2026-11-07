@@ -5,6 +5,7 @@ import { img, sized } from './api.js';
 import { REMOTE } from './remote.js';
 import { store } from './store.js';
 import { player } from './player.js';
+import { answer, queueWindow } from './car.js';
 
 const mac = window.webkit?.messageHandlers?.openwave;
 const android = window.OpenWaveAndroid;
@@ -86,10 +87,22 @@ export function initNative(commands) {
   player.addEventListener('time', () => {
     if (Date.now() - lastTime > 5000) { lastTime = Date.now(); nowPlaying(); }
   });
+  // The car's queue screen (Android Auto), sent shortly after the queue settles.
+  let queueTimer = 0;
+  const sendQueue = () => { clearTimeout(queueTimer); queueTimer = setTimeout(() => send({ type: 'queue', queue: queueWindow() }), 300); };
+  if (android) { player.addEventListener('queue', sendQueue); player.addEventListener('track', sendQueue); }
+
   store.on((what) => { if (what === 'liked' || what === 'all') nowPlaying(); if (what === 'settings') send({ type: 'settings', settings: store.settings }); });
 
   window.openwaveNative = {
     command(name, arg) {
+      if (name === 'car') {
+        // A question from the car (car.js); the answer goes back with the question's number.
+        let ask = null;
+        try { ask = JSON.parse(arg); } catch { return; }
+        answer(ask, (r) => send({ type: 'car', req: ask.req, ...r }));
+        return;
+      }
       const fn = commands[name];
       if (fn) fn(arg);
       nowPlaying();

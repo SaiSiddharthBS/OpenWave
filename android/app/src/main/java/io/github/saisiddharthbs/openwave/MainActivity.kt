@@ -42,12 +42,16 @@ class MainActivity : ComponentActivity() {
     companion object {
         /** The live screen (Android can recreate the activity, e.g. when the WebView updates). */
         private var current = WeakReference<MainActivity>(null)
+
+        /** The open screen, if there is one (the page asks it for share sheets, pairing, haptics). */
+        fun live(): MainActivity? = current.get()?.takeUnless { it.isDestroyed }
     }
+
+    val bridge = AndroidBridge()
 
     private lateinit var web: WebView
     private var fileCallback: ValueCallback<Array<Uri>>? = null
     private var pendingLink: String? = null
-    @Volatile private var currentUrl: String? = null
     private val io = Executors.newSingleThreadExecutor()
 
     private val prefs by lazy { getSharedPreferences("openwave", MODE_PRIVATE) }
@@ -121,14 +125,10 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 29) window.isNavigationBarContrastEnforced = false
         useFastestScreenMode()
 
-        web = WebView(this).apply {
-            setBackgroundColor(Color.parseColor("#0A0B14"))
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.mediaPlaybackRequiresUserGesture = false
-            settings.setSupportZoom(false)
-            settings.userAgentString = settings.userAgentString + " OpenWaveAndroid/" + BuildConfig.VERSION_NAME
-            addJavascriptInterface(AndroidBridge(), "OpenWaveAndroid")
+        // The page may already be running: a car started OpenWave, or Android recreated this screen.
+        // Then this screen shows that same page, and the music carries on.
+        val running = PageHost.adopt(this)
+        web = (running ?: PageHost.create(this)).apply {
             webViewClient = Client()
             webChromeClient = Chrome()
         }
@@ -150,7 +150,6 @@ class MainActivity : ComponentActivity() {
             WindowInsetsCompat.CONSUMED
         }
         setContentView(root)
-        Bridge.attach(web)
         current = WeakReference(this)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -172,8 +171,19 @@ class MainActivity : ComponentActivity() {
         UpdateCheck.schedule(this)
         pendingLink = linkFrom(intent)
         pendingLink?.let { link -> pairingBase(link)?.let { usePairing(link, it, boot = false); pendingLink = null } }
+        if (running != null && pendingPairing == null) {
+            pendingLink?.let { if (pairingBase(it) == null) openLink(it) }
+            pendingLink = null
+            web.post { tellPageSafeArea() }
+            return
+        }
         if (savedInstanceState != null) web.restoreState(savedInstanceState)
         boot()
+    }
+
+    override fun onDestroy() {
+        PageHost.release(this)
+        super.onDestroy()
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -308,17 +318,11 @@ class MainActivity : ComponentActivity() {
 
     // ------------------------------------------------------------------ WebView plumbing
 
-    private fun isAppPage(url: Uri): Boolean {
-        val base = Uri.parse(serverUrl.ifEmpty { Engine.localUrl })
-        if (url.scheme == "file" || url.scheme == "blob" || url.scheme == "data") return true
-        if (url.host != base.host || url.port != base.port) return false
-        // The phone app sits on a shared website: trust only its own folder of it.
-        return !connectMode || serverUrl.isEmpty() || (url.scheme == base.scheme && (url.path ?: "/").startsWith(base.path ?: "/"))
-    }
+    private fun isAppPage(url: Uri): Boolean = PageHost.isAppPage(this, url)
 
     private inner class Client : WebViewClient() {
         override fun onPageStarted(view: WebView, url: String?, favicon: android.graphics.Bitmap?) {
-            currentUrl = url
+            PageHost.currentUrl = url
         }
 
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
@@ -374,9 +378,9 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    /** Exposed to the page as window.OpenWaveAndroid. Only OpenWave's own pages may use it. */
-    private inner class AndroidBridge {
-        private fun trusted(): Boolean = currentUrl?.let { isAppPage(Uri.parse(it)) } == true
+    /** What window.OpenWaveAndroid (PageInterface) does while the screen is open. Only OpenWave's own pages may use it. */
+    inner class AndroidBridge {
+        private fun trusted(): Boolean = PageHost.trusted(this@MainActivity)
 
         @JavascriptInterface
         fun postMessage(json: String) {

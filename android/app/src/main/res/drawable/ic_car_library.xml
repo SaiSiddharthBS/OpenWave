@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Drawn like the app's own icons (openwave/web/index.html); Android Auto tints them. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M4 3h2.5v18H4zM9 3h2.5v18H9zm4.6 1.2 2.4-.7 5 17.3-2.4.7z" />
+</vector>
