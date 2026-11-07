@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.5.9] — 2026-11-07
+
 ### Changed
 - **The Windows app has its own window.** It now opens in WebView2, the Edge engine Windows builds in for apps, with its own name, taskbar button and a dark title bar in the app's colour, instead of an Edge app window. Update downloads and links to other sites open in your browser. If WebView2 can't start, it opens the Edge window as before.
 
