@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-11-07
+
 ### Added
 - **Android Auto.** OpenWave appears on the car's screen with four tabs: Home, Mixes (your Daily Mixes, On Repeat and Rediscover, with their covers and names as in the app), Library (Liked songs, Downloads, your playlists, and saved albums, playlists and artists) and Recent. Albums, playlists and mixes open as lists with Shuffle play at the top. Search works by typing or voice ("Hey Google, play Road trip on OpenWave" plays your own playlist first), the queue shows what's next, and like, shuffle and repeat are buttons on the car's player. It works with the phone in your pocket: if OpenWave isn't open, the car starts it. Cars that run Android themselves can use the same screens. Android Auto shows apps from outside the Play Store only once **Unknown sources** is on in Android Auto's developer settings.
 
