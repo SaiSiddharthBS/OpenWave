@@ -5,6 +5,8 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+## [0.7.0] — 2026-11-10
+
 ### Added
 - **Explore: what the world is playing.** A new Explore page (in the sidebar, and one tap from the top of Search) is built around a dotted world map where every country with a chart today glows in its own colour. Point at a country to see its name and local time, and tap it to open its page: today's Trending chart, its top artists with their rank, its other charts, and more countries to go to next. About 70 countries have charts, plus the world's top songs. **Take me somewhere** picks a country you haven't been to, flies a line across the map to it and starts its chart; **Next stop** on a country's page moves on again. Every country also has a tile with its own dotted shape, grouped by region, and Explore lists YouTube Music's genres (African, Latin, K-Pop, Reggae and more) and moods, each opening a page of songs, playlists and albums.
 - **Today's stop.** One country a day is featured, the same everywhere: on Explore, as a shelf on Home ("Today in Nigeria"), and on the Explore card in Search, which shows today's covers and names the countries with charts one after another. Search's start page now has moods under the card instead of the fixed genre tiles.
