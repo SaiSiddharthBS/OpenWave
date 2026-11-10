@@ -161,7 +161,9 @@ class Graph {
 
   async running() {
     if (this.ctx.state !== 'running') await Promise.race([this.ctx.resume().catch(() => {}), sleep(1500)]);
-    return this.ctx.state === 'running';
+    const ok = this.ctx.state === 'running';
+    this.rest(); // back to sleep if nothing goes on to play (a song that fails to load, say)
+    return ok;
   }
 
   /** The deck's mixer, made the first time (an element, once routed, always plays through here). */
@@ -193,8 +195,26 @@ class Graph {
     send.connect(this.echoIn);
     c = { el, bass, hp, lp, gain, send };
     this.chains.set(el, c);
-    el.addEventListener('play', () => this.keepRunning());
+    el.addEventListener('play', () => this.wake());
+    for (const type of ['pause', 'ended', 'emptied']) el.addEventListener(type, () => this.rest());
     return c;
+  }
+
+  /**
+   * A running context keeps an audio stream open even in silence, so Android would count OpenWave
+   * as playing while it's paused (the battery, headsets and media keys all go by that). So it
+   * sleeps a moment after every deck has stopped, and wakes as soon as one plays.
+   */
+  wake() {
+    clearTimeout(this.resting);
+    if (this.ctx.state !== 'running') this.ctx.resume().catch(() => {});
+  }
+
+  rest() {
+    clearTimeout(this.resting);
+    this.resting = setTimeout(() => {
+      if ([...this.chains.keys()].every((el) => el.paused) && this.ctx.state === 'running') this.ctx.suspend().catch(() => {});
+    }, 2000);
   }
 
   params(c) {
