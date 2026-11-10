@@ -155,14 +155,15 @@ class Graph {
     window.__openwaveMixTap?.(ctx, this.master); // the tests listen to what comes out
   }
 
+  /** If the system stops the context while a deck plays, start it again. */
   keepRunning() {
-    if (this.ctx.state !== 'running' && [...this.chains.keys()].some((el) => !el.paused)) this.ctx.resume().catch(() => {});
+    if (this.ctx.state === 'suspended' && [...this.chains.keys()].some((el) => !el.paused)) this.ctx.resume().catch(() => {});
   }
 
   async running() {
     if (this.ctx.state !== 'running') await Promise.race([this.ctx.resume().catch(() => {}), sleep(1500)]);
     const ok = this.ctx.state === 'running';
-    this.rest(); // back to sleep if nothing goes on to play (a song that fails to load, say)
+    this.rest(); // back to sleep if nothing goes on to play
     return ok;
   }
 
@@ -249,6 +250,8 @@ export async function audioGraph() {
 }
 /** Whether the graph is (or can be) used: decides how plans are made. */
 export const graphPossible = () => CAN_GRAPH;
+/** The mixer's state, for the playback log and the tests: none, running, suspended or closed. */
+export const mixerState = () => graph?.ctx.state ?? 'none';
 /** Has this deck been put through the mixer? */
 export const routed = (el) => !!graph?.chains.has(el);
 /** Put a deck back to plain sound, if it was ever routed. */

@@ -5,6 +5,11 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Added
+- **Smart mix.** Songs now flow into each other like a DJ set, and it's on to start with (Settings → Playback). Before a song plays, OpenWave listens to it: its tempo, where every beat and bar falls, its key, and how long its intro builds and its outro winds down. Then it plays the change to suit the two songs. When their tempos are close, the next song comes in on a downbeat, beat for beat with this one (both are nudged to a tempo between theirs, as on a pair of turntables), with its bass held back until the two swap bass on a downbeat halfway through; the blend lasts as long as the next song's intro, so it's fully in just as this one has gone. When the tempos are too far apart, this song echoes out on a downbeat and the next one lands on it. Music without a steady beat gets a smooth six-second fade, timed to the end of the music rather than its silence. Albums still play as they were made. Pausing, skipping or seeking during a mix leaves one song playing at its own speed. The full-screen player says what it's mixing into. Beat matching runs in the Android app (and Android Auto) and in Chrome; in the Mac app, whose audio engine can't line two songs up, each song hands over to the next as its music ends.
+- Smart mix was to be in 0.8.0, 0.8.1 and 0.8.2, which were never published. It now waits until a song has finished downloading before listening to it, so playback never competes with it on a slow phone or connection.
+- Smart mix's mixer starts only once a song is really playing, and sleeps while everything is paused, so Android never counts OpenWave as playing when it isn't.
+
 ## [0.8.2] — 2026-11-10
 
 ### Added

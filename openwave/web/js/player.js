@@ -253,7 +253,7 @@ class Player extends EventTarget {
       if (token !== this.token) { if (src.blob) URL.revokeObjectURL(src.url); return; }
       this.setSrc(this.deck, src);
       this.audioEl.volume = this.vol;
-      this.routeForMix();
+      this.audioEl.addEventListener('playing', () => this.routeForMix(), { once: true });
       if (at) this.audioEl.addEventListener('loadedmetadata', () => { this.audioEl.currentTime = at; }, { once: true });
       if (token !== this.token) return;
       if (autoplay) await this.el.play();
@@ -338,14 +338,15 @@ class Player extends EventTarget {
 
   /**
    * Put both decks through Smart mix's mixer as a song starts, rather than in the middle of one when
-   * the first mix comes (moving a playing deck there can click). If the mixer isn't running yet,
-   * that happens at the next song, or when the first mix starts.
+   * the first mix comes (moving a playing deck there can click). Only once a song really plays: the
+   * mixer holds an audio stream open while it runs, which a song that never loads shouldn't.
    */
   routeForMix() {
     if (store.settings.smartMix === false || !this.dualDeck || !graphPossible() || routed(decks[0])) return;
     audioGraph().then((g) => {
-      if (!g || (!this.el.paused && this.el.currentTime > 0.3)) return;
+      if (!g) return;
       decks.forEach((d) => g.chain(d));
+      if (decks.some((d) => !d.paused)) g.wake();
     });
   }
 
