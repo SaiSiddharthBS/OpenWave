@@ -355,13 +355,21 @@ class Player extends EventTarget {
     if (store.settings.smartMix === false || !this.dualDeck || this.remote || !t) return;
     const codec = audioCodec();
     if (knownAnalysis(t.videoId, codec)) return;
-    // After it's started, so the first seconds of a song never wait on this.
-    this.analyseTimer = setTimeout(() => {
-      if (this.current !== t) return;
-      const url = deckBlobs[this.deck] || this.streamUrl(t.videoId);
+    // A song that's streaming is fetched again for this, so not until the deck has all of it (or the
+    // end is coming up): two downloads of one song at once can starve the one being played on a slow
+    // phone or connection. A song playing from memory (downloaded, or away from home) goes at once.
+    const go = () => {
+      if (this.current !== t || knownAnalysis(t.videoId, codec)) return;
+      const blob = deckBlobs[this.deck], el = this.el;
+      const ends = el.buffered.length ? el.buffered.end(el.buffered.length - 1) : 0;
+      const whole = this.duration > 0 && ends >= this.duration - 1;
+      if (!blob && !whole && this.duration - this.time > SMART_PRELOAD_AT + 30) { this.analyseTimer = setTimeout(go, 3000); return; }
+      const url = blob || this.streamUrl(t.videoId);
       analysis(t.videoId, codec, async () => { const r = await fetch(url); return r.ok ? r.arrayBuffer() : null; })
         .then(() => this.planMix());
-    }, 4000);
+    };
+    // After it's started, so the first seconds of a song never wait on this.
+    this.analyseTimer = setTimeout(go, 4000);
   }
 
   /** With both songs analysed and the next one ready: work out how they'll meet. */
