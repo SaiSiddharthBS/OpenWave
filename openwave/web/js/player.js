@@ -1,7 +1,8 @@
 // Playback engine.
 //
 // Two <audio> "decks" alternate: while one plays, the next song buffers on the other, so the
-// change-over is gapless (or crossfaded, if enabled) and skipping is instant. OpenWave plays audio
+// change-over is gapless (crossfaded, if enabled, or mixed by Smart mix: mix.js) and skipping is
+// instant. OpenWave plays audio
 // tracks only: a music video in the queue is swapped for its song version before it plays.
 // Listening time is tracked per song for history and insights.
 //
@@ -13,6 +14,8 @@ import { get, img } from './api.js';
 import { store, slim } from './store.js';
 import { offline } from './offline.js';
 import { REMOTE, songUrl, preloadSong } from './remote.js';
+import { Mix, analysis, knownAnalysis, audioGraph, graphPossible, routed } from './mix.js';
+import { plan as planMix } from './mix-plan.js';
 
 const decks = [document.getElementById('audio'), Object.assign(document.createElement('audio'), { preload: 'auto' })];
 document.body.appendChild(decks[1]);
@@ -21,6 +24,7 @@ const deckBlobs = [null, null];
 // iOS only lets one element play in the background and ignores element.volume: use a single deck there.
 const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const PRELOAD_AT = 30; // seconds before the end to start buffering the next song
+const SMART_PRELOAD_AT = 110; // with Smart mix: the next song is fetched whole and analysed first
 
 /** Opus wherever it plays (sounds better, and WebKit misreads AAC lengths); AAC otherwise. */
 export const audioCodec = () => (decks[0].canPlayType('audio/webm; codecs="opus"') ? 'opus' : 'aac');
@@ -53,6 +57,7 @@ class Player extends EventTarget {
   vol = 0.8;
   preloaded = null; // {videoId, index, ready}
   fade = null;
+  mix = null; // the Smart mix transition playing now (mix.js), or 'starting'
   sleep = null; // {at} | {endOfTrack: true}
   listenTrack = null;
   listened = 0;
@@ -192,6 +197,7 @@ class Player extends EventTarget {
 
   beginTrack(t) {
     this.checkLength(t);
+    this.analyseSoon(t);
     this.forcedEnd = false;
     this.resumes = 0;
     this.listenTrack = t;
@@ -247,6 +253,7 @@ class Player extends EventTarget {
       if (token !== this.token) { if (src.blob) URL.revokeObjectURL(src.url); return; }
       this.setSrc(this.deck, src);
       this.audioEl.volume = this.vol;
+      this.routeForMix();
       if (at) this.audioEl.addEventListener('loadedmetadata', () => { this.audioEl.currentTime = at; }, { once: true });
       if (token !== this.token) return;
       if (autoplay) await this.el.play();
@@ -273,7 +280,7 @@ class Player extends EventTarget {
 
   async preloadNext() {
     const i = this.nextIndex();
-    if (i < 0 || !this.dualDeck || this.remote) return;
+    if (i < 0 || !this.dualDeck || this.remote || this.mix) return;
     const token = this.token;
     const p = { videoId: this.queue[i].videoId, index: i, ready: false };
     this.preloaded = p;
@@ -281,18 +288,137 @@ class Player extends EventTarget {
     if (token !== this.token || this.preloaded !== p) return;
     p.videoId = t.videoId;
     if (!navigator.onLine && !offline.has(t.videoId)) { this.preloaded = null; return; }
-    const src = await this.sourceFor(t);
+    let src = await this.sourceFor(t);
     if (token !== this.token || this.preloaded !== p) { if (src.blob) URL.revokeObjectURL(src.url); return; }
+    if (this.smartFor(i)) {
+      src = await this.wholeSong(t, src);
+      if (token !== this.token || this.preloaded !== p) { if (src.blob) URL.revokeObjectURL(src.url); return; }
+    }
     const spare = 1 - this.deck;
     decks[spare].volume = 0;
     this.setSrc(spare, src);
     decks[spare].load();
-    decks[spare].addEventListener('canplaythrough', () => { if (this.preloaded === p) p.ready = true; }, { once: true });
+    decks[spare].addEventListener('canplaythrough', () => { if (this.preloaded === p) { p.ready = true; this.planMix(); } }, { once: true });
     decks[spare].addEventListener('error', () => { if (this.preloaded === p) this.preloaded = null; }, { once: true });
+  }
+
+  // ---------------------------------------------------------------- Smart mix (mix.js)
+  /** Is the change from the current song to queue[i] one for Smart mix? */
+  smartFor(i = this.nextIndex()) {
+    if (store.settings.smartMix === false || !this.dualDeck || this.remote || this.repeat === 'one' || this.sleep?.endOfTrack) return false;
+    const a = this.current, b = this.queue[i];
+    if (!a || !b || i !== this.nextIndex()) return false;
+    // An album plays as it was made: its songs run into each other where the artist meant them to.
+    if (this.context?.href?.startsWith('#/album/') || (a.album?.id && a.album.id === b.album?.id)) return false;
+    return true;
+  }
+
+  /**
+   * The next song, fetched whole, so what's analysed is exactly what the deck plays. Falls back to
+   * streaming it (and a plain change-over) if it can't be fetched.
+   */
+  async wholeSong(t, src) {
+    const codec = audioCodec();
+    try {
+      let url = src.url, blob = null;
+      if (!src.blob) {
+        const r = await fetch(src.url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        blob = await r.blob();
+        url = URL.createObjectURL(blob);
+      }
+      analysis(t.videoId, codec, async () => (blob || (await (await fetch(url)).blob())).arrayBuffer())
+        .then(() => this.planMix());
+      return { url, blob: true };
+    } catch (e) {
+      this.note(`smart mix: next song not fetched whole (${e.message}), streaming it`);
+      return src;
+    }
+  }
+
+  /**
+   * Put both decks through Smart mix's mixer as a song starts, rather than in the middle of one when
+   * the first mix comes (moving a playing deck there can click). If the mixer isn't running yet,
+   * that happens at the next song, or when the first mix starts.
+   */
+  routeForMix() {
+    if (store.settings.smartMix === false || !this.dualDeck || !graphPossible() || routed(decks[0])) return;
+    audioGraph().then((g) => {
+      if (!g || (!this.el.paused && this.el.currentTime > 0.3)) return;
+      decks.forEach((d) => g.chain(d));
+    });
+  }
+
+  /** Analyse the song now playing, unless that's known already (it usually is: it was the next song). */
+  analyseSoon(t) {
+    clearTimeout(this.analyseTimer);
+    if (store.settings.smartMix === false || !this.dualDeck || this.remote || !t) return;
+    const codec = audioCodec();
+    if (knownAnalysis(t.videoId, codec)) return;
+    // After it's started, so the first seconds of a song never wait on this.
+    this.analyseTimer = setTimeout(() => {
+      if (this.current !== t) return;
+      const url = deckBlobs[this.deck] || this.streamUrl(t.videoId);
+      analysis(t.videoId, codec, async () => { const r = await fetch(url); return r.ok ? r.arrayBuffer() : null; })
+        .then(() => this.planMix());
+    }, 4000);
+  }
+
+  /** With both songs analysed and the next one ready: work out how they'll meet. */
+  planMix() {
+    const p = this.preloaded, t = this.current;
+    if (!p?.ready || p.plan || !t || !this.smartFor(p.index)) return;
+    const codec = audioCodec();
+    const a = knownAnalysis(t.videoId, codec), b = knownAnalysis(p.videoId, codec);
+    if (!a || !b) return;
+    p.plan = planMix(a, b, { graph: graphPossible() });
+    p.analyses = [a, b];
+    this.note(`smart mix planned: ${p.plan.style} at ${p.plan.outAt?.toFixed(1)}s (${p.plan.reason})`);
+    this.emit('mix', { phase: 'planned', style: p.plan.style, next: this.queue[p.index] });
+  }
+
+  /** Start the transition planned for the next song. */
+  async startMix() {
+    const p = this.preloaded, out = this.audioEl, inc = this.spare;
+    if (!p?.plan || this.mix) return;
+    this.mix = 'starting';
+    const graph = await audioGraph();
+    if (this.mix !== 'starting' || this.preloaded !== p || this.audioEl !== out || out.paused) {
+      if (this.mix === 'starting') this.mix = null;
+      return;
+    }
+    // Planned for the audio graph but it isn't running (yet): mix on volume alone this time.
+    const plan = !graph && graphPossible() ? planMix(...p.analyses, { graph: false }) : p.plan;
+    const mix = new Mix({
+      plan, out, inc, graph, volume: () => this.vol, note: (s) => this.note(s),
+      onAdvance: () => {
+        if (this.preloaded !== p) return;
+        this.advanceTo(p.index);
+        this.emit('mix', { phase: 'advanced', style: mix.style, next: this.current });
+      },
+      onDone: () => {
+        if (this.mix === mix) this.mix = null;
+        if (mix.failed && this.preloaded === p) p.plan = null; // don't try that one again
+        this.lastMix = mix;
+        this.emit('mix', null);
+        this.prefetchNext();
+      },
+    });
+    this.mix = mix;
+    mix.start();
+    this.emit('mix', { phase: 'starting', style: mix.style, next: this.queue[p.index] });
+  }
+
+  /** Whatever the transition was doing: be in a plain state now (the next song if it had taken over). */
+  settleMix(why = 'stopped') {
+    const m = this.mix;
+    if (!m || m === 'starting') { this.mix = null; return; }
+    if (m.advanced) m.finish(); else m.abort(why);
   }
 
   clearPreload() {
     if (!this.preloaded) return;
+    if (this.mix && !this.mix.advanced) this.settleMix('the queue changed');
     this.preloaded = null;
     const s = this.spare;
     s.pause();
@@ -338,6 +464,7 @@ class Player extends EventTarget {
   }
 
   cancelFade() {
+    this.settleMix('the song changed');
     if (!this.fade) return;
     clearInterval(this.fade.timer);
     this.fade.outgoing.pause();
@@ -430,6 +557,8 @@ class Player extends EventTarget {
   jump(i) {
     if (i < 0 || i >= this.queue.length) return;
     if (this.remote) return this.remote.send({ cmd: 'jump', ...this.remote.at(i) });
+    if (this.mix?.phase === 'mix' && !this.mix.advanced && i === this.nextIndex()) { this.mix.finish(); return; }
+    this.settleMix('another song was chosen');
     if (i === this.nextIndex() && this.preloadValid()) return this.skipToPreloaded();
     this.index = i;
     this.emit('queue');
@@ -481,7 +610,7 @@ class Player extends EventTarget {
     if (!this.current) return;
     if (!this.loaded) return this.load({ at: this.resumeAt, fresh: true });
     if (this.el.paused) this.el.play().catch(() => {});
-    else { this.heldAt = performance.now(); this.el.pause(); }
+    else { this.settleMix('paused'); this.heldAt = performance.now(); this.el.pause(); }
   }
 
   play() {
@@ -492,7 +621,7 @@ class Player extends EventTarget {
 
   pause() {
     if (this.remote) return this.remote.send({ cmd: 'pause' });
-    if (this.loaded && !this.el.paused) { this.heldAt = performance.now(); this.el.pause(); }
+    if (this.loaded && !this.el.paused) { this.settleMix('paused'); this.heldAt = performance.now(); this.el.pause(); }
   }
 
   /**
@@ -534,6 +663,8 @@ class Player extends EventTarget {
 
   async next() {
     if (this.remote) return this.remote.send({ cmd: 'next' });
+    // In the middle of a mix the next song is already playing: Next lets it take over at once.
+    if (this.mix?.phase === 'mix' && !this.mix.advanced) { this.mix.finish(); return; }
     this.cancelFade();
     if (this.loaded && this.preloadValid()) return this.skipToPreloaded();
     if (this.index < this.queue.length - 1) { this.index++; this.emit('queue'); return this.load(); }
@@ -564,7 +695,8 @@ class Player extends EventTarget {
     v = Math.max(0, Math.min(1, v));
     if (this.mirror) { this.remote.send({ cmd: 'volume', v }); this.emit('volume'); return; }
     this.vol = v;
-    if (!this.fade) decks.forEach((d) => { d.volume = d === this.audioEl ? v : d.volume && v; });
+    if (this.mix?.setVolume) this.mix.setVolume(v);
+    else if (!this.fade) decks.forEach((d) => { d.volume = d === this.audioEl ? v : d.volume && v; });
     decks.forEach((d) => { d.muted = false; });
     if (store.settings.volume !== v) store.setting('volume', v);
     this.emit('volume');
@@ -634,14 +766,27 @@ class Player extends EventTarget {
       this.forcedEnd = true; // the real audio has ended; don't sit through the phantom second half
       return this.onEnded();
     }
-    if (!this.dualDeck || !this.loaded || this.repeat === 'one') return;
+    if (!this.dualDeck || !this.loaded || this.repeat === 'one' || this.mix) return;
     const remaining = this.duration - pos;
+    const smart = this.smartFor();
+    if (smart) {
+      // Smart mix: fetch and analyse the next song well before the end, then start the transition
+      // a few bars ahead of where it's planned (a blend locks its beat first).
+      if (!this.preloaded && remaining > 0 && remaining < SMART_PRELOAD_AT) this.preloadNext();
+      const plan = this.preloadValid() ? this.preloaded.plan : null;
+      if (plan?.outAt != null) {
+        const lead = plan.style === 'blend' ? 4 * plan.barA + 5 : 6;
+        if (pos >= plan.outAt - lead && pos < plan.outAt - 1 && !this.el.paused) this.startMix();
+      }
+      return;
+    }
     const xfade = +store.settings.crossfade || 0;
     if (!this.preloaded && remaining > 0 && remaining < Math.max(PRELOAD_AT, xfade + 15)) this.preloadNext();
     if (xfade > 0 && !this.fade && this.preloadValid() && remaining <= xfade && !this.sleep?.endOfTrack) this.startCrossfade(remaining);
   }
 
   onEnded() {
+    if (this.mix) return; // the transition moves on to the next song itself
     // A stream that broke off can look like the end of the song (WebKit even shortens the reported
     // length to match), so compare with the catalog length too, and pick up where it stopped.
     const pos = this.el.currentTime;

@@ -11,7 +11,7 @@ const LEGACY_QUEUE_KEY = 'openwave:session:v1';
 const cacheKey = (pid) => `openwave:lib:${pid}`;
 const outboxKey = (pid) => `openwave:outbox:${pid}`;
 
-export const DEFAULT_SETTINGS = { quality: 'normal', autoplay: true, crossfade: 0, gapless: true, notifications: true };
+export const DEFAULT_SETTINGS = { quality: 'normal', autoplay: true, smartMix: true, crossfade: 0, gapless: true, notifications: true };
 
 const emptyLibrary = () => ({
   version: 0, profile: null, liked: [], playlists: [], albums: [], artists: [], ytPlaylists: [],

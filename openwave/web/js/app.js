@@ -899,7 +899,7 @@ function bindTrack(t) {
   if (t && offline.has(t.videoId) && !navigator.onLine) {
     offline.artUrl(t.videoId).then((u) => u && player.current?.videoId === t.videoId && bind('art').concat(bind('art-sm')).forEach((el) => { el.src = u; }));
   }
-  bind('context').forEach((el) => { el.textContent = player.context?.label || 'Queue'; });
+  bindContext();
   bindLike();
   markPlaying();
   setAmbient(t ? img(t.thumbnail, 240) : '');
@@ -969,7 +969,19 @@ player.addEventListener('track', (e) => bindTrack(e.detail));
 player.addEventListener('state', bindState);
 player.addEventListener('time', bindTime);
 player.addEventListener('volume', bindVolume);
-player.addEventListener('queue', () => { bind('context').forEach((el) => { el.textContent = player.context?.label || 'Queue'; }); queueChanged(); markPlaying(); });
+player.addEventListener('queue', () => { bindContext(); queueChanged(); markPlaying(); });
+// Smart mix: while the next song is coming in, the full-screen player says what it's mixing into.
+let mixing = null;
+function bindContext() {
+  $$('.np-from small').forEach((el) => { el.textContent = mixing ? 'Mixing into' : 'Playing from'; });
+  bind('context').forEach((el) => { el.textContent = mixing ? mixing.title : player.context?.label || 'Queue'; });
+  document.body.classList.toggle('mixing', !!mixing);
+}
+player.addEventListener('mix', (e) => {
+  const d = e.detail;
+  mixing = d?.phase === 'starting' && d.next ? d.next : null;
+  bindContext();
+});
 player.addEventListener('track', () => queueChanged());
 store.on((what) => { if (what === 'settings') queueChanged(); });
 player.addEventListener('error', (e) => toast(e.detail, 4500));

@@ -78,7 +78,8 @@ Every app is self-contained, with nothing else to install. Each [release](https:
 
 - **Search almost any song** on YouTube Music: songs, albums, artists and playlists, with suggestions as you type. Paste a YouTube or YouTube Music link to open it directly.
 - **Songs, never videos.** OpenWave always plays the studio audio track. Music videos are swapped for their song version automatically.
-- **Gapless playback** with optional **crossfade** of up to 12 seconds. The next song is buffered while the current one plays, so skipping is instant.
+- **Smart mix.** Songs flow into each other like a DJ set. OpenWave listens to each song before it plays it (its tempo, where every beat and bar falls, its key, and how its intro builds and its outro winds down) and plays the change to suit the two songs: their beats matched to within a few milliseconds, with the bass swapped on a downbeat; an echo out on the downbeat when their tempos are too far apart; or a smooth fade for music without a steady beat. Albums still play as they were made. Beat matching runs in the Android app (and Android Auto) and in Chrome; the Mac app hands each song over as its music ends.
+- **Gapless playback**, or a crossfade of up to 12 seconds with Smart mix off. The next song is buffered while the current one plays, so skipping is instant.
 - **Endless autoplay.** When the queue ends, similar music keeps playing, leaving out what you heard recently.
 - **Synced lyrics** that follow the song. Select a line to jump to it.
 - **Offline downloads** of songs, albums and playlists, and a **sleep timer** that fades out.
@@ -337,10 +338,12 @@ OpenWave is developed with the discipline of a product team, and the machinery d
   |---|---|
   | Engine tests (`pytest`, 113) | Profiles, sync, sharing, import, Daily Mixes, Explore, phone pairing, updates, on two FastAPI and pydantic versions |
   | Layout audit (`tests/ui/layout_audit.mjs`) | Every screen at 13 sizes, from a 320-pixel phone to a wide desktop, with real and deliberately extreme names: 728 checks that nothing is cut off or pushed past the edge |
-  | Behaviour (`tests/ui/behaviour.mjs`, 71 checks) | Things a person does: search suggestions that stay, the player landing in the mini player, centred titles, menus, dropdowns, update cards and notifications |
+  | Behaviour (`tests/ui/behaviour.mjs`, 73 checks) | Things a person does: search suggestions that stay, the player landing in the mini player, centred titles, menus, dropdowns, update cards and notifications |
   | Motion audit (`tests/ui/motion_audit.mjs`) | Scrolls and flings with the processor slowed down, and fails if an animation needs anything but the graphics chip |
   | Connect end to end (`tests/ui/connect_e2e.mjs`) | A phone pairs with an engine by QR link, uses the app through the connection, reconnects, and is removed |
   | Explore (`tests/ui/explore.mjs`, 42 checks) | The card in Search, the map (pointing, tapping, the region filter), Take me somewhere and Next stop, the passport, genres and moods, and today's country on Home |
+  | Smart mix analysis (`tests/ui/mix.mjs`, 79 checks) | Tempo, beat grid, downbeats, intros, outros and keys of made-up songs whose every beat is known, and the transitions planned between them |
+  | Smart mix in Chrome (`tests/ui/smartmix.mjs`, 23 checks) | Real transitions, recorded as they leave the mixer: two songs' beats heard together within a few milliseconds, an echo out landing on the downbeat, a fade, and pausing or skipping halfway through |
   | Android Auto (`tests/ui/car.mjs`) | What the car asks for: tabs, folders, countries, search, playing, voice, the queue, and a phone with no profile chosen |
   | Android emulator (`android/ci/emulator-test.sh`) | The installed app starts its engine, plays, and drives the media notification |
 
@@ -426,7 +429,7 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 ```bash
 python -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/python -m openwave --no-browser      # http://localhost:8787
-.venv/bin/pytest                               # 101 tests
+.venv/bin/pytest                               # 113 tests
 node tests/ui/layout_audit.mjs                 # and the other suites in tests/ui (Node 22+ and Chrome)
 ```
 
@@ -458,6 +461,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [MAINTAINING.md](MAINTAINING.md).
 - [x] Tablet layouts, and update notifications on every platform
 - [x] Android Auto
 - [x] Explore: charts from about 70 countries on a world map, genres and moods
+- [x] Smart mix: songs mixed into each other, beat for beat
 - [ ] My devices: one profile kept in step across several computers
 - [ ] Listen together over the internet
 - [ ] Distribution on F-Droid and IzzyOnDroid

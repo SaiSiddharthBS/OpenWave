@@ -51,6 +51,11 @@ jobs:
         env:
           OPENWAVE_PYTHON: python
           CHROME: /usr/bin/google-chrome
+      - run: node tests/ui/mix.mjs
+      - run: node tests/ui/smartmix.mjs
+        env:
+          OPENWAVE_PYTHON: python
+          CHROME: /usr/bin/google-chrome
       - run: node tests/ui/motion_audit.mjs
         env:
           OPENWAVE_PYTHON: python

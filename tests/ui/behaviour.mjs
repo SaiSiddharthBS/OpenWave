@@ -136,6 +136,13 @@ try {
   await page.ev(`location.hash = '#/settings'; true`);
   await sleep(1500);
   check((await page.ev(`document.querySelector('[data-select=quality]').textContent.trim()`)) === 'High', 'and it\'s kept after a restart');
+  // Smart mix is on to start with, and takes the place of Crossfade; turning it off brings that back.
+  check(await page.ev(`document.querySelector('[data-setting-toggle=smartMix]')?.classList.contains('on') && !document.querySelector('[data-select=crossfade]')`),
+    'Smart mix is on to start with, in place of Crossfade');
+  await page.ev(`document.querySelector('[data-setting-toggle=smartMix]').click(); true`);
+  await sleep(600);
+  check(await page.ev(`!document.querySelector('[data-setting-toggle=smartMix]').classList.contains('on') && !!document.querySelector('[data-select=crossfade]')`),
+    'turning it off brings Crossfade back');
   await page.ev(`document.querySelector('[data-select=crossfade]').click(); true`);
   await sleep(400);
   await page.ev(`[...document.querySelectorAll('#menu [data-mi]')].find((b) => b.textContent.trim() === '4 seconds').click(); true`);
