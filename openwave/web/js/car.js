@@ -7,7 +7,8 @@
 // Every item is { id, title, subtitle, art, play, group, style, children, tile, label, tint,
 // downloaded, explicit }. `id` says what it is:
 //   folders   home, mixes, library, recent, album/ID, playlist/ID, artist/ID, my/ID, liked,
-//             downloads, daily/N, smart/on-repeat, smart/rediscover
+//             downloads, daily/N, smart/on-repeat, smart/rediscover, world (every country with a
+//             chart), world/CODE (a country's chart, ZZ for the world's)
 //   songs     play|FOLDER|VIDEO_ID  plays the folder from that song
 //             radio|VIDEO_ID        starts a radio from that song
 //             shuffle|FOLDER        plays the folder shuffled
@@ -17,6 +18,9 @@ import { store } from './store.js';
 import { offline } from './offline.js';
 import { player } from './player.js';
 import { REMOTE } from './remote.js';
+
+// Explore (js/explore.js) brings the world map with it: loaded only once the car wants a country.
+const exploring = () => import('./explore.js');
 
 const GRID = 'grid';
 const LIST = 'list';
@@ -99,6 +103,7 @@ async function home() {
   const [made, sections] = await Promise.all([madeForYou(), get.home().catch(() => [])]);
   items.push(...madeItems(made, name ? `Made for ${name}` : 'Made for you'));
   items.push(...store.history.slice(0, 8).map(radio('Jump back in')));
+  items.push(...await aroundTheWorld().catch(() => []));
   for (const sec of sections.slice(0, 8)) {
     const tracks = sec.items.filter((x) => x.videoId);
     const others = sec.items.filter((x) => !x.videoId);
@@ -107,6 +112,31 @@ async function home() {
   }
   if (!items.length && !navigator.onLine) return downloads();
   return items;
+}
+
+/** A country as a folder: its dotted shape in its colour, with its name. */
+function place(ex, code, group, title = ex.nameOf(code)) {
+  return { id: `world/${code}`, title, subtitle: code === ex.GLOBAL ? 'Top songs worldwide' : 'Trending now', group, style: GRID, children: LIST,
+    label: ex.nameOf(code), tint: ex.hexOf(code), shape: code === ex.GLOBAL ? ex.worldShape() : ex.shapeOf(code) };
+}
+
+/** Home's Explore row: today's country, the world's top songs, and every country. */
+async function aroundTheWorld() {
+  const ex = await exploring();
+  const w = await ex.world();
+  if (!w.countries?.length) return [];
+  const g = 'Around the world';
+  const items = [];
+  if (w.today?.code) items.push(place(ex, w.today.code, g, `Today: ${ex.nameOf(w.today.code)}`));
+  items.push(place(ex, ex.GLOBAL, g));
+  items.push({ id: 'world', title: 'Every country', subtitle: `${w.countries.length} charts`, group: g, style: GRID, children: GRID, shape: ex.worldShape(), label: 'Every country', tint: '#c45cff' });
+  return items;
+}
+
+async function everyCountry() {
+  const ex = await exploring();
+  const w = await ex.world();
+  return [place(ex, ex.GLOBAL, undefined), ...[...w.countries].sort((a, b) => ex.nameOf(a).localeCompare(ex.nameOf(b))).map((c) => place(ex, c))];
 }
 
 async function mixes() {
@@ -150,6 +180,7 @@ async function folder(id) {
   let tracks = [];
   let extra = [];
   let label = '';
+  let href;
   if (kind === 'album') { const a = await get.album(key); tracks = a.tracks; label = a.title; }
   else if (kind === 'playlist') { const p = await get.playlist(key); tracks = p.tracks; label = p.title; }
   else if (kind === 'artist') {
@@ -162,8 +193,13 @@ async function folder(id) {
   else if (kind === 'downloads') { tracks = await offline.list(); label = 'Downloads'; }
   else if (kind === 'daily') { const m = (await mine('/api/me/daily')).mixes.find((x) => x.id === key); tracks = m?.tracks || []; label = m?.title || ''; }
   else if (kind === 'smart') { const [k, title] = SMART[key] || []; tracks = k ? (await mine('/api/me/smart'))[k] || [] : []; label = title || ''; }
-  else throw new Error(`unknown folder ${id}`);
-  const entry = { at: Date.now(), tracks: tracks.filter((t) => t.videoId), extra, label };
+  else if (kind === 'world' && /^[A-Z]{2}$/.test(key)) {
+    const ex = await exploring();
+    tracks = (await ex.countryData(key)).tracks;
+    label = key === ex.GLOBAL ? 'Top songs worldwide' : `Trending in ${ex.nameOf(key)}`;
+    href = `#/explore/${key}`;   // a song played from here stamps the passport, as in the app
+  } else throw new Error(`unknown folder ${id}`);
+  const entry = { at: Date.now(), tracks: tracks.filter((t) => t.videoId), extra, label, href };
   // Your own lists change as you use them: always read them fresh.
   if (!['my', 'liked', 'downloads'].includes(kind)) cache.set(id, entry);
   return entry;
@@ -196,11 +232,11 @@ async function track(videoId) {
 }
 
 async function playFolder(id, videoId = null, shuffled = false) {
-  const { tracks, label } = await folder(id);
+  const { tracks, label, href } = await folder(id);
   if (!tracks.length) return;
   if (shuffled && !player.shuffle) player.toggleShuffle();
   const i = videoId ? Math.max(0, tracks.findIndex((t) => t.videoId === videoId)) : shuffled ? Math.floor(Math.random() * tracks.length) : 0;
-  player.playList(tracks, i, { label });
+  player.playList(tracks, i, href ? { label, href } : { label });
 }
 
 /** "Hey Google, play … on OpenWave": your own lists first, then the best match on YouTube Music. */
@@ -213,12 +249,22 @@ async function playSpoken(q) {
   }
   if (/^(my )?(liked|favou?rite)( songs| music)?$/.test(words)) return playFolder('liked', null, true);
   if (/^(my )?downloads?$/.test(words) && offline.count) return playFolder('downloads', null, true);
-  const mine = store.playlists.find((p) => p.name.toLowerCase() === words);
-  if (mine) return playFolder(`my/${mine.id}`);
+  const own = store.playlists.find((p) => p.name.toLowerCase() === words);
+  if (own) return playFolder(`my/${own.id}`);
   if (/daily mix/.test(words)) {
     const n = +(words.match(/\d+/)?.[0] || 1);
     const m = (await mine('/api/me/daily').catch(() => ({ mixes: [] }))).mixes[n - 1];
     if (m) return playFolder(`daily/${m.id}`);
+  }
+  // "Top songs in Mexico", "music from Nigeria", "what's trending in Japan", "take me somewhere".
+  const where = words.match(/(?:music|songs|hits|charts?|trending|playing)\s+(?:from|in)\s+(.+)$/)?.[1]
+    || words.match(/^(?:trending|top songs|top hits|hits|charts?)\s+(?:in\s+|from\s+)?(.+)$/)?.[1];
+  if (where || /^(take me somewhere|surprise me|world music|around the world)$/.test(words)) {
+    const ex = await exploring();
+    const w = await ex.world().catch(() => null);
+    const codes = w?.countries || [];
+    const code = where ? (/^(the )?world(wide)?$/.test(where) ? ex.GLOBAL : ex.countryNamed(where, codes)) : codes[Math.floor(Math.random() * codes.length)];
+    if (code) return playFolder(`world/${code}`);
   }
   const data = await get.search(q, 'all');
   const top = data.top || (data.results || [])[0];
@@ -249,7 +295,7 @@ export async function answer({ op, id = '', q = '' }, reply) {
       return;
     }
     if (op === 'browse' && id.endsWith('-hint')) reply({ items: [] });
-    else if (op === 'browse') reply({ items: await (TABS[id] ? TABS[id]() : folderItems(id)) });
+    else if (op === 'browse') reply({ items: await (TABS[id] ? TABS[id]() : id === 'world' ? everyCountry() : folderItems(id)) });
     else if (op === 'search') reply({ items: await search(q) });
     else if (op === 'play') { await play(id); reply({ items: [] }); }
     else reply({ error: `unknown ${op}`, items: [] });

@@ -115,6 +115,23 @@ Every app is self-contained, with nothing else to install. Each [release](https:
   </tr>
 </table>
 
+### Explore
+
+<img src="docs/screenshots/explore.png" alt="Explore: a dotted world map where countries with a chart today glow" width="100%">
+
+- **What the world is playing.** A dotted world map where every country with a chart today glows. Point at one for its name and local time, tap it for its chart, its top artists and more places to go next. About 70 countries, plus the world's top songs.
+- **Take me somewhere.** One button picks a country you haven't been to, flies across the map and starts its chart. **Next stop** keeps going.
+- **Today's stop**, the same for everyone each day, on Explore, on Home and on the Explore card that opens Search.
+- **Genres and moods** from YouTube Music, from African and Latin to K-Pop and Reggae, each with its songs, playlists and albums.
+- **A passport** that stamps every country you play, kept on your device.
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/explore-country.png" alt="A country's chart"><p align="center"><sub>A country's page: the map closes in on it, with its chart, its top artists and the time there</sub></p></td>
+    <td width="50%"><img src="docs/screenshots/explore-countries.png" alt="Every country, each as its own dotted shape"><p align="center"><sub>Every country, as its own dotted shape</sub></p></td>
+  </tr>
+</table>
+
 ### Every device
 
 <img src="docs/screenshots/every-device.png" alt="OpenWave on a Mac, an iPad and an iPhone" width="100%">
@@ -189,6 +206,8 @@ OpenWave matches each song on YouTube Music by title, artist and length, and bui
   &nbsp;
   <img src="docs/screenshots/mobile-search.png" width="200" alt="Search on a phone">
   &nbsp;
+  <img src="docs/screenshots/mobile-explore.png" width="200" alt="A country's chart on a phone">
+  &nbsp;
   <img src="docs/screenshots/mobile-playlist.png" width="200" alt="A playlist on a phone">
   &nbsp;
   <img src="docs/screenshots/mobile-insights.png" width="200" alt="Insights on a phone">
@@ -224,7 +243,7 @@ A native Swift app (AppKit and SwiftUI) that runs its own engine, with nothing t
 A native Kotlin app that runs the complete engine on the phone through [Chaquopy](https://chaquo.com/chaquopy/). No computer is needed.
 
 - Media notification, lock-screen, headphone and Bluetooth controls; pauses for calls and when headphones are unplugged; keeps playing in the background.
-- **Android Auto:** Home, Mixes, Library and Recent on the car's screen, with artwork, Daily Mix covers, search, voice ("Hey Google, play Road trip on OpenWave"), the queue, and like, shuffle and repeat buttons. It starts by itself when the car asks, with the phone in a pocket. Because OpenWave isn't from the Play Store, turn on **Unknown sources** once in Android Auto's settings (tap the version number ten times to show developer settings).
+- **Android Auto:** Home, Mixes, Library and Recent on the car's screen, with artwork, Daily Mix covers, countries from Explore drawn as their own dotted shapes, search, voice ("Hey Google, play Road trip on OpenWave", "play top songs in Mexico"), the queue, and like, shuffle and repeat buttons. It starts by itself when the car asks, with the phone in a pocket. Because OpenWave isn't from the Play Store, turn on **Unknown sources** once in Android Auto's settings (tap the version number ten times to show developer settings).
 - **Home-screen widget** with artwork and playback controls, and the screen's fastest refresh rate.
 - Native-feeling navigation: swipe the player down to close, swipe the artwork to change songs, long-press for a song's menu, haptics and a back button that behaves as expected.
 - **Library location:** keep the library on the phone, or play from OpenWave on your computer with the same profiles and playlists, from anywhere (on the computer, **Settings → Phones → Add a phone**).
@@ -271,6 +290,7 @@ flowchart LR
   end
   subgraph Engine["OpenWave engine (FastAPI)"]
     Music["music.py<br/>catalogue, radio, lyrics"]
+    Explore["explore.py<br/>countries' charts, genres, moods"]
     Stream["youtube.py + app.py<br/>stream resolution, range proxy"]
     Lib["library.py<br/>SQLite: profiles, playlists, plays"]
     Mixes["mixes.py<br/>Daily Mixes from your listening"]
@@ -289,6 +309,8 @@ flowchart LR
   UI -->|library sync| Lib
   Lib --> Mixes
   Music --> YTM
+  UI -->|Explore| Explore
+  Explore --> YTM
   Stream --> YT
   Link <-->|UDP discovery, paired HTTP| Peers
   Phone["iPhone away from home<br/>web app from GitHub Pages"]
@@ -313,12 +335,13 @@ OpenWave is developed with the discipline of a product team, and the machinery d
 
   | Suite | What it checks |
   |---|---|
-  | Engine tests (`pytest`, 101) | Profiles, sync, sharing, import, Daily Mixes, phone pairing, updates, on two FastAPI and pydantic versions |
-  | Layout audit (`tests/ui/layout_audit.mjs`) | Every screen at 13 sizes, from a 320-pixel phone to a wide desktop, with real and deliberately extreme names: 572 checks that nothing is cut off or pushed past the edge |
+  | Engine tests (`pytest`, 113) | Profiles, sync, sharing, import, Daily Mixes, Explore, phone pairing, updates, on two FastAPI and pydantic versions |
+  | Layout audit (`tests/ui/layout_audit.mjs`) | Every screen at 13 sizes, from a 320-pixel phone to a wide desktop, with real and deliberately extreme names: 728 checks that nothing is cut off or pushed past the edge |
   | Behaviour (`tests/ui/behaviour.mjs`, 71 checks) | Things a person does: search suggestions that stay, the player landing in the mini player, centred titles, menus, dropdowns, update cards and notifications |
   | Motion audit (`tests/ui/motion_audit.mjs`) | Scrolls and flings with the processor slowed down, and fails if an animation needs anything but the graphics chip |
   | Connect end to end (`tests/ui/connect_e2e.mjs`) | A phone pairs with an engine by QR link, uses the app through the connection, reconnects, and is removed |
-  | Android Auto (`tests/ui/car.mjs`) | What the car asks for: tabs, folders, search, playing, voice, the queue, and a phone with no profile chosen |
+  | Explore (`tests/ui/explore.mjs`, 42 checks) | The card in Search, the map (pointing, tapping, the region filter), Take me somewhere and Next stop, the passport, genres and moods, and today's country on Home |
+  | Android Auto (`tests/ui/car.mjs`) | What the car asks for: tabs, folders, countries, search, playing, voice, the queue, and a phone with no profile chosen |
   | Android emulator (`android/ci/emulator-test.sh`) | The installed app starts its engine, plays, and drives the media notification |
 
 - **Measured performance.** Motion is tuned against frame timings measured on real hardware: in Safari's engine the full-screen player is drawn and set up while still invisible, then animated entirely on the graphics chip, with every part of the animation ending together.
@@ -376,6 +399,7 @@ openwave --host 0.0.0.0 --port 8787 --no-browser
 | `GET /api/search?q=&type=all\|songs\|albums\|artists\|playlists` | Normalised search results |
 | `GET /api/home` · `/api/album/{id}` · `/api/playlist/{id}` · `/api/artist/{id}` | Catalogue pages |
 | `GET /api/next/{videoId}` · `/api/lyrics/{videoId}` | Radio and lyrics |
+| `GET /api/explore` · `/api/explore/country/{code}` · `/api/explore/genre/{params}` | Countries with charts, genres, moods and today's country; a country's chart; a genre or mood page |
 | `GET /api/stream/{videoId}?q=&codec=opus\|aac` · `/api/download/{videoId}` | Audio |
 | `GET /api/audio/{videoId}` | The song (audio-track) version of any video |
 | `GET/POST /api/profiles` · `POST /api/profiles/{id}/login` | Profiles and sign-in |
@@ -433,6 +457,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and [MAINTAINING.md](MAINTAINING.md).
 - [x] iPhone access from anywhere with a QR code and no accounts (OpenWave Connect)
 - [x] Tablet layouts, and update notifications on every platform
 - [x] Android Auto
+- [x] Explore: charts from about 70 countries on a world map, genres and moods
 - [ ] My devices: one profile kept in step across several computers
 - [ ] Listen together over the internet
 - [ ] Distribution on F-Droid and IzzyOnDroid
@@ -492,7 +517,7 @@ Contributions of every kind are welcome: code, design, translations, documentati
 
 ## Acknowledgements
 
-OpenWave is built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ytmusicapi](https://github.com/sigma67/ytmusicapi), [FastAPI](https://fastapi.tiangolo.com), [aiortc](https://github.com/aiortc/aiortc), [Deno](https://deno.com), [PyInstaller](https://pyinstaller.org), [pywebview](https://pywebview.flowrl.com) and [Chaquopy](https://chaquo.com/chaquopy/), and inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io).
+OpenWave is built on [yt-dlp](https://github.com/yt-dlp/yt-dlp), [ytmusicapi](https://github.com/sigma67/ytmusicapi), [FastAPI](https://fastapi.tiangolo.com), [aiortc](https://github.com/aiortc/aiortc), [Deno](https://deno.com), [PyInstaller](https://pyinstaller.org), [pywebview](https://pywebview.flowrl.com) and [Chaquopy](https://chaquo.com/chaquopy/), and inspired by [NewPipe](https://newpipe.net), [FreeTube](https://freetubeapp.io) and [Invidious](https://invidious.io). Explore's map is drawn from [Natural Earth](https://www.naturalearthdata.com) (public domain, packaged by [world-atlas](https://github.com/topojson/world-atlas)), and contains information from [world-countries](https://github.com/mledoze/countries), which is made available under the [Open Database License](https://opendatacommons.org/licenses/odbl/1-0/).
 
 ## Legal and responsible use
 

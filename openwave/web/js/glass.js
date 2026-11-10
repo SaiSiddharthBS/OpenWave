@@ -169,8 +169,9 @@ function tuckTabsOnScroll(main) {
 }
 
 // ------------------------------------------------------------------ pages arrive piece by piece
-const PIECES = ['.greeting', '.lib-head', '.settings h1', '.settings h2', '.setting', '.section-head', '.shortcut', '.card', '.row', '.top-card', '.genre',
-  '.stat', '.chips', '.recent', '.actions', '.hero .cover', '.hero .mosaic', '.hero .info', '.list-head', '.hours', '.empty', '.about'].join(', ');
+const PIECES = ['.greeting', '.lib-head', '.settings h1', '.settings h2', '.setting', '.section-head', '.shortcut', '.card', '.row', '.top-card',
+  '.stat', '.chips', '.recent', '.actions', '.hero .cover', '.hero .mosaic', '.hero .info', '.list-head', '.hours', '.empty', '.about',
+  '.ex-head', '.ex-stage', '.ex-card', '.today', '.pass-card', '.cty', '.gtile', '.mood-pills'].join(', ');
 const RISE = [{ opacity: 0, transform: 'translateY(26px) scale(.965)' }, {}];
 const SLIDE = [{ opacity: 0, transform: 'translateY(16px)' }, {}];   // no scaling: text would be redrawn at the end
 const FADE = [{ opacity: 0 }, {}];

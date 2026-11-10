@@ -259,7 +259,7 @@ class PlaybackService : MediaBrowserServiceCompat() {
         if (o.optBoolean("downloaded")) extras.putLong(MediaDescriptionCompat.EXTRA_DOWNLOAD_STATUS, MediaDescriptionCompat.STATUS_DOWNLOADED)
         if (o.optBoolean("explicit")) extras.putLong(IS_EXPLICIT, 1L)
         val art = CarArt.uri(this, o.optString("art").ifBlank { null }, o.optString("tile").ifBlank { null },
-            o.optString("label").ifBlank { null }, o.optString("tint").ifBlank { null }, o.optBoolean("round"))
+            o.optString("label").ifBlank { null }, o.optString("tint").ifBlank { null }, o.optBoolean("round"), o.optString("shape").ifBlank { null })
         val desc = MediaDescriptionCompat.Builder()
             .setMediaId(o.optString("id"))
             .setTitle(o.optString("title"))

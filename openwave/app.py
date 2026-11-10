@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import re
 import time
@@ -15,8 +16,10 @@ from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.background import BackgroundTask
+from starlette.datastructures import Headers
+from starlette.staticfiles import NotModifiedResponse
 
-from . import __version__, connect, link, music, releases, updater, youtube
+from . import __version__, connect, explore, link, music, releases, updater, youtube
 from .api_connect import error_response as connect_error, host as connect_host, router as connect_router
 from .api_library import error_response, library, router as library_router, sync as shared_sync
 from .config import FROZEN, data_dir
@@ -180,6 +183,27 @@ async def track(video_id: str):
 @app.get("/api/lyrics/{video_id}")
 async def lyrics(video_id: str):
     return await _guard(music.lyrics(_check_id(video_id)))
+
+
+@app.get("/api/explore")
+async def explore_world():
+    """Countries with charts, genres, moods, and today's featured country."""
+    return await _guard(explore.world())
+
+
+@app.get("/api/explore/country/{code}")
+async def explore_country(code: str):
+    code = code.upper()
+    if not explore.COUNTRY_RE.match(code):
+        raise HTTPException(400, "unknown country")
+    return await _guard(explore.country(code))
+
+
+@app.get("/api/explore/genre/{params}")
+async def explore_genre(params: str):
+    if not explore.PARAMS_RE.match(params):
+        raise HTTPException(400, "unknown genre")
+    return await _guard(explore.genre(params))
 
 
 # --------------------------------------------------------------------------- media
@@ -365,4 +389,26 @@ async def revalidate_app_files(request: Request, call_next):
     return response
 
 
-app.mount("/", StaticFiles(directory=WEB, html=True), name="web")
+class AppFiles(StaticFiles):
+    """The app's own files, each with an ETag made from what's in it, and only the ETag decides
+    whether a browser's copy is still current. The Android app unpacks every file dated 1980, so a
+    date can't tell one version from the next, and the Starlette it bundles answered "not modified"
+    on the date alone: after an update, the old scripts ran on until the WebView's cache let go."""
+
+    _tags: dict[tuple, str] = {}
+
+    def file_response(self, full_path, stat_result, scope, status_code=200):
+        response = FileResponse(full_path, status_code=status_code, stat_result=stat_result)
+        key = (str(full_path), stat_result.st_mtime, stat_result.st_size, stat_result.st_ino)
+        tag = self._tags.get(key)
+        if tag is None:
+            tag = f'"{hashlib.md5(Path(full_path).read_bytes(), usedforsecurity=False).hexdigest()}"'
+            self._tags[key] = tag
+        response.headers["etag"] = tag
+        asked = Headers(scope=scope).get("if-none-match", "")
+        if tag in [t.strip().removeprefix("W/") for t in asked.split(",")]:
+            return NotModifiedResponse(response.headers)
+        return response
+
+
+app.mount("/", AppFiles(directory=WEB, html=True), name="web")

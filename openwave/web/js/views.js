@@ -53,11 +53,15 @@ export async function home() {
   let personal = null;
   let mine = null;
   let today = null;
+  // Today's country (Explore) loads beside your own recommendations; Home still opens if it fails.
+  // The first time (nothing saved yet) Home doesn't wait more than a moment for it.
+  const elsewhere = Promise.race([exploring().then(async (ex) => ({ ex, w: await ex.world() })).catch(() => null), new Promise((r) => setTimeout(r, 1500, null))]);
   if (store.session && store.history.length) {
     // Recommendations still load if any of these fails.
     [personal, mine, today] = await Promise.all([store.api('/api/me/mixes').catch(() => null), store.api('/api/me/smart').catch(() => null),
       store.api('/api/me/daily').catch(() => null)]);
   }
+  const abroad = await elsewhere;
   let html = `<h1 class="greeting">${greeting()}${store.profile ? `, ${esc(store.profile.name)}` : ''}</h1>`;
   html += shortcuts();
   const made = (today?.mixes || []).map(dailyCard).join('') + smartCards(mine) + (personal?.mixes || []).map(mixCard).join('');
@@ -67,6 +71,7 @@ export async function home() {
     html += section('Your top artists', personal.topArtists.filter((a) => a.id).map((a) => cards([{ type: 'artist', id: a.id, title: a.name, subtitle: `${a.plays} plays`, thumbnail: a.thumbnail }])).join(''));
   }
   sections.forEach((sec, n) => {
+    if (n === 1 && abroad) html += abroad.ex.todayShelf(abroad.w);
     const tracks = sec.items.filter((x) => x.videoId);
     const others = sec.items.filter((x) => !x.videoId);
     if (tracks.length >= others.length) {
@@ -78,10 +83,11 @@ export async function home() {
       html += section(sec.title, cards(others));
     }
   });
+  if (abroad && sections.length < 2) html += abroad.ex.todayShelf(abroad.w);
   if (failed && !recent.length) {
     html += empty('radio', "Couldn't load recommendations", failed.message, '<p><a class="btn" href="#/search">Search instead</a></p>');
   }
-  return { html };
+  return { html, mount: (view) => abroad?.ex.mountToday(view) };
 }
 
 const MIX_TINTS = ['#2fc8ff', '#7b7bff', '#c45cff', '#ff6fae', '#ffb648', '#3ddc97'];
@@ -146,22 +152,21 @@ function trackListRows(tracks, opts) {
 // ------------------------------------------------------------------ search
 const TYPES = [['all', 'All'], ['songs', 'Songs'], ['albums', 'Albums'], ['artists', 'Artists'], ['playlists', 'Playlists']];
 
-const GENRES = [
-  ['Pop', '#e13300'], ['Hip-Hop', '#bc5900'], ['Bollywood', '#d84000'], ['Lo-fi beats', '#477d95'],
-  ['Workout', '#777777'], ['Chill', '#8d67ab'], ['Rock', '#e91429'], ['Indie', '#608108'],
-  ['K-Pop', '#e8115b'], ['Jazz', '#1e3264'], ['Classical', '#7d4b32'], ['EDM', '#0d73ec'],
-  ['Romance', '#dc148c'], ['Party', '#af2896'], ['Focus', '#503750'], ['Sleep', '#1e3264'],
-];
+/** Explore (js/explore.js) loads only when it's first wanted: the world map is a good few kilobytes. */
+const exploring = () => import('./explore.js');
 
 export async function search({ q = '', type = 'all' }) {
   if (!q) {
     const recent = store.searches;
+    const ex = await exploring();
+    // Search is for typing: it doesn't wait more than a moment for Explore's countries.
+    const w = navigator.onLine ? await Promise.race([ex.world().catch(() => null), new Promise((r) => setTimeout(r, 1500, null))]) : null;
     return {
-      html: `${recent.length ? `<div class="section-head"><h2>Recent searches</h2></div>
+      html: `${ex.searchCard(w)}${recent.length ? `<div class="section-head"><h2>Recent searches</h2></div>
         <div class="recent">${recent.map((s) => `<span class="chip"><a href="#/search?q=${enc(s)}">${esc(s)}</a>
           <button class="icon-btn sm" data-forget-search="${esc(s)}" aria-label="Remove">${icon('close')}</button></span>`).join('')}</div>` : ''}
-        <div class="section-head"><h2>Browse all</h2></div>
-        <div class="browse">${GENRES.map(([g, c]) => `<a class="genre" style="background:${c}" href="#/search?q=${enc(g + ' playlists')}&type=playlists">${esc(g)}</a>`).join('')}</div>`,
+        ${ex.moodPills(w)}`,
+      mount: (view) => ex.mountSearchCard(view, w),
     };
   }
 
@@ -232,7 +237,7 @@ function downloadButton(tracks) {
   return `<button class="icon-btn lg dl-btn ${all ? 'on' : ''}" data-act="download-collection" title="${all ? 'Downloaded' : 'Download'}" aria-label="${all ? 'Remove downloads' : 'Download'}">${icon(all ? 'downloaded' : 'download')}</button>`;
 }
 
-function actions({ play, shuffle = true, save = null, edit = false, del = false, invite = '', more = true, tracks = null }) {
+export function actions({ play, shuffle = true, save = null, edit = false, del = false, invite = '', more = true, tracks = null, extra = '' }) {
   return `<div class="actions">
     <button class="big-play" data-act="${play}">${icon('play')}<span>Play</span></button>
     ${shuffle ? `<button class="pill-btn" data-act="${play}-shuffle">${icon('shuffle')}<span>Shuffle</span></button>` : ''}
@@ -241,6 +246,7 @@ function actions({ play, shuffle = true, save = null, edit = false, del = false,
     ${invite ? `<button class="icon-btn lg" data-act="${invite}" title="${invite === 'sharing' ? 'Shared with' : 'Share with friends'}" aria-label="${invite === 'sharing' ? 'Shared with' : 'Share with friends'}">${icon('people')}</button>` : ''}
     ${edit ? `<button class="icon-btn lg" data-act="rename-playlist" title="Rename" aria-label="Rename">${icon('edit')}</button>` : ''}
     ${del ? `<button class="icon-btn lg" data-act="delete-playlist" title="Delete" aria-label="Delete playlist">${icon('trash')}</button>` : ''}
+    ${extra}
     ${more ? `<button class="icon-btn lg" data-act="collection-menu" aria-label="More">${icon('more')}</button>` : ''}
   </div>`;
 }

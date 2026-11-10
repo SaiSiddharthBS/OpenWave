@@ -5,6 +5,17 @@ Write new changes under **Unreleased**; `scripts/release.sh` turns that into the
 
 ## [Unreleased]
 
+### Added
+- **Explore: what the world is playing.** A new Explore page (in the sidebar, and one tap from the top of Search) is built around a dotted world map where every country with a chart today glows in its own colour. Point at a country to see its name and local time, and tap it to open its page: today's Trending chart, its top artists with their rank, its other charts, and more countries to go to next. About 70 countries have charts, plus the world's top songs. **Take me somewhere** picks a country you haven't been to, flies a line across the map to it and starts its chart; **Next stop** on a country's page moves on again. Every country also has a tile with its own dotted shape, grouped by region, and Explore lists YouTube Music's genres (African, Latin, K-Pop, Reggae and more) and moods, each opening a page of songs, playlists and albums.
+- **Today's stop.** One country a day is featured, the same everywhere: on Explore, as a shelf on Home ("Today in Nigeria"), and on the Explore card in Search, which shows today's covers and names the countries with charts one after another. Search's start page now has moods under the card instead of the fixed genre tiles.
+- **Your passport.** Every country you play gets a stamp, shown on Explore with how many of the countries you've played. It's kept on the device, for each profile.
+- **Explore in Android Auto.** Home on the car's screen has an "Around the world" row (today's country, the world's top songs, and every country, each drawn as its own dotted shape), and voice works for countries: "Hey Google, play top songs in Mexico on OpenWave".
+
+### Fixed
+- **The Android app runs the new version straight after an update.** Parts of the old version could keep running for a while after updating, because the engine told the app its old copies of OpenWave's screens were still current. The Android app's files all carry the same date, so the engine now checks what's in each file instead of when it was made.
+- **"Play daily mix 2" by voice in Android Auto** stopped with an error instead of playing the mix.
+- **A long recent search on the Search page** no longer runs off the side of a phone's screen.
+
 ## [0.6.0] — 2026-11-07
 
 ### Added

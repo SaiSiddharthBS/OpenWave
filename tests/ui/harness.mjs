@@ -62,6 +62,20 @@ export function catalogue(d) {
       monthlyListeners: '98.7M', radioId: 'RDaudit', shuffleId: 'RDshuffle', songsPlaylistId: 'PLaudit', songs: songs(90, 5),
       albums: cards('album'), singles: cards('album'), related: cards('artist') },
     next: { tracks: songs(1, 30), lyricsId: 'MPLYaudit', relatedId: 'MPTRaudit' },
+    // Explore: the countries with charts, genres and moods (long names included), and today's country.
+    explore: {
+      countries: ['AR', 'AU', 'BR', 'CA', 'DE', 'EG', 'FR', 'GB', 'IN', 'JP', 'KE', 'KR', 'MX', 'NG', 'NZ', 'SA', 'TH', 'US', 'ZA'],
+      genres: ['African', 'K-Pop', 'Latin', 'Reggae & caribbean', d.artist, 'Hindustani classical', 'Dance & electronic', 'Indie & alternative']
+        .map((title, i) => ({ title, params: `ggMPOaudit${i}` })),
+      moods: ['Chill', 'Feel good', 'Focus', 'Party', 'Romance', 'Workout'].map((title, i) => ({ title, params: `ggMPOmood${i}` })),
+      today: { code: 'NG', title: 'Trending 20 Nigeria', playlistId: 'OLAK5uy_audit', covers: [THUMB, THUMB, THUMB], tracks: songs(100, 12) },
+    },
+    country: (code) => ({ code, title: `Trending 20 ${code}`, playlistId: 'OLAK5uy_audit', thumbnail: THUMB, tracks: songs(100, 20),
+      artists: cards('artist').map((a, i) => ({ ...a, rank: String(i + 1), trend: ['up', 'down', 'neutral'][i % 3] })),
+      charts: cards('playlist').slice(0, 2) }),
+    genre: (params) => ({ params, title: params.startsWith('ggMPOmood') ? 'Chill' : 'African', sections: [
+      { title: 'Songs', kind: 'songs', items: songs(120, 30) }, { title: 'Featured playlists', kind: 'cards', items: cards('playlist') },
+      { title: 'Albums', kind: 'cards', items: cards('album') }] }),
     lyrics: { found: true, synced: true, lines, source: 'Source: LRCLIB' },
     phones: { available: true, via: false, name: d.artist, relays: 6, tickets: [{ id: 'audit', expires: 0, devices: [] }],
       devices: [{ id: 'a1', label: 'iPhone', added: 1, seen: Math.floor(Date.now() / 1000), online: true, profiles: [d.artist] },
@@ -91,6 +105,9 @@ export function fake(cat, url) {
   if (p.startsWith('/api/artist/')) return json(cat.artist);
   if (p.startsWith('/api/next/') || p.startsWith('/api/me/radio/')) return json(cat.next);
   if (p.startsWith('/api/lyrics/')) return json(cat.lyrics);
+  if (p === '/api/explore') return json(cat.explore);
+  if (p.startsWith('/api/explore/country/')) return json(cat.country(p.slice(-2)));
+  if (p.startsWith('/api/explore/genre/')) return json(cat.genre(p.split('/').pop()));
   if (p.startsWith('/api/audio/') || p.startsWith('/api/track/')) return json(cat.song(Number(p.slice(-8)) || 1));
   if (p.startsWith('/api/prefetch/')) return json({ ok: true });
   if (p.startsWith('/api/length/')) return json({ seconds: cat.song(Number(p.slice(-8)) || 1).duration });

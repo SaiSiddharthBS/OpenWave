@@ -42,6 +42,9 @@ const ROUTES = [
   [/^\/my\/(.+)$/, 'library', (m) => views.myPlaylist({ id: id(m) }), 'detail'],
   [/^\/smart\/(on-repeat|rediscover)$/, 'library', (m) => views.smart({ which: m[1] }), 'detail'],
   [/^\/daily\/(\d+)$/, 'library', (m) => views.daily({ id: m[1] }), 'detail'],
+  [/^\/explore$/, 'explore', () => import('./explore.js').then((ex) => ex.explorePage()), 'detail'],
+  [/^\/explore\/([A-Z]{2})$/, 'explore', (m) => import('./explore.js').then((ex) => ex.countryPage({ code: m[1] })), 'detail'],
+  [/^\/genre\/([A-Za-z0-9_-]+)$/, 'explore', (m) => import('./explore.js').then((ex) => ex.genrePage({ params: m[1] })), 'detail'],
   [/^\/settings$/, 'settings', () => views.settings(), 'home'],
   [/^\/insights$/, 'insights', (m, q) => insights({ days: q.get('days') || 30 }), 'home'],
   [/^\/play\/([A-Za-z0-9_-]{11})$/, 'home', (m) => playLink(m[1]), 'home'],
@@ -77,7 +80,7 @@ async function render({ keepScroll = false } = {}) {
 
   document.body.classList.forEach((c) => c.startsWith('route-') && document.body.classList.remove(c));
   document.body.classList.add(`route-${name}`);
-  $$('[data-route]').forEach((a) => a.classList.toggle('on', a.dataset.route === name));
+  $$('[data-route]').forEach((a) => a.classList.toggle('on', a.dataset.route.split(' ').includes(name)));
   $$('.side-item').forEach((a) => a.classList.toggle('on', a.getAttribute('href') === location.hash));
   moveLenses();
   closeMenu();
@@ -407,7 +410,7 @@ function collectionMenu(anchor) {
     { icon: 'download', label: 'Download all', run: () => downloadCollection(c, false) },
   ];
   if (c.tracks[0]) items.push({ icon: 'radio', label: 'Start radio', run: () => player.playRadio(c.tracks[0], { label: `${c.context.label} radio` }) });
-  if (['album', 'playlist', 'artist', 'insights', 'downloads'].includes(c.kind) && c.tracks.length) {
+  if (['album', 'playlist', 'artist', 'insights', 'downloads', 'genre'].includes(c.kind) && c.tracks.length) {
     items.push({ icon: 'queue', label: 'Save as my playlist', run: () => {
       const p = store.createPlaylist(c.context.label || 'My playlist', c.tracks);
       toast(`Created “${p.name}”`);

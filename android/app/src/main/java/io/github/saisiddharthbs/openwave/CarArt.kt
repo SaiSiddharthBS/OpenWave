@@ -39,23 +39,25 @@ import kotlin.math.sin
 object CarArt {
     private const val SIZE = 600
 
-    /** What one picture is: a cover, a cover with a mix name over it, or a tile. */
-    private data class Spec(val url: String?, val tile: String?, val label: String?, val tint: Int?, val round: Boolean)
+    /** What one picture is: a cover, a cover with a mix name over it, a tile, or a country's dotted
+     * shape ("columns,rows,base64 bits", as in js/world-map.js). */
+    private data class Spec(val url: String?, val tile: String?, val label: String?, val tint: Int?, val round: Boolean, val shape: String? = null)
 
     private val specs = ConcurrentHashMap<String, Spec>()
 
     private fun authority(context: Context) = context.packageName + ".art"
 
     /** The car's address for a picture; null when there's nothing to show. */
-    fun uri(context: Context, url: String?, tile: String? = null, label: String? = null, tint: String? = null, round: Boolean = false): Uri? {
+    fun uri(context: Context, url: String?, tile: String? = null, label: String? = null, tint: String? = null, round: Boolean = false, shape: String? = null): Uri? {
         val spec = Spec(
             url?.takeIf { it.startsWith("http://") || it.startsWith("https://") },
             tile?.takeIf { it in TILES },
             label?.takeIf { it.isNotBlank() },
             tint?.let { runCatching { Color.parseColor(it) }.getOrNull() },
             round,
+            shape?.takeIf { SHAPE.matches(it) },
         )
-        if (spec.url == null && spec.tile == null) return null
+        if (spec.url == null && spec.tile == null && spec.shape == null) return null
         val key = MessageDigest.getInstance("SHA-1").digest(spec.toString().toByteArray()).joinToString("") { "%02x".format(it) }.take(32)
         specs[key] = spec
         return Uri.Builder().scheme("content").authority(authority(context)).appendPath(key).build()
@@ -110,6 +112,7 @@ object CarArt {
         when {
             cover != null -> { drawCover(canvas, cover); cover.recycle() }
             spec.tile != null -> drawTile(context, canvas, spec.tile)
+            spec.shape != null -> drawShape(canvas, spec.shape, spec.tint ?: Color.parseColor("#7b7bff"), spec.label != null)
             else -> { out.recycle(); return null }
         }
         if (spec.label != null) drawMixLabel(canvas, spec.label, spec.tint ?: Color.parseColor("#7b7bff"))
@@ -174,6 +177,37 @@ object CarArt {
         canvas.translate(margin, SIZE - margin - layout.height)
         layout.draw(canvas)
         canvas.restore()
+    }
+
+    private val SHAPE = Regex("\\d{1,3},\\d{1,3},[A-Za-z0-9+/=]{1,400}")
+
+    /** A country in Explore (css .cty-card): its own dotted shape glowing in its colour on the night
+     * sky, leaving room at the bottom for its name. */
+    private fun drawShape(canvas: Canvas, shape: String, tint: Int, named: Boolean) {
+        val (c, r, b64) = shape.split(",", limit = 3)
+        val cols = c.toInt().coerceIn(1, 60)
+        val rows = r.toInt().coerceIn(1, 60)
+        val bits = android.util.Base64.decode(b64, android.util.Base64.DEFAULT)
+        val s = SIZE.toFloat()
+        canvas.drawColor(Color.parseColor("#121428"))
+        canvas.drawRect(0f, 0f, s, s, Paint().apply {
+            shader = android.graphics.RadialGradient(s / 2, s * 0.4f, s * 0.62f, intArrayOf(withAlpha(tint, 0.55f), withAlpha(tint, 0.12f), withAlpha(tint, 0f)),
+                floatArrayOf(0f, 0.62f, 1f), Shader.TileMode.CLAMP)
+        })
+        val hex = Math.sqrt(3.0).toFloat() / 2
+        val boxW = s * 0.78f
+        val boxH = s * (if (named) 0.56f else 0.72f)
+        val step = minOf(boxW / (cols + 0.5f), boxH / (rows * hex + 0.2f))
+        val ox = (s - (cols + 0.5f) * step) / 2
+        val oy = s * (if (named) 0.1f else 0.14f) + (boxH - rows * hex * step) / 2
+        val dot = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            shader = LinearGradient(0f, oy, 0f, oy + rows * hex * step, intArrayOf(Color.WHITE, tint, withAlpha(tint, 0.8f)), floatArrayOf(0f, 0.55f, 1f), Shader.TileMode.CLAMP)
+        }
+        for (y in 0 until rows) for (x in 0 until cols) {
+            val i = y * cols + x
+            if (i shr 3 >= bits.size || (bits[i shr 3].toInt() shr (i and 7)) and 1 == 0) continue
+            canvas.drawCircle(ox + (x + 0.5f + (y % 2) * 0.5f) * step, oy + (y + 0.5f) * hex * step, step * 0.36f, dot)
+        }
     }
 
     /** The app's tiles: a gradient with a white symbol (css .liked-tile, .download-tile…). */

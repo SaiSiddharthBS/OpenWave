@@ -92,6 +92,16 @@ try {
     check(inside.items.length > 1, `${daily.title} opens with its songs (${inside.items.length - 1})`);
   }
 
+  console.log('Around the world');
+  const world = home.items.filter((x) => x.group === 'Around the world');
+  check(world.length === 3 && world[0].id === 'world/NG' && world[0].shape && /^#[0-9a-f]{6}$/.test(world[0].tint) && world[1].id === 'world/ZZ' && world[2].id === 'world',
+    `Home has today's country, the world's top songs and every country (${world.map((x) => x.title).join(', ')})`);
+  const every = await ask('browse', 'world');
+  check(every.items.length === 20 && every.items.every((x) => /^world\/[A-Z]{2}$/.test(x.id) && /^\d+,\d+,/.test(x.shape) && x.label),
+    `every country is a folder with its own dotted shape (${every.items.length})`);
+  const ng = await ask('browse', 'world/NG');
+  check(ng.items[0]?.id === 'shuffle|world/NG' && ng.items.length === 21, `a country opens with its chart (${ng.items.length - 1} songs)`);
+
   console.log('Search');
   const found = await ask('search', '', 'arijit');
   const fg = [...new Set(found.items.map((x) => x.group))];
@@ -119,6 +129,21 @@ try {
   await sleep(500);
   st = await page.ev(`window.openwaveNative.state()?.videoId`);
   check(st === vid(1), `anything else plays the best match from search (${st})`);
+  await ask('play', 'voice|top songs in mexico');
+  await sleep(500);
+  st = await page.ev(`(async () => (await import('./js/player.js')).player.context)()`);
+  check(st?.href === '#/explore/MX' && st.label === 'Trending in Mexico', `"Hey Google, play top songs in Mexico on OpenWave" plays Mexico's chart (${st?.label})`);
+  await ask('play', 'world/KE');
+  await ask('play', 'play|world/NG|' + vid(103));
+  await sleep(500);
+  st = await page.ev(`(async () => { const { player } = await import('./js/player.js'); return [player.context?.href, player.current?.videoId]; })()`);
+  check(st[0] === '#/explore/NG' && st[1] === vid(103), 'a song chosen in a country plays from there, as part of its chart');
+  if (daily) {
+    await ask('play', 'voice|daily mix 1');
+    await sleep(500);
+    st = await page.ev(`(async () => (await import('./js/player.js')).player.context?.label)()`);
+    check(st === daily.title, `"play daily mix 1" plays it (${st})`);
+  }
   await page.ev(`window.openwaveNative.command('jump', '3'); true`);
   await sleep(300);
   st = await page.ev(`(async () => (await import('./js/player.js')).player.index)()`);
