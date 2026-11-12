@@ -40,7 +40,8 @@ async function tx(mode, fn) {
 const emit = (type, detail) => events.dispatchEvent(new CustomEvent(type, { detail }));
 
 function quality() {
-  const codec = document.createElement('audio').canPlayType('audio/webm; codecs="opus"') ? 'opus' : 'aac';
+  // The Mac app plays through macOS's own audio engine, which doesn't decode Opus (native-deck.js).
+  const codec = !window.OpenWaveNativeAudio && document.createElement('audio').canPlayType('audio/webm; codecs="opus"') ? 'opus' : 'aac';
   return `${store.settings.quality}&codec=${codec}`;
 }
 

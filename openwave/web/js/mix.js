@@ -22,6 +22,7 @@
 // decoded from the same bytes the deck plays, and is kept per song in localStorage.
 
 import { RATE, VERSION } from './mix-analysis.js';
+import { NATIVE, nativeGraph } from './native-deck.js';
 
 const UA = navigator.userAgent;
 /** Safari and the Mac app: Web Audio hears nothing from an Opus <audio>, so no graph there. */
@@ -93,6 +94,9 @@ async function decode(bytes) {
 }
 
 let queue = Promise.resolve();
+let lastError = '';
+/** Why the last analysis failed, for the playback log. */
+export const analysisError = () => lastError;
 const keyOf = (id, codec) => `${PREFIX}${codec}:${id}`;
 
 /** What's already known about a song, without fetching anything (null if nothing yet). */
@@ -102,20 +106,33 @@ export function knownAnalysis(id, codec) {
 
 /**
  * A song's analysis: from memory, from storage, or worked out from `bytes()` (an ArrayBuffer of
- * the audio). One song at a time; null if it can't be done (it then mixes with a plain fade).
+ * the audio) or `samples()` (mono samples at RATE, from the Mac app). One song at a time; null if
+ * it can't be done (it then mixes with a plain fade).
  */
-export function analysis(id, codec, bytes) {
+export function analysis(id, codec, bytes, getSamples) {
+  // (Not a parameter with a default: Safari's engine then can't see it from the async function below.)
+  const fromSamples = typeof getSamples === 'function' ? getSamples : null;
   const key = keyOf(id, codec);
   if (memo.has(key)) return memo.get(key);
   const stored = recall(key);
   if (stored) { const p = Promise.resolve(stored); memo.set(key, p); return p; }
   const p = (queue = queue.then(async () => {
+    if (fromSamples) {
+      const s = await fromSamples();
+      if (!s || !s.length || s.length > RATE * 60 * 15) return null;
+      return remember(key, await work(s));
+    }
     const data = await bytes();
     if (!data || !data.byteLength || data.byteLength > 40e6) return null;
     const samples = await decode(data);
     if (samples.length > RATE * 60 * 15) return null; // a DJ set or an album in one: not a song to mix
     return remember(key, await work(samples));
-  }).catch((e) => { console.warn('Smart mix could not analyse a song', e); memo.delete(key); return null; }));
+  }).catch((e) => {
+    console.warn('Smart mix could not analyse a song', e);
+    lastError = String(e?.stack ? `${e.message} ${e.stack}` : e?.message || e);
+    memo.delete(key);
+    return null;
+  }));
   memo.set(key, p);
   return p;
 }
@@ -239,6 +256,7 @@ function hold(p, t) {
 
 /** The audio graph, if this browser can have one and it's running (made on first use). */
 export async function audioGraph() {
+  if (NATIVE) return nativeGraph;
   if (!CAN_GRAPH) return null;
   try {
     graph ||= new Graph();
@@ -249,11 +267,11 @@ export async function audioGraph() {
   }
 }
 /** Whether the graph is (or can be) used: decides how plans are made. */
-export const graphPossible = () => CAN_GRAPH;
+export const graphPossible = () => NATIVE || CAN_GRAPH;
 /** The mixer's state, for the playback log and the tests: none, running, suspended or closed. */
-export const mixerState = () => graph?.ctx.state ?? 'none';
+export const mixerState = () => (NATIVE ? 'native' : graph?.ctx.state ?? 'none');
 /** Has this deck been put through the mixer? */
-export const routed = (el) => !!graph?.chains.has(el);
+export const routed = (el) => (NATIVE ? nativeGraph.chains.has(el) : !!graph?.chains.has(el));
 /** Put a deck back to plain sound, if it was ever routed. */
 export function plain(el) {
   const c = graph?.chains.get(el);

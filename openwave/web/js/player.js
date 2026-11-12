@@ -15,10 +15,13 @@ import { store, slim } from './store.js';
 import { offline } from './offline.js';
 import { REMOTE, songUrl, preloadSong } from './remote.js';
 import { Mix, analysis, knownAnalysis, audioGraph, graphPossible, routed } from './mix.js';
+import { NATIVE, NativeDeck } from './native-deck.js';
 import { plan as planMix } from './mix-plan.js';
 
-const decks = [document.getElementById('audio'), Object.assign(document.createElement('audio'), { preload: 'auto' })];
-document.body.appendChild(decks[1]);
+// The Mac app plays through macOS's own audio engine (native-deck.js); everywhere else, two <audio>s.
+const decks = NATIVE ? [new NativeDeck(0), new NativeDeck(1)]
+  : [document.getElementById('audio'), Object.assign(document.createElement('audio'), { preload: 'auto' })];
+if (!NATIVE) document.body.appendChild(decks[1]);
 const deckBlobs = [null, null];
 
 // iOS only lets one element play in the background and ignores element.volume: use a single deck there.
@@ -28,6 +31,8 @@ const SMART_PRELOAD_AT = 110; // with Smart mix: the next song is fetched whole 
 
 /** Opus wherever it plays (sounds better, and WebKit misreads AAC lengths); AAC otherwise. */
 export const audioCodec = () => (decks[0].canPlayType('audio/webm; codecs="opus"') ? 'opus' : 'aac');
+/** Smart mix keeps what it learns about a song per decoder: the Mac app's own differs from WebKit's. */
+const mixCodec = () => (NATIVE ? 'native' : audioCodec());
 
 let seq = 0;
 const tag = (t) => ({ ...slim(t), _k: ++seq }); // _k remembers insertion order so shuffle can be undone
@@ -290,7 +295,7 @@ class Player extends EventTarget {
     if (!navigator.onLine && !offline.has(t.videoId)) { this.preloaded = null; return; }
     let src = await this.sourceFor(t);
     if (token !== this.token || this.preloaded !== p) { if (src.blob) URL.revokeObjectURL(src.url); return; }
-    if (this.smartFor(i)) {
+    if (this.smartFor(i) && !NATIVE) {
       src = await this.wholeSong(t, src);
       if (token !== this.token || this.preloaded !== p) { if (src.blob) URL.revokeObjectURL(src.url); return; }
     }
@@ -298,7 +303,12 @@ class Player extends EventTarget {
     decks[spare].volume = 0;
     this.setSrc(spare, src);
     decks[spare].load();
-    decks[spare].addEventListener('canplaythrough', () => { if (this.preloaded === p) { p.ready = true; this.planMix(); } }, { once: true });
+    decks[spare].addEventListener('canplaythrough', () => {
+      if (this.preloaded !== p) return;
+      p.ready = true;
+      if (NATIVE && this.smartFor(p.index)) analysis(p.videoId, mixCodec(), null, () => decks[spare].samples()).then(() => this.planMix());
+      this.planMix();
+    }, { once: true });
     decks[spare].addEventListener('error', () => { if (this.preloaded === p) this.preloaded = null; }, { once: true });
   }
 
@@ -354,8 +364,18 @@ class Player extends EventTarget {
   analyseSoon(t) {
     clearTimeout(this.analyseTimer);
     if (store.settings.smartMix === false || !this.dualDeck || this.remote || !t) return;
-    const codec = audioCodec();
+    const codec = mixCodec();
     if (knownAnalysis(t.videoId, codec)) return;
+    if (NATIVE) {
+      // The Mac app has the whole song decoded as soon as it plays: listen to that copy.
+      const ask = () => {
+        if (this.current !== t || knownAnalysis(t.videoId, codec)) return;
+        if (this.el.readyState < 4 || !this.el.native) { this.analyseTimer = setTimeout(ask, 2000); return; }
+        analysis(t.videoId, codec, null, () => this.el.samples()).then(() => this.planMix());
+      };
+      this.analyseTimer = setTimeout(ask, 3000);
+      return;
+    }
     // A song that's streaming is fetched again for this, so not until the deck has all of it (or the
     // end is coming up): two downloads of one song at once can starve the one being played on a slow
     // phone or connection. A song playing from memory (downloaded, or away from home) goes at once.
@@ -377,7 +397,7 @@ class Player extends EventTarget {
   planMix() {
     const p = this.preloaded, t = this.current;
     if (!p?.ready || p.plan || !t || !this.smartFor(p.index)) return;
-    const codec = audioCodec();
+    const codec = mixCodec();
     const a = knownAnalysis(t.videoId, codec), b = knownAnalysis(p.videoId, codec);
     if (!a || !b) return;
     p.plan = planMix(a, b, { graph: graphPossible() });
@@ -391,7 +411,7 @@ class Player extends EventTarget {
     const p = this.preloaded, out = this.audioEl, inc = this.spare;
     if (!p?.plan || this.mix) return;
     this.mix = 'starting';
-    const graph = await audioGraph();
+    const graph = NATIVE && !(out.native && inc.native) ? null : await audioGraph();
     if (this.mix !== 'starting' || this.preloaded !== p || this.audioEl !== out || out.paused) {
       if (this.mix === 'starting') this.mix = null;
       return;

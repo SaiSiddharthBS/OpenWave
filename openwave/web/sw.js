@@ -5,13 +5,13 @@ const BASE = new URL('./', self.location.href).pathname;
 // Copies of the app at different paths of one site (the website's /app/ and /app-next/) keep
 // separate caches, so updating one never empties the other's.
 const SCOPE = BASE === '/' ? '' : `@${BASE}`;
-const VERSION = `openwave-v35${SCOPE}`;
+const VERSION = `openwave-v36${SCOPE}`;
 const IMAGES = `openwave-img-v1${SCOPE}`;
 const MAX_IMAGES = 600;
 const SHELL = [
   './', 'index.html', 'css/app.css', 'js/boot.js', 'js/remote.js', 'js/app.js', 'js/api.js', 'js/player.js', 'js/store.js', 'js/ui.js',
   'js/views.js', 'js/offline.js', 'js/profiles.js', 'js/importer.js', 'js/insights.js', 'js/native.js', 'js/update.js', 'js/gestures.js', 'js/link.js', 'js/sharing.js',
-  'js/phones.js', 'js/nav.js', 'js/glass.js', 'js/connect.js', 'js/car.js', 'js/explore.js', 'js/world-map.js', 'js/mix.js', 'js/mix-analysis.js', 'js/mix-plan.js', 'js/mix-worker.js', 'js/vendor/secp256k1.js', 'js/vendor/qrcode.js',
+  'js/phones.js', 'js/nav.js', 'js/glass.js', 'js/connect.js', 'js/car.js', 'js/explore.js', 'js/world-map.js', 'js/mix.js', 'js/mix-analysis.js', 'js/mix-plan.js', 'js/mix-worker.js', 'js/native-deck.js', 'js/vendor/secp256k1.js', 'js/vendor/qrcode.js',
   'icons/logo-mark-64.png', 'icons/logo-mark-128.png', 'icons/favicon-64.png', 'icons/icon-192.png', 'icons/apple-touch-icon.png',
 ];
 const INDEX = new URL('index.html', self.location.href).href;

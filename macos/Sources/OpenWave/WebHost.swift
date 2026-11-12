@@ -21,6 +21,12 @@ final class WebHost: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
         controller.addUserScript(WKUserScript(
             source: "document.documentElement.classList.add('native-app','native-mac');",
             injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        // Music plays through macOS's own audio engine (NativeAudio), not the web view's.
+        controller.addUserScript(WKUserScript(source: "window.OpenWaveNativeAudio = 1;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        // Tests only (with OPENWAVE_DEV_URL): a script that drives the page, e.g. tests/mac/native_mix.js.
+        if let path = ProcessInfo.processInfo.environment["OPENWAVE_TEST_SCRIPT"], let js = try? String(contentsOfFile: path, encoding: .utf8) {
+            controller.addUserScript(WKUserScript(source: js, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+        }
         config.userContentController = controller
 
         webView = WKWebView(frame: .zero, configuration: config)
@@ -32,6 +38,8 @@ final class WebHost: NSObject, WKNavigationDelegate, WKUIDelegate, WKScriptMessa
         super.init()
 
         controller.add(WeakMessageHandler(self), name: "openwave")
+        controller.add(WeakMessageHandler(NativeAudio.shared), name: "audio")
+        NativeAudio.shared.webView = webView
         webView.navigationDelegate = self
         webView.uiDelegate = self
 

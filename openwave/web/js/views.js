@@ -15,6 +15,7 @@ import { REMOTE, computer } from './remote.js';
 import { fullMotion, glassReduced } from './glass.js';
 import { player } from './player.js';
 import { WEBKIT } from './mix.js';
+import { NATIVE } from './native-deck.js';
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
 
@@ -468,8 +469,8 @@ export async function settings() {
       <h2>Playback</h2>
       <div class="setting"><div><b>Audio quality</b><p>OpenWave picks the best format your device plays (Opus or AAC, up to ~160 kbps). Data saver uses about a third of the data.</p></div>
         ${select('quality', [['high', 'High'], ['normal', 'Normal'], ['low', 'Data saver']])}</div>
-      ${player.dualDeck ? `<div class="setting"><div><b>Smart mix</b><p>${WEBKIT
-    ? 'Each song hands over to the next as its music ends, not its silence, with no gap. Beat-matched mixes play in OpenWave for Android and in Chrome. Albums still play as they were made.'
+      ${player.dualDeck ? `<div class="setting"><div><b>Smart mix</b><p>${WEBKIT && !NATIVE
+    ? 'Each song hands over to the next as its music ends, not its silence, with no gap. Beat-matched mixes play in the OpenWave apps for Mac and Android, and in Chrome. Albums still play as they were made.'
     : 'Songs flow into each other like a DJ set: their beats are matched, the bass swaps on the downbeat, and the next song comes in as this one winds down. Albums still play as they were made.'}</p></div>${sw('smartMix')}</div>` : ''}
       ${s.smartMix && player.dualDeck ? '' : `<div class="setting"><div><b>Crossfade</b><p>Blend the end of one song into the start of the next.</p></div>
         ${select('crossfade', [[0, 'Off'], [2, '2 seconds'], [4, '4 seconds'], [6, '6 seconds'], [8, '8 seconds'], [10, '10 seconds'], [12, '12 seconds']], 'number')}</div>`}
