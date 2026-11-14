@@ -1,0 +1,1790 @@
+{
+ "days": [
+  {
+   "date": "2026-10-25",
+   "downloads": {
+    "v0.3.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 3,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    }
+   },
+   "stars": 0,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-10-26",
+   "downloads": {
+    "v0.3.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 3,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    }
+   },
+   "stars": 0,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-10-27",
+   "downloads": {
+    "v0.3.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 3,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-10-28",
+   "downloads": {
+    "v0.3.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 3,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-10-29",
+   "downloads": {
+    "v0.3.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 3,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-10-30",
+   "downloads": {
+    "v0.3.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 3,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-10-31",
+   "downloads": {
+    "v0.3.1": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 3,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-01",
+   "downloads": {
+    "v0.3.2": {
+     "OpenWave-Android.apk": 3,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-02",
+   "downloads": {
+    "v0.5.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-03",
+   "downloads": {
+    "v0.5.3": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-04",
+   "downloads": {
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 8,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-05",
+   "downloads": {
+    "v0.5.7": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 3
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-06",
+   "downloads": {
+    "v0.5.7": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 3
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-07",
+   "downloads": {
+    "v0.6.0": {
+     "OpenWave-Android-update.apk": 1,
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.9": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.8": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.7": {
+     "OpenWave-Android.apk": 10,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 5
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-08",
+   "downloads": {
+    "v0.6.0": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.9": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.8": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.7": {
+     "OpenWave-Android.apk": 11,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 5
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-09",
+   "downloads": {
+    "v0.6.0": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 3
+    },
+    "v0.5.9": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.8": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.7": {
+     "OpenWave-Android.apk": 11,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 5
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-10",
+   "downloads": {
+    "v0.7.0": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.6.0": {
+     "OpenWave-Android-update.apk": 4,
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 3
+    },
+    "v0.5.9": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.8": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.7": {
+     "OpenWave-Android.apk": 13,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 5
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-11",
+   "downloads": {
+    "v0.7.0": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.6.0": {
+     "OpenWave-Android-update.apk": 4,
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 3
+    },
+    "v0.5.9": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.8": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.7": {
+     "OpenWave-Android.apk": 14,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 5
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-12",
+   "downloads": {
+    "v0.8.3": {
+     "OpenWave-Android-update.apk": 0,
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.7.0": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.6.0": {
+     "OpenWave-Android-update.apk": 4,
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 3
+    },
+    "v0.5.9": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.8": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.7": {
+     "OpenWave-Android.apk": 14,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 5
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-13",
+   "downloads": {
+    "v0.8.3": {
+     "OpenWave-Android-update.apk": 0,
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.7.0": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.6.0": {
+     "OpenWave-Android-update.apk": 4,
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 3
+    },
+    "v0.5.9": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.8": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.7": {
+     "OpenWave-Android.apk": 16,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 5
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  },
+  {
+   "date": "2026-11-14",
+   "downloads": {
+    "v0.8.3": {
+     "OpenWave-Android-update.apk": 0,
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.7.0": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.6.0": {
+     "OpenWave-Android-update.apk": 4,
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel-update.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 3
+    },
+    "v0.5.9": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.8": {
+     "OpenWave-Android-update.apk": 2,
+     "OpenWave-Android.apk": 0,
+     "OpenWave-Linux-x86_64-update.AppImage": 1,
+     "OpenWave-Linux-x86_64.AppImage": 0,
+     "OpenWave-macOS-AppleSilicon-update.dmg": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 0,
+     "OpenWave-macOS-Intel-update.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 0,
+     "OpenWave-Windows-Setup-update.exe": 1,
+     "OpenWave-Windows-Setup.exe": 0
+    },
+    "v0.5.7": {
+     "OpenWave-Android.apk": 17,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 5
+    },
+    "v0.5.6": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.5": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.5.4": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.3": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.2": {
+     "OpenWave-Android.apk": 1,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.1": {
+     "OpenWave-Android.apk": 2,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.5.0": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 1,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.4.0": {
+     "OpenWave-Android.apk": 9,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.2": {
+     "OpenWave-Android.apk": 6,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 4,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.3.1": {
+     "OpenWave-Android.apk": 5,
+     "OpenWave-Linux-x86_64.AppImage": 1,
+     "OpenWave-macOS-AppleSilicon.dmg": 1,
+     "OpenWave-macOS-Intel.dmg": 3,
+     "OpenWave-Windows-Setup.exe": 1
+    },
+    "v0.3.0": {
+     "OpenWave-Android.apk": 4,
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    },
+    "v0.2.0": {
+     "OpenWave-Linux-x86_64.AppImage": 2,
+     "OpenWave-macOS-AppleSilicon.dmg": 2,
+     "OpenWave-macOS-Intel.dmg": 2,
+     "OpenWave-Windows-Setup.exe": 2
+    }
+   },
+   "stars": 1,
+   "forks": 0,
+   "watchers": 0
+  }
+ ],
+ "traffic": {},
+ "updated": "2026-11-14T10:28:29+00:00"
+}
